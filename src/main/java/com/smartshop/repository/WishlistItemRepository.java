@@ -5,7 +5,7 @@ import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
-import com.smartshop.entity.WishlistItem;
+import com.smartshop.entity.cart.WishlistItem;
 
 public interface WishlistItemRepository extends JpaRepository<WishlistItem, Long> {
     List<WishlistItem> findByWishlistId(Long wishlistId);

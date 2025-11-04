@@ -2,8 +2,9 @@ package com.smartshop.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import com.smartshop.entity.order.OrderStatusHistory;
+
 import java.util.List;
-import com.smartshop.entity.OrderStatusHistory;
 
 public interface OrderStatusHistoryRepository extends JpaRepository<OrderStatusHistory, Long> {
     List<OrderStatusHistory> findByOrderIdOrderByChangedAtDesc(Long orderId);

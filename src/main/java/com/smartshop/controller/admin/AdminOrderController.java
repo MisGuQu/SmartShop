@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.smartshop.dto.order.OrderAdminDTO;
 import com.smartshop.dto.order.UpdateOrderStatusRequest;
-import com.smartshop.entity.Order;
+import com.smartshop.entity.order.Order;
 import com.smartshop.response.ApiResponse;
 import com.smartshop.service.admin.AdminOrderService;
 

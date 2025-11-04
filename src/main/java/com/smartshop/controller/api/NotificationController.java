@@ -1,7 +1,7 @@
 package com.smartshop.controller.api;
 
 import com.smartshop.dto.notification.NotificationDTO;
-import com.smartshop.entity.User;
+import com.smartshop.entity.user.User;
 import com.smartshop.response.ApiResponse;
 import com.smartshop.service.NotificationService;
 

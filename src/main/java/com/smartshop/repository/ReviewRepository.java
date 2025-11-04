@@ -8,7 +8,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-import com.smartshop.entity.Review;
+import com.smartshop.entity.review.Review;
 
 public interface ReviewRepository extends JpaRepository<Review, Long> {
     Page<Review> findByProductIdAndStatus(Long productId, ReviewStatus status, Pageable pageable);

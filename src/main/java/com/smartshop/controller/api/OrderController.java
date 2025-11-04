@@ -3,7 +3,7 @@ package com.smartshop.controller.api;
 import com.smartshop.dto.order.CheckoutRequest;
 import com.smartshop.dto.order.OrderDTO;
 import com.smartshop.dto.order.OrderDetailDTO;
-import com.smartshop.entity.User;
+import com.smartshop.entity.user.User;
 import com.smartshop.response.ApiResponse;
 import com.smartshop.service.OrderService;
 

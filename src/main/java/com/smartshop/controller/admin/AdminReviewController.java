@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.smartshop.dto.review.AdminReplyRequest;
 import com.smartshop.dto.review.ReviewAdminDTO;
 import com.smartshop.dto.review.ReviewReplyDTO;
-import com.smartshop.entity.Review;
+import com.smartshop.entity.review.Review;
 import com.smartshop.response.ApiResponse;
 import com.smartshop.service.admin.AdminReviewService;
 
@@ -42,13 +42,13 @@ public class AdminReviewController {
 
     @PutMapping("/{id}/approve")
     public ResponseEntity<ApiResponse<Void>> approve(@PathVariable Long id) {
-        reviewService.updateStatus(id, Review.ReviewStatus.APPROVED);
+        reviewService.updateStatus(id, com.smartshop.entity.review.ReviewStatus.APPROVED);
         return ResponseEntity.ok(ApiResponse.success(null, "Đã duyệt đánh giá"));
     }
 
     @PutMapping("/{id}/reject")
     public ResponseEntity<ApiResponse<Void>> reject(@PathVariable Long id) {
-        reviewService.updateStatus(id, Review.ReviewStatus.REJECTED);
+        reviewService.updateStatus(id, com.smartshop.entity.review.ReviewStatus.REJECTED);
         return ResponseEntity.ok(ApiResponse.success(null, "Đã từ chối đánh giá"));
     }
 

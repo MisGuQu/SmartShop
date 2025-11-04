@@ -2,7 +2,7 @@ package com.smartshop.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
-import com.smartshop.entity.ProductVariant;
+import com.smartshop.entity.product.ProductVariant;
 
 import java.util.List;
 import java.util.Optional;

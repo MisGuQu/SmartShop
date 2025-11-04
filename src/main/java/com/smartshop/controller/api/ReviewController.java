@@ -2,7 +2,7 @@ package com.smartshop.controller.api;
 
 import com.smartshop.dto.review.CreateReviewRequest;
 import com.smartshop.dto.review.ReviewDTO;
-import com.smartshop.entity.User;
+import com.smartshop.entity.user.User;
 import com.smartshop.response.ApiResponse;
 import com.smartshop.service.ReviewService;
 

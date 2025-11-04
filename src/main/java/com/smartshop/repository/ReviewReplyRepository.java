@@ -4,7 +4,7 @@ import java.util.List;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
-import com.smartshop.entity.ReviewReply;
+import com.smartshop.entity.review.ReviewReply;
 
 public interface ReviewReplyRepository extends JpaRepository<ReviewReply, Long> {
     List<ReviewReply> findByReviewIdOrderByCreatedAtAsc(Long reviewId);

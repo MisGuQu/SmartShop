@@ -5,7 +5,7 @@ import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
-import com.smartshop.entity.UserVoucher;
+import com.smartshop.entity.voucher.UserVoucher;
 
 public interface UserVoucherRepository extends JpaRepository<UserVoucher, Long> {
     List<UserVoucher> findByUserId(Long userId);

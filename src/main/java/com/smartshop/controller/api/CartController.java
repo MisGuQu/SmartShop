@@ -2,8 +2,8 @@ package com.smartshop.controller.api;
 
 import com.smartshop.dto.cart.AddToCartRequest;
 import com.smartshop.dto.cart.UpdateCartItemRequest;
+import com.smartshop.entity.user.User;
 import com.smartshop.dto.cart.CartDTO;
-import com.smartshop.entity.User;
 import com.smartshop.response.ApiResponse;
 import com.smartshop.service.CartService;
 

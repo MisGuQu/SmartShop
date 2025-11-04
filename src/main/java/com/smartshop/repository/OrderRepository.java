@@ -6,11 +6,11 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import com.smartshop.entity.order.Order;
+import com.smartshop.entity.order.Order.OrderStatus;
+
 import java.util.List;
 import java.util.Optional;
-
-import com.smartshop.entity.Order;                    // ĐÚNG: CÓ Order
-import com.smartshop.entity.Order.OrderStatus;        // THÊM: Import enum OrderStatus
 
 public interface OrderRepository extends JpaRepository<Order, Long> {
     List<Order> findByUserIdOrderByOrderDateDesc(Long userId);

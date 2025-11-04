@@ -1,7 +1,8 @@
 package com.smartshop.repository;
 
-import com.smartshop.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
+
+import com.smartshop.entity.user.User;
 
 import java.util.List;
 import java.util.Optional;
