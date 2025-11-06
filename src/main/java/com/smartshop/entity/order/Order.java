@@ -5,6 +5,9 @@ import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
+import com.smartshop.entity.enums.OrderStatus;
+import com.smartshop.entity.enums.PaymentMethod;
+import com.smartshop.entity.enums.PaymentStatus;
 import com.smartshop.entity.user.User;
 import com.smartshop.entity.voucher.Voucher;
 
@@ -14,7 +17,11 @@ import java.util.List;
 
 @Entity
 @Table(name = "orders")
-@Getter @Setter @NoArgsConstructor @AllArgsConstructor
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class Order {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -30,28 +37,21 @@ public class Order {
     @Column(name = "order_date", nullable = false)
     private LocalDateTime orderDate;
 
-    // THÊM ENUM Ở ĐÂY
-    public enum OrderStatus {
-        PENDING, CONFIRMED, PROCESSING, SHIPPING, DELIVERED, CANCELLED, REFUNDED
-    }
-
-    public enum PaymentMethod {
-        COD, BANK_TRANSFER, CREDIT_CARD, MOMO, VNPAY
-    }
-
-    public enum PaymentStatus {
-        PENDING, PAID, FAILED, REFUNDED
-    }
-
+    @Builder.Default
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private OrderStatus status = OrderStatus.PENDING;
 
     private Double subtotal;
+
+    @Builder.Default
     @Column(name = "shipping_fee")
     private Double shippingFee = 0.0;
+
+    @Builder.Default
     @Column(name = "discount_amount")
     private Double discountAmount = 0.0;
+
     @Column(name = "total_amount", nullable = false)
     private Double totalAmount;
 
@@ -78,6 +78,7 @@ public class Order {
     @Column(name = "payment_method", nullable = false)
     private PaymentMethod paymentMethod;
 
+    @Builder.Default
     @Enumerated(EnumType.STRING)
     @Column(name = "payment_status")
     private PaymentStatus paymentStatus = PaymentStatus.PENDING;
@@ -114,9 +115,11 @@ public class Order {
     @Column(name = "updated_by")
     private String updatedBy;
 
+    @Builder.Default
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<OrderItem> items = new ArrayList<>();
 
+    @Builder.Default
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL)
     private List<OrderStatusHistory> statusHistory = new ArrayList<>();
 }

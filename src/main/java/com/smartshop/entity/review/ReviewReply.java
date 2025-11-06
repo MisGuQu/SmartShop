@@ -11,7 +11,11 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "review_replies")
-@Getter @Setter @NoArgsConstructor @AllArgsConstructor
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class ReviewReply {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -28,6 +32,7 @@ public class ReviewReply {
     @Column(name = "reply_text", nullable = false)
     private String replyText;
 
+    @Builder.Default
     @Column(name = "is_admin_reply")
     private boolean isAdminReply = false;
 

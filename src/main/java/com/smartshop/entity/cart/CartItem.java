@@ -11,7 +11,11 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "cart_items")
-@Getter @Setter @NoArgsConstructor @AllArgsConstructor
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class CartItem {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -29,6 +33,7 @@ public class CartItem {
     @JoinColumn(name = "variant_id")
     private ProductVariant variant;
 
+    @Builder.Default
     @Column(nullable = false)
     private int quantity = 1;
 

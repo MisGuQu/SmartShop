@@ -1,5 +1,5 @@
 -- ═══════════════════════════════════════════════════════════════
--- DATABASE E-COMMERCE HOÀN CHỈNH
+-- DATABASE smartShop-db HOÀN CHỈNH
 -- Bao gồm: Products, Variants, Cloudinary, Wishlist, Orders, Reviews, 
 --          VNPay/MoMo Payment, Vouchers, Notifications
 -- ═══════════════════════════════════════════════════════════════

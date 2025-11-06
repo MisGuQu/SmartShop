@@ -11,7 +11,11 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "user_vouchers")
-@Getter @Setter @NoArgsConstructor @AllArgsConstructor
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class UserVoucher {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -25,6 +29,7 @@ public class UserVoucher {
     @JoinColumn(name = "voucher_id", nullable = false)
     private Voucher voucher;
 
+    @Builder.Default
     @Column(name = "is_used")
     private boolean isUsed = false;
 

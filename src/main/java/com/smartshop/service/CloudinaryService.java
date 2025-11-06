@@ -15,12 +15,19 @@ public class CloudinaryService {
 
     private final Cloudinary cloudinary;
 
-    public Map upload(MultipartFile file, String folder) throws IOException {
-        return cloudinary.uploader().upload(file.getBytes(),
-                ObjectUtils.asMap("folder", folder));
+    @SuppressWarnings("unchecked")
+    public Map<String, Object> upload(MultipartFile file, String folder) throws IOException {
+        return (Map<String, Object>) cloudinary.uploader().upload(
+                file.getBytes(),
+                ObjectUtils.asMap("folder", folder)
+        );
     }
 
-    public Map delete(String publicId) throws IOException {
-        return cloudinary.uploader().destroy(publicId, ObjectUtils.emptyMap());
+    @SuppressWarnings("unchecked")
+    public Map<String, Object> delete(String publicId) throws IOException {
+        return (Map<String, Object>) cloudinary.uploader().destroy(
+                publicId,
+                ObjectUtils.emptyMap()
+        );
     }
 }

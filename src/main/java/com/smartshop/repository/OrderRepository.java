@@ -7,7 +7,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import com.smartshop.entity.order.Order;
-import com.smartshop.entity.order.Order.OrderStatus;
+import com.smartshop.entity.enums.OrderStatus;
 
 import java.util.List;
 import java.util.Optional;
@@ -20,4 +20,5 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
 
     @Query("SELECT o FROM Order o WHERE o.status IN :statuses")
     Page<Order> findByStatusIn(@Param("statuses") List<OrderStatus> statuses, Pageable pageable);
+    List<Order> findByUserId(Long userId);
 }

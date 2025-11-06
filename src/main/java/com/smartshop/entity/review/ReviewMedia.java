@@ -4,11 +4,17 @@ import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 
+import com.smartshop.entity.enums.MediaType;
+
 import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "review_media")
-@Getter @Setter @NoArgsConstructor @AllArgsConstructor
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class ReviewMedia {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -22,17 +28,26 @@ public class ReviewMedia {
     @Column(name = "media_type", nullable = false)
     private MediaType mediaType;
 
-    @Column(name = "media_url", nullable = false)
-    private String mediaUrl;
+    @Column(name = "public_id", nullable = false)
+    private String publicId;
 
-    @Column(name = "thumbnail_url")
-    private String thumbnailUrl;
+    @Column(name = "resource_type")
+    private String resourceType;
+
+    private Integer width;
+
+    private Integer height;
+
+    @Column(name = "format")
+    private String format;
+
+    @Column(name = "duration")
+    private Double duration;
 
     @Column(name = "file_size")
     private Long fileSize;
 
-    private Integer duration;
-
+    @Builder.Default
     @Column(name = "display_order")
     private int displayOrder = 0;
 
@@ -40,5 +55,3 @@ public class ReviewMedia {
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 }
-
-enum MediaType { IMAGE, VIDEO }

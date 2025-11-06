@@ -1,5 +1,12 @@
 package com.smartshop.entity.enums;
 
-public class OrderStatus {
-    
+
+public enum OrderStatus {
+    PENDING,
+    CONFIRMED,
+    PROCESSING,
+    SHIPPING,
+    DELIVERED,
+    CANCELLED,
+    REFUNDED
 }

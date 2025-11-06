@@ -11,7 +11,11 @@ import java.util.List;
 
 @Entity
 @Table(name = "product_variants")
-@Getter @Setter @NoArgsConstructor @AllArgsConstructor
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class ProductVariant {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -36,6 +40,7 @@ public class ProductVariant {
     @Column(name = "compare_at_price")
     private Double compareAtPrice;
 
+    @Builder.Default
     @Column(name = "stock_quantity", nullable = false)
     private int stockQuantity = 0;
 
@@ -44,6 +49,7 @@ public class ProductVariant {
 
     private String barcode;
 
+    @Builder.Default
     @Column(name = "is_active", nullable = false)
     private boolean isActive = true;
 
@@ -55,6 +61,7 @@ public class ProductVariant {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
+    @Builder.Default
     @OneToMany(mappedBy = "variant", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<VariantImage> images = new ArrayList<>();
 }

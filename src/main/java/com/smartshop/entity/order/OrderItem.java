@@ -8,7 +8,11 @@ import lombok.*;
 
 @Entity
 @Table(name = "order_items")
-@Getter @Setter @NoArgsConstructor @AllArgsConstructor
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class OrderItem {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -32,8 +36,8 @@ public class OrderItem {
     @Column(name = "variant_details")
     private String variantDetails;
 
-    @Column(name = "product_image")
-    private String productImage;
+    @Column(name = "product_image_public_id")
+    private String productImagePublicId;
 
     @Column(nullable = false)
     private int quantity;

@@ -8,7 +8,11 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "variant_images")
-@Getter @Setter @NoArgsConstructor @AllArgsConstructor
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class VariantImage {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -18,14 +22,23 @@ public class VariantImage {
     @JoinColumn(name = "variant_id", nullable = false)
     private ProductVariant variant;
 
-    @Column(name = "image_url", nullable = false)
-    private String imageUrl;
+    @Column(name = "public_id", nullable = false)
+    private String publicId;
 
+    @Builder.Default
     @Column(name = "is_primary")
     private boolean isPrimary = false;
 
+    @Builder.Default
     @Column(name = "display_order")
     private int displayOrder = 0;
+
+    private Integer width;
+
+    private Integer height;
+
+    @Column(name = "format")
+    private String format;
 
     @CreationTimestamp
     @Column(name = "created_at")

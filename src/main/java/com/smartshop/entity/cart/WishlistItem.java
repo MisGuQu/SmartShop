@@ -10,8 +10,14 @@ import com.smartshop.entity.product.ProductVariant;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "wishlist_items")
-@Getter @Setter @NoArgsConstructor @AllArgsConstructor
+@Table(name = "wishlist_items",
+        uniqueConstraints = @UniqueConstraint(name = "unique_wishlist_item",
+                columnNames = {"wishlist_id", "product_id", "variant_id"}))
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class WishlistItem {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -32,7 +38,4 @@ public class WishlistItem {
     @CreationTimestamp
     @Column(name = "added_at")
     private LocalDateTime addedAt;
-
-    @Column(name = "unique_wishlist_item", unique = true)
-    private String uniqueConstraint; // Tạm (xem chú thích)
 }

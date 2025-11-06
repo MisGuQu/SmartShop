@@ -4,13 +4,18 @@ import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 
+import com.smartshop.entity.enums.NotificationType;
 import com.smartshop.entity.user.User;
 
 import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "notifications")
-@Getter @Setter @NoArgsConstructor @AllArgsConstructor
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class Notification {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -32,12 +37,11 @@ public class Notification {
 
     private String link;
 
+    @Builder.Default
     @Column(name = "is_read")
-    private boolean isRead = false;
+    private boolean read = false;
 
     @CreationTimestamp
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 }
-
-enum NotificationType { ORDER, PROMOTION, REVIEW, SYSTEM }

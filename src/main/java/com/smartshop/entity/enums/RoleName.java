@@ -1,5 +1,7 @@
 package com.smartshop.entity.enums;
 
-public class RoleName {
-    
+public enum RoleName {
+    ROLE_ADMIN,
+    ROLE_CUSTOMER
 }
+

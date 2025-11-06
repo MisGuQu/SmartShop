@@ -9,7 +9,11 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "vouchers")
-@Getter @Setter @NoArgsConstructor @AllArgsConstructor
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class Voucher {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -30,15 +34,18 @@ public class Voucher {
     @Column(name = "max_discount_amount")
     private Double maxDiscountAmount;
 
+    @Builder.Default
     @Column(name = "min_order_amount")
     private Double minOrderAmount = 0.0;
 
     @Column(name = "usage_limit")
     private Integer usageLimit;
 
+    @Builder.Default
     @Column(name = "usage_per_user")
     private int usagePerUser = 1;
 
+    @Builder.Default
     @Column(name = "used_count")
     private int usedCount = 0;
 
@@ -48,6 +55,7 @@ public class Voucher {
     @Column(name = "end_date", nullable = false)
     private LocalDateTime endDate;
 
+    @Builder.Default
     @Column(name = "is_active", nullable = false)
     private boolean isActive = true;
 
@@ -60,4 +68,3 @@ public class Voucher {
     private LocalDateTime updatedAt;
 }
 
-enum DiscountType { PERCENTAGE, FIXED_AMOUNT }

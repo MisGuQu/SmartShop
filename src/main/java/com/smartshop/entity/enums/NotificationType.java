@@ -1,5 +1,9 @@
 package com.smartshop.entity.enums;
 
-public class NotificationType {
-    
+public enum NotificationType {
+    ORDER,
+    PROMOTION,
+    REVIEW,
+    SYSTEM,
+    PAYMENT
 }
