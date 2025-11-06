@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đăng ký | SmartShop</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/auth.css">
+</head>
+<body class="auth-body">
+<main class="auth-container" id="register-page">
+    <section class="auth-panel">
+        <div class="auth-brand">SmartShop</div>
+        <h1 class="auth-title">Tạo tài khoản</h1>
+        <p class="auth-subtitle">Đã có tài khoản?
+            <a th:href="@{/auth/login}">Đăng nhập ngay</a>
+        </p>
+
+        <div th:if="${errorMessage}" class="alert alert--error" th:text="${errorMessage}"></div>
+        <div th:if="${successMessage}" class="alert alert--success" th:text="${successMessage}"></div>
+
+        <form class="auth-form" th:action="@{/auth/register}" method="post" th:object="${registerRequest}">
+            <div class="form-field" th:classappend="${#fields.hasErrors('fullName')} ? ' form-field--error'">
+                <label for="fullName">Họ tên</label>
+                <input id="fullName" type="text" th:field="*{fullName}" placeholder="Nguyễn Văn A" required>
+                <p class="field-error" th:if="${#fields.hasErrors('fullName')}" th:errors="*{fullName}"></p>
+            </div>
+
+            <div class="form-field" th:classappend="${#fields.hasErrors('email')} ? ' form-field--error'">
+                <label for="email">Email</label>
+                <input id="email" type="email" th:field="*{email}" placeholder="name@email.com" required>
+                <p class="field-error" th:if="${#fields.hasErrors('email')}" th:errors="*{email}"></p>
+            </div>
+
+            <div class="form-columns">
+                <div class="form-field" th:classappend="${#fields.hasErrors('password')} ? ' form-field--error'">
+                    <label for="password">Mật khẩu</label>
+                    <input id="password" type="password" th:field="*{password}" placeholder="Ít nhất 8 ký tự" required minlength="8">
+                    <p class="field-error" th:if="${#fields.hasErrors('password')}" th:errors="*{password}"></p>
+                </div>
+
+                <div class="form-field" th:classappend="${#fields.hasErrors('confirmPassword')} ? ' form-field--error'">
+                    <label for="confirmPassword">Xác nhận mật khẩu</label>
+                    <input id="confirmPassword" type="password" th:field="*{confirmPassword}" placeholder="Nhập lại mật khẩu" required>
+                    <p class="field-error" th:if="${#fields.hasErrors('confirmPassword')}" th:errors="*{confirmPassword}"></p>
+                </div>
+            </div>
+
+            <button type="submit" class="button button--primary">Đăng ký</button>
+        </form>
+
+        <div class="auth-divider">
+            <span>Hoặc</span>
+        </div>
+
+        <a class="button button--google" href="/oauth2/authorization/google">
+            <svg viewBox="0 0 533.5 544.3" aria-hidden="true">
+                <path fill="#4285f4" d="M533.5 278.4c0-17.4-1.6-34.1-4.7-50.4H272v95.3h146.9c-6.3 34-25.1 62.9-53.7 82.3v68.2h86.9c51.1-47 81.4-116.2 81.4-195.4z"/>
+                <path fill="#34a853" d="M272 544.3c72 0 132.5-23.8 176.6-64.7l-86.9-68.2c-24.2 16.2-55.3 25.7-89.7 25.7-68.9 0-127.2-46.5-148-109.2h-89.9v68.8c43.3 86 132.8 147.6 237.9 147.6z"/>
+                <path fill="#fbbc04" d="M124 327.9c-10.4-30.3-10.4-63 0-93.3V165.8h-89.9C12.1 200.6 0 240.1 0 272s12.1 71.4 34.1 106.2z"/>
+                <path fill="#ea4335" d="M272 107.7c37.9-.6 74.1 13.6 101.7 39.6l76-76C396.9 24.9 335.2-0.6 272 0 166.9 0 77.4 61.6 34.1 165.8l89.9 68.8C144.8 154.9 203.1 108.4 272 107.7z"/>
+            </svg>
+            Đăng ký với Google
+        </a>
+
+        <p class="auth-footer">Khi đăng ký, bạn đồng ý với <a href="#">Điều khoản dịch vụ</a> và <a href="#">Chính sách bảo mật</a> của SmartShop.</p>
+    </section>
+    <aside class="auth-illustration">
+        <div class="illustration-overlay">
+            <h2>Gia nhập cộng đồng SmartShop</h2>
+            <p>Nhận thông báo khuyến mãi, theo dõi đơn hàng và quản lý wishlist chỉ với vài thao tác.</p>
+        </div>
+    </aside>
+</main>
+</body>
+</html>
+
