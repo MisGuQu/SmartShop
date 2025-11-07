@@ -1,9 +1,11 @@
 package com.smartshop.service;
 
+import com.smartshop.dto.order.CheckoutRequest;
 import com.smartshop.entity.enums.OrderStatus;
 import com.smartshop.entity.enums.PaymentMethod;
 import com.smartshop.entity.enums.PaymentStatus;
 import com.smartshop.entity.order.Order;
+import com.smartshop.entity.order.OrderItem;
 import com.smartshop.entity.user.User;
 import com.smartshop.entity.voucher.Voucher;
 import com.smartshop.repository.OrderRepository;
@@ -72,6 +74,44 @@ public class OrderService {
         order.setPaymentMethod(payload.getPaymentMethod() != null ? payload.getPaymentMethod() : PaymentMethod.COD);
         order.setPaymentStatus(PaymentStatus.PENDING);
         order.setCustomerNote(payload.getCustomerNote());
+
+        return orderRepository.save(order);
+    }
+
+    public Order createOrderFromCart(User user,
+                                     CheckoutRequest request,
+                                     double subtotal,
+                                     double shippingFee,
+                                     List<OrderItem> orderItems) {
+        Objects.requireNonNull(user, "user must not be null");
+        Objects.requireNonNull(request, "request must not be null");
+
+        Order order = new Order();
+        order.setUser(user);
+        order.setOrderNumber(generateOrderNumber());
+        order.setOrderDate(LocalDateTime.now());
+        order.setStatus(OrderStatus.PENDING);
+        order.setSubtotal(subtotal);
+        order.setShippingFee(shippingFee);
+        order.setDiscountAmount(0.0);
+        order.setTotalAmount(subtotal + shippingFee);
+        order.setVoucher(null);
+        order.setCustomerName(request.getCustomerName());
+        order.setCustomerEmail(request.getCustomerEmail());
+        order.setCustomerPhone(request.getCustomerPhone());
+        order.setShippingAddress(request.getShippingAddress());
+        order.setShippingCity(request.getShippingCity());
+        order.setShippingDistrict(request.getShippingDistrict());
+        order.setShippingWard(request.getShippingWard());
+        order.setPaymentMethod(request.getPaymentMethod() != null ? request.getPaymentMethod() : PaymentMethod.COD);
+        order.setPaymentStatus(PaymentStatus.PENDING);
+        order.setCustomerNote(request.getCustomerNote());
+        order.setShippingCarrier(request.getShippingMethod() != null ? request.getShippingMethod().name() : null);
+
+        for (OrderItem item : orderItems) {
+            item.setOrder(order);
+        }
+        order.setItems(orderItems);
 
         return orderRepository.save(order);
     }

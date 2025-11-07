@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SmartShop | Quản lý sản phẩm</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+    <link rel="stylesheet" th:href="@{/css/admin.css}">
+</head>
+<body>
+<header class="admin-header">
+    <div class="admin-header__title">
+        <a class="admin-header__logo" href="/">SmartShop</a>
+        <span class="admin-header__subtitle">Bảng điều khiển quản trị</span>
+    </div>
+    <nav class="admin-header__nav">
+        <a class="admin-header__link admin-header__link--active" href="/admin/products">Sản phẩm</a>
+        <a class="admin-header__link" href="/admin/users">Người dùng</a>
+        <a class="admin-header__link" href="/admin/orders">Đơn hàng</a>
+    </nav>
+</header>
+
+<main class="admin-main">
+    <section class="admin-card admin-card--stack">
+        <div class="admin-card__header">
+            <div>
+                <h1 class="admin-card__title">Quản lý sản phẩm</h1>
+                <p class="admin-card__subtitle">Thêm mới, chỉnh sửa hoặc xóa sản phẩm và danh mục.</p>
+            </div>
+            <div class="admin-card__actions">
+                <a class="admin-chip" href="/admin">Về trang quản trị</a>
+            </div>
+        </div>
+
+        <div th:if="${successMessage}" class="alert alert--success" th:text="${successMessage}"></div>
+        <div th:if="${errorMessage}" class="alert alert--error" th:text="${errorMessage}"></div>
+    </section>
+
+    <section class="admin-grid">
+        <article class="admin-card">
+            <div class="admin-card__header">
+                <div>
+                    <h2 class="admin-card__title" th:text="${editingProductId} != null ? 'Chỉnh sửa sản phẩm' : 'Thêm sản phẩm mới'"></h2>
+                    <p class="admin-card__subtitle">Nhập thông tin cơ bản cho sản phẩm.</p>
+                </div>
+                <a th:if="${editingProductId}" class="admin-link" href="/admin/products">Hủy chỉnh sửa</a>
+            </div>
+
+            <form class="form" th:object="${productForm}"
+                  th:action="${productForm.id} != null ? @{/admin/products/{id}(id=${productForm.id})} : @{/admin/products}"
+                  method="post">
+                <div th:if="${#fields.hasGlobalErrors()}" class="alert alert--error" th:each="err : ${#fields.globalErrors()}" th:text="${err}"></div>
+
+                <div class="form__group">
+                    <label for="name">Tên sản phẩm</label>
+                    <input id="name" type="text" placeholder="Ví dụ: Đồng hồ thông minh" th:field="*{name}">
+                    <p class="form__error" th:if="${#fields.hasErrors('name')}" th:errors="*{name}"></p>
+                </div>
+
+                <div class="form__group">
+                    <label for="description">Mô tả</label>
+                    <textarea id="description" rows="3" placeholder="Tóm tắt ngắn gọn về sản phẩm" th:field="*{description}"></textarea>
+                </div>
+
+                <div class="form__grid">
+                    <div class="form__group">
+                        <label for="basePrice">Giá cơ bản (VNĐ)</label>
+                        <input id="basePrice" type="number" step="0.01" min="0" th:field="*{basePrice}" placeholder="0.00">
+                        <p class="form__error" th:if="${#fields.hasErrors('basePrice')}" th:errors="*{basePrice}"></p>
+                    </div>
+                    <div class="form__group">
+                        <label for="categoryId">Danh mục</label>
+                        <select id="categoryId" th:field="*{categoryId}">
+                            <option value="">-- Không có danh mục --</option>
+                            <option th:each="category : ${categories}"
+                                    th:value="${category.id}"
+                                    th:text="${category.name}"></option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form__group form__group--inline">
+                    <label class="switch">
+                        <input type="checkbox" th:field="*{active}">
+                        <span>Hiển thị sản phẩm trong cửa hàng</span>
+                    </label>
+                </div>
+
+                <div class="form__actions">
+                    <button class="button button--primary" type="submit"
+                            th:text="${productForm.id} != null ? 'Cập nhật sản phẩm' : 'Thêm sản phẩm'"></button>
+                    <a class="button button--ghost" href="/products" target="_blank">Xem cửa hàng</a>
+                </div>
+            </form>
+        </article>
+
+        <article class="admin-card">
+            <div class="admin-card__header">
+                <div>
+                    <h2 class="admin-card__title">Thêm danh mục</h2>
+                    <p class="admin-card__subtitle">Tạo danh mục mới để nhóm các sản phẩm liên quan.</p>
+                </div>
+            </div>
+
+            <form class="form" th:object="${categoryForm}" th:action="@{/admin/products/categories}" method="post">
+                <div th:if="${#fields.hasGlobalErrors()}" class="alert alert--error" th:each="err : ${#fields.globalErrors()}" th:text="${err}"></div>
+
+                <div class="form__group">
+                    <label for="category-name">Tên danh mục</label>
+                    <input id="category-name" type="text" placeholder="Ví dụ: Thiết bị đeo" th:field="*{name}">
+                    <p class="form__error" th:if="${#fields.hasErrors('name')}" th:errors="*{name}"></p>
+                </div>
+
+                <div class="form__group">
+                    <label for="category-description">Mô tả</label>
+                    <textarea id="category-description" rows="3" placeholder="Mô tả ngắn gọn" th:field="*{description}"></textarea>
+                </div>
+
+                <div class="form__group">
+                    <label for="parentId">Danh mục cha (tùy chọn)</label>
+                    <select id="parentId" th:field="*{parentId}">
+                        <option value="">-- Không chọn --</option>
+                        <option th:each="category : ${categories}"
+                                th:value="${category.id}"
+                                th:text="${category.name}"></option>
+                    </select>
+                </div>
+
+                <div class="form__group form__group--inline">
+                    <label class="switch">
+                        <input type="checkbox" th:field="*{active}">
+                        <span>Kích hoạt danh mục</span>
+                    </label>
+                </div>
+
+                <div class="form__actions">
+                    <button class="button button--secondary" type="submit">Thêm danh mục</button>
+                </div>
+            </form>
+
+            <div class="category-list">
+                <h3 class="category-list__title">Danh sách danh mục</h3>
+                <ul class="category-list__items">
+                    <li class="category-list__item" th:each="category : ${categories}">
+                        <div>
+                            <p class="category-list__name" th:text="${category.name}"></p>
+                            <p class="category-list__meta" th:text="${category.description} ?: 'Chưa có mô tả'"></p>
+                        </div>
+                        <span class="badge" th:text="${category.active} ? 'Đang hiển thị' : 'Đã ẩn'"></span>
+                    </li>
+                    <li class="category-list__empty" th:if="${#lists.isEmpty(categories)}">Chưa có danh mục nào.</li>
+                </ul>
+            </div>
+        </article>
+    </section>
+
+    <section class="admin-card">
+        <div class="admin-card__header">
+            <div>
+                <h2 class="admin-card__title">Danh sách sản phẩm</h2>
+                <p class="admin-card__subtitle">Quản lý các sản phẩm hiện có trong hệ thống.</p>
+            </div>
+        </div>
+
+        <div class="table-wrapper">
+            <table class="table">
+                <thead>
+                <tr>
+                    <th>Tên sản phẩm</th>
+                    <th>Danh mục</th>
+                    <th>Giá cơ bản</th>
+                    <th>Trạng thái</th>
+                    <th>Cập nhật</th>
+                    <th class="table__actions-col">Hành động</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="product : ${products}">
+                    <td>
+                        <div class="table__primary">
+                            <span th:text="${product.name}"></span>
+                            <span class="badge badge--accent" th:if="${editingProductId} == ${product.id}">Đang chỉnh sửa</span>
+                        </div>
+                        <p class="table__secondary" th:text="${product.slug}"></p>
+                    </td>
+                    <td th:text="${product.category != null ? product.category.name : 'Không phân loại'}"></td>
+                    <td th:text="${#numbers.formatDecimal(product.basePrice, 1, 'POINT', 0, 'COMMA')} + ' ₫'"></td>
+                    <td>
+                        <span class="status" th:classappend="${product.active} ? ' status--active' : ' status--inactive'"
+                              th:text="${product.active} ? 'Đang hiển thị' : 'Đã ẩn'"></span>
+                    </td>
+                    <td th:text="${product.updatedAt != null ? #temporals.format(product.updatedAt, 'dd/MM/yyyy HH:mm') : '-'}"></td>
+                    <td class="table__actions">
+                        <a class="button button--ghost" th:href="@{/admin/products(editId=${product.id})}">Sửa</a>
+                        <form th:action="@{/admin/products/{id}/delete(id=${product.id})}" method="post" onsubmit="return confirm('Bạn có chắc chắn muốn xóa sản phẩm này?');">
+                            <button class="button button--danger" type="submit">Xóa</button>
+                        </form>
+                    </td>
+                </tr>
+                <tr th:if="${#lists.isEmpty(products)}">
+                    <td colspan="6" class="table__empty">Chưa có sản phẩm nào được tạo.</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+</main>
+
+</body>
+</html>
+

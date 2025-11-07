@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org" xmlns:sec="https://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Danh sách yêu thích | SmartShop</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+    <link rel="stylesheet" href="/css/wishlist.css">
+</head>
+<body>
+<header class="wishlist-header">
+    <div class="container">
+        <h1>Danh sách yêu thích</h1>
+        <p>Những sản phẩm bạn đã lưu để xem sau.</p>
+    </div>
+</header>
+
+<div class="container" th:if="${wishlistMessage}">
+    <div class="alert alert--success" th:text="${wishlistMessage}"></div>
+</div>
+
+<main class="container wishlist-layout" data-wishlist-page th:if="${!items.isEmpty()}">
+    <section class="wishlist-panel">
+        <h2>Sản phẩm yêu thích</h2>
+        <div class="wishlist-grid">
+            <article class="wishlist-item" th:each="itemView : ${items}" th:data-item-id="${itemView.item.id}">
+                <a th:href="@{'/products/' + ${itemView.item.product.slug}}" class="wishlist-item__link">
+                    <div class="wishlist-item__thumb"
+                         th:style="${itemView.imageUrl} != null ? 'background-image:url(' + itemView.imageUrl + ')' : ''"></div>
+                    <div class="wishlist-item__info">
+                        <h3 class="wishlist-item__title" th:text="${itemView.item.product.name}"></h3>
+                        <p class="wishlist-item__price"
+                           th:text="${#numbers.formatDecimal(itemView.item.product.basePrice, 0, 'COMMA', 0, 'POINT')} + '₫'"></p>
+                        <p class="wishlist-item__variant" th:if="${itemView.item.variant}">
+                            <span th:text="${itemView.item.variant.color != null ? itemView.item.variant.color : ''}"></span>
+                            <span th:if="${itemView.item.variant.size != null}" th:text="' - ' + ${itemView.item.variant.size}"></span>
+                            <span th:if="${itemView.item.variant.storage != null}" th:text="' - ' + ${itemView.item.variant.storage}"></span>
+                        </p>
+                    </div>
+                </a>
+                <div class="wishlist-item__actions">
+                    <button class="button button--primary" type="button" data-add-to-cart-from-wishlist
+                            th:data-product-id="${itemView.item.product.id}"
+                            th:data-variant-id="${itemView.item.variant != null ? itemView.item.variant.id : ''}">
+                        Thêm vào giỏ hàng
+                    </button>
+                    <button class="button button--danger" type="button" data-remove-from-wishlist
+                            th:data-item-id="${itemView.item.id}">
+                        Xóa
+                    </button>
+                </div>
+            </article>
+        </div>
+    </section>
+</main>
+
+<section class="container wishlist-empty" th:if="${items.isEmpty()}">
+    <div class="wishlist-empty__content">
+        <svg viewBox="0 0 24 24" aria-hidden="true" class="wishlist-empty__icon">
+            <path d="M17.657 5.343a4 4 0 0 0-5.657 0L11 6.343l-.999-1a4 4 0 1 0-5.657 5.657L11 17.657l6.657-6.657a4 4 0 0 0 0-5.657z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path>
+        </svg>
+        <p>Danh sách yêu thích của bạn đang trống.</p>
+        <p class="wishlist-empty__subtitle">Hãy khám phá thêm sản phẩm tại <a th:href="@{/products}">SmartShop</a>.</p>
+    </div>
+</section>
+
+<div class="wishlist-toast" id="wishlistToast" hidden></div>
+
+<script src="/js/wishlist.js" defer></script>
+<script src="/js/cart.js" defer></script>
+</body>
+</html>

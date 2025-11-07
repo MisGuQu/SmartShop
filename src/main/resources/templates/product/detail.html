@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org" xmlns:sec="https://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${product.name} + ' | SmartShop'"></title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+    <link rel="stylesheet" href="/css/product.css">
+</head>
+<body class="product-body">
+<header class="product-header">
+    <div class="container">
+        <a class="product-header__logo" th:href="@{/}">SmartShop</a>
+        <nav class="product-header__nav">
+            <a th:href="@{/products}" class="nav-link nav-link--active">Sản phẩm</a>
+            <a th:href="@{/cart}" class="nav-link">Giỏ hàng</a>
+            <a th:href="@{/wishlist}" class="nav-link" sec:authorize="isAuthenticated()">Yêu thích</a>
+        </nav>
+    </div>
+</header>
+
+<main class="container product-detail">
+    <div class="product-detail__gallery">
+        <div class="product-detail__main" th:style="${primaryImage} != null ? 'background-image:url(' + primaryImage + ')' : ''"></div>
+        <div class="product-detail__thumbs" th:if="${gallery}">
+            <button type="button"
+                    th:each="image : ${gallery}"
+                    class="product-detail__thumb"
+                    th:style="'background-image:url(' + image + ')'">
+            </button>
+        </div>
+    </div>
+
+    <section class="product-detail__info">
+        <h1 th:text="${product.name}"></h1>
+        <p class="product-detail__price"
+           th:text="${#numbers.formatDecimal(product.basePrice, 0, 'COMMA', 0, 'POINT')} + '₫'"></p>
+
+        <p class="product-detail__description" th:text="${product.description}" th:if="${product.description}"></p>
+
+        <form class="product-detail__form" id="addToCartForm">
+            <input type="hidden" name="productId" th:value="${product.id}">
+
+            <div class="form-field" th:if="${!variants.isEmpty()}">
+                <label for="variant">Chọn phiên bản</label>
+                <select id="variant" name="variantId">
+                    <option value="" disabled selected>-- Chọn tùy chọn --</option>
+                    <option th:each="variant : ${variants}"
+                            th:value="${variant.id}"
+                            th:text="${#strings.trim((variant.color != null ? variant.color : '') + ' ' + (variant.size != null ? variant.size : '') + ' ' + (variant.storage != null ? variant.storage : ''))}">
+                    </option>
+                </select>
+            </div>
+
+            <div class="form-field">
+                <label for="quantity">Số lượng</label>
+                <input id="quantity" name="quantity" type="number" min="1" value="1">
+            </div>
+
+            <div class="product-detail__actions">
+                <button class="button button--primary" type="button" data-add-to-cart>Thêm vào giỏ hàng</button>
+                <button class="button button--wishlist" type="button" data-add-to-wishlist
+                        th:data-product-id="${product.id}">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M17.657 5.343a4 4 0 0 0-5.657 0L11 6.343l-.999-1a4 4 0 1 0-5.657 5.657L11 17.657l6.657-6.657a4 4 0 0 0 0-5.657z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path>
+                    </svg>
+                    <span>Yêu thích</span>
+                </button>
+            </div>
+        </form>
+
+        <div class="product-detail__meta">
+            <h3>Thông tin thêm</h3>
+            <ul>
+                <li th:if="${product.brand}"><strong>Thương hiệu:</strong> <span th:text="${product.brand}"></span></li>
+                <li th:if="${product.category}"><strong>Danh mục:</strong> <span th:text="${product.category.name}"></span></li>
+                <li th:if="${product.weight}"><strong>Trọng lượng:</strong> <span th:text="${product.weight} + ' kg'"></span></li>
+            </ul>
+        </div>
+    </section>
+</main>
+
+<div class="cart-toast" id="cartToast" hidden></div>
+<div class="cart-toast" id="wishlistToast" hidden></div>
+
+<script src="/js/cart.js" defer></script>
+<script src="/js/wishlist.js" defer></script>
+</body>
+</html>
+

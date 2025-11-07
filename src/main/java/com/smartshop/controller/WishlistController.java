@@ -1,9 +1,12 @@
 package com.smartshop.controller;
 
 import com.smartshop.entity.cart.Wishlist;
+import com.smartshop.entity.user.User;
 import com.smartshop.service.WishlistService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -19,21 +22,30 @@ public class WishlistController {
 
     private final WishlistService wishlistService;
 
-    @GetMapping("/user/{userId}")
-    public ResponseEntity<Wishlist> getWishlist(@PathVariable Long userId) {
-        return ResponseEntity.ok(wishlistService.getWishlistByUser(userId));
+    @GetMapping
+    public ResponseEntity<Wishlist> getWishlist(@AuthenticationPrincipal User user) {
+        if (user == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        return ResponseEntity.ok(wishlistService.getWishlistByUser(user.getId()));
     }
 
-    @PostMapping("/user/{userId}/items")
-    public ResponseEntity<Wishlist> addToWishlist(@PathVariable Long userId,
+    @PostMapping("/items")
+    public ResponseEntity<Wishlist> addToWishlist(@AuthenticationPrincipal User user,
                                                   @RequestParam Long productId,
                                                   @RequestParam(required = false) Long variantId) {
-        return ResponseEntity.ok(wishlistService.addToWishlist(userId, productId, variantId));
+        if (user == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        return ResponseEntity.ok(wishlistService.addToWishlist(user.getId(), productId, variantId));
     }
 
-    @DeleteMapping("/user/{userId}/items/{itemId}")
-    public ResponseEntity<Wishlist> removeFromWishlist(@PathVariable Long userId,
+    @DeleteMapping("/items/{itemId}")
+    public ResponseEntity<Wishlist> removeFromWishlist(@AuthenticationPrincipal User user,
                                                        @PathVariable Long itemId) {
-        return ResponseEntity.ok(wishlistService.removeFromWishlist(userId, itemId));
+        if (user == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        return ResponseEntity.ok(wishlistService.removeFromWishlist(user.getId(), itemId));
     }
 }

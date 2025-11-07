@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Giỏ hàng | SmartShop</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+    <link rel="stylesheet" href="/css/cart.css">
+</head>
+<body>
+<header class="cart-header">
+    <div class="container">
+        <h1>Giỏ hàng của bạn</h1>
+        <p>Kiểm tra lại sản phẩm trước khi tiến hành thanh toán.</p>
+    </div>
+</header>
+
+<div class="container" th:if="${cartMessage}">
+    <div class="alert alert--success" th:text="${cartMessage}"></div>
+</div>
+
+<main class="container cart-layout" data-cart-page th:if="${!cart.empty}">
+    <section class="cart-panel">
+        <h2>Sản phẩm</h2>
+        <div class="cart-table">
+            <article class="cart-item" th:each="item : ${cart.items}" th:data-item-id="${item.id}">
+                <div class="cart-item__thumb"
+                     th:style="${item.imageUrl} != null ? 'background-image:url(' + item.imageUrl + ')' : ''"></div>
+                <div class="cart-item__info">
+                    <h3 class="cart-item__title" th:text="${item.productName}"></h3>
+                    <p class="cart-item__variant" th:if="${item.variantLabel}" th:text="${item.variantLabel}"></p>
+                    <div class="cart-item__controls">
+                        <div class="cart-quantity">
+                            <label>Số lượng
+                                <input type="number" min="1" th:value="${item.quantity}"
+                                       th:data-cart-quantity="${item.id}">
+                            </label>
+                        </div>
+                        <button class="button--danger" type="button" data-remove-item th:data-item-id="${item.id}">Xóa</button>
+                    </div>
+                </div>
+                <div class="cart-item__price" data-item-subtotal th:data-item-id="${item.id}"
+                     th:text="${#numbers.formatDecimal(item.subtotal, 0, 'COMMA', 0, 'POINT')} + '₫'"></div>
+            </article>
+        </div>
+    </section>
+
+    <aside class="cart-panel cart-summary" data-cart-summary>
+        <h2>Tổng quan đơn hàng</h2>
+        <div class="cart-summary__row">
+            <span>Tạm tính</span>
+            <span data-cart-subtotal th:text="${#numbers.formatDecimal(cart.subtotal, 0, 'COMMA', 0, 'POINT')} + '₫'"></span>
+        </div>
+        <div class="cart-summary__row">
+            <span>Số lượng</span>
+            <span data-cart-count th:text="${cart.totalQuantity}"></span>
+        </div>
+        <div class="cart-summary__total">
+            Tổng cộng: <span data-cart-total th:text="${#numbers.formatDecimal(cart.subtotal, 0, 'COMMA', 0, 'POINT')} + '₫'"></span>
+        </div>
+        <a class="button button--primary" href="/cart/checkout">Tiến hành thanh toán</a>
+    </aside>
+</main>
+
+<section class="container cart-empty" th:if="${cart.empty}">
+    <p>Giỏ hàng của bạn đang trống. Hãy khám phá thêm sản phẩm tại <a href="/products">SmartShop</a>.</p>
+</section>
+
+<div class="cart-toast" id="cartToast" hidden></div>
+
+<script src="/js/cart.js" defer></script>
+</body>
+</html>
+
