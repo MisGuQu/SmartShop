@@ -13,6 +13,8 @@ public class ProductForm {
     @NotBlank(message = "Tên sản phẩm không được để trống")
     private String name;
 
+    private String slug;
+
     private String description;
 
     @NotNull(message = "Giá cơ bản không được để trống")
@@ -21,6 +23,18 @@ public class ProductForm {
 
     private Long categoryId;
 
+    private boolean hasVariants = false;
+
+    private Integer stockQuantity = 0;
+
     private boolean active = true;
+
+    private String brand;
+
+    private Double weight;
+
+    private String metaTitle;
+
+    private String metaDescription;
 }
 

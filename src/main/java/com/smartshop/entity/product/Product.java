@@ -37,6 +37,10 @@ public class Product {
     private boolean hasVariants = false;
 
     @Builder.Default
+    @Column(name = "stock_quantity")
+    private Integer stockQuantity = 0;
+
+    @Builder.Default
     @Column(name = "is_active", nullable = false)
     private boolean isActive = true;
 

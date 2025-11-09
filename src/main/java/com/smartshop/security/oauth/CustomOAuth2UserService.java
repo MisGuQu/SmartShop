@@ -5,7 +5,6 @@ import com.smartshop.entity.user.Role;
 import com.smartshop.entity.user.User;
 import com.smartshop.repository.RoleRepository;
 import com.smartshop.repository.UserRepository;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -54,15 +53,8 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
 
         Optional<User> existingUserOpt = userRepository.findByEmail(email);
         User user = existingUserOpt.orElseGet(() -> registerOAuthUser(attributes, email));
-
-        if (existingUserOpt.isPresent() && user.getAuthProvider() == AuthProvider.LOCAL) {
-            throw new OAuth2AuthenticationException("Tài khoản đã được đăng ký bằng email & mật khẩu. Vui lòng đăng nhập theo cách đó.");
-        }
-
-        if (user.getAuthProvider() != AuthProvider.GOOGLE) {
-            user.setAuthProvider(AuthProvider.GOOGLE);
-        }
-
+        
+        // Cập nhật last login
         user.setLastLoginAt(java.time.LocalDateTime.now());
         userRepository.save(user);
 
@@ -88,8 +80,8 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
                 .password(passwordEncoder.encode(UUID.randomUUID().toString()))
                 .roles(List.of(userRole))
                 .isActive(true)
-                .authProvider(AuthProvider.GOOGLE)
                 .emailVerified(true)
+                .authProvider(AuthProvider.GOOGLE)
                 .build());
     }
 }

@@ -9,8 +9,10 @@ import com.smartshop.repository.ProductImageRepository;
 import com.smartshop.repository.ProductRepository;
 import com.smartshop.repository.ProductVariantRepository;
 import com.smartshop.repository.spec.ProductSpecifications;
+import com.smartshop.service.CloudinaryService;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.hibernate.Hibernate;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
@@ -20,23 +22,28 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.text.Normalizer;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
 @Service
 @Transactional
 @RequiredArgsConstructor
+@Slf4j
 public class ProductService {
 
     private final ProductRepository productRepository;
     private final CategoryRepository categoryRepository;
     private final ProductVariantRepository productVariantRepository;
     private final ProductImageRepository productImageRepository;
+    private final CloudinaryService cloudinaryService;
 
     public List<Product> getAllProducts() {
         return productRepository.findAll(Sort.by(Sort.Direction.DESC, "createdAt"));
@@ -67,10 +74,27 @@ public class ProductService {
 
         product.setId(null);
         product.setCategory(category);
-        product.setSlug(generateUniqueSlug(name, null));
+        
+        // Xử lý slug: nếu có slug từ form thì dùng (sẽ được slugify), không thì tự động tạo từ tên
+        if (StringUtils.hasText(product.getSlug())) {
+            product.setSlug(generateUniqueSlug(product.getSlug(), null));
+        } else {
+            product.setSlug(generateUniqueSlug(name, null));
+        }
 
         if (!StringUtils.hasText(product.getDescription())) {
             product.setDescription(null);
+        }
+        
+        // Xử lý các trường optional
+        if (!StringUtils.hasText(product.getBrand())) {
+            product.setBrand(null);
+        }
+        if (!StringUtils.hasText(product.getMetaTitle())) {
+            product.setMetaTitle(null);
+        }
+        if (!StringUtils.hasText(product.getMetaDescription())) {
+            product.setMetaDescription(null);
         }
 
         return productRepository.save(product);
@@ -84,10 +108,19 @@ public class ProductService {
                 .orElseThrow(() -> new EntityNotFoundException("Sản phẩm không tồn tại"));
 
         String newName = normalizeName(updatedProduct.getName());
-        if (!existing.getName().equals(newName)) {
+        existing.setName(newName);
+        
+        // Xử lý slug: nếu có slug từ form thì dùng (sẽ được slugify), nếu tên thay đổi thì tự động tạo lại
+        if (StringUtils.hasText(updatedProduct.getSlug())) {
+            // Nếu slug thay đổi, cần kiểm tra unique
+            String newSlug = generateUniqueSlug(updatedProduct.getSlug(), existing.getId());
+            if (!newSlug.equals(existing.getSlug())) {
+                existing.setSlug(newSlug);
+            }
+        } else if (!existing.getName().equals(newName)) {
+            // Nếu không có slug và tên thay đổi, tự động tạo slug mới
             existing.setSlug(generateUniqueSlug(newName, existing.getId()));
         }
-        existing.setName(newName);
 
         if (updatedProduct.getBasePrice() == null || updatedProduct.getBasePrice() <= 0) {
             throw new IllegalArgumentException("Giá sản phẩm phải lớn hơn 0");
@@ -99,6 +132,12 @@ public class ProductService {
                 : null);
 
         existing.setActive(updatedProduct.isActive());
+        existing.setHasVariants(updatedProduct.isHasVariants());
+        existing.setStockQuantity(updatedProduct.getStockQuantity() != null ? updatedProduct.getStockQuantity() : 0);
+        existing.setBrand(StringUtils.hasText(updatedProduct.getBrand()) ? updatedProduct.getBrand() : null);
+        existing.setWeight(updatedProduct.getWeight());
+        existing.setMetaTitle(StringUtils.hasText(updatedProduct.getMetaTitle()) ? updatedProduct.getMetaTitle() : null);
+        existing.setMetaDescription(StringUtils.hasText(updatedProduct.getMetaDescription()) ? updatedProduct.getMetaDescription() : null);
 
         Category category = resolveCategory(categoryId);
         existing.setCategory(category);
@@ -278,5 +317,68 @@ public class ProductService {
             slug = "san-pham";
         }
         return slug;
+    }
+
+    /**
+     * Upload và lưu hình ảnh sản phẩm vào Cloudinary và database
+     */
+    public void uploadProductImages(Long productId, MultipartFile[] files) throws IOException {
+        if (productId == null || files == null || files.length == 0) {
+            return;
+        }
+
+        Product product = getProductOrThrow(productId);
+        
+        // Lấy số lượng hình ảnh hiện tại để tính displayOrder
+        List<ProductImage> existingImages = productImageRepository.findByProductIdOrderByDisplayOrderAsc(productId);
+        int displayOrder = existingImages.size();
+
+        // Kiểm tra xem đã có ảnh chính chưa
+        boolean hasPrimary = existingImages.stream().anyMatch(ProductImage::isPrimary);
+
+        for (int i = 0; i < files.length; i++) {
+            MultipartFile file = files[i];
+            if (file == null || file.isEmpty()) {
+                continue;
+            }
+
+            try {
+                // Upload lên Cloudinary
+                String folder = "products/" + productId;
+                Map<String, Object> uploadResult = cloudinaryService.upload(file, folder);
+                
+                String publicId = (String) uploadResult.get("public_id");
+                Integer width = (Integer) uploadResult.get("width");
+                Integer height = (Integer) uploadResult.get("height");
+                String format = (String) uploadResult.get("format");
+
+                if (publicId == null) {
+                    log.warn("Upload image failed: public_id is null for product {}", productId);
+                    continue;
+                }
+
+                // Tạo ProductImage entity
+                ProductImage productImage = ProductImage.builder()
+                        .product(product)
+                        .publicId(publicId)
+                        .isPrimary(!hasPrimary && i == 0) // Ảnh đầu tiên là ảnh chính nếu chưa có
+                        .displayOrder(displayOrder + i)
+                        .width(width)
+                        .height(height)
+                        .format(format)
+                        .build();
+
+                productImageRepository.save(productImage);
+                log.info("Uploaded image {} for product {}", publicId, productId);
+                
+                // Đánh dấu đã có ảnh chính
+                if (!hasPrimary && i == 0) {
+                    hasPrimary = true;
+                }
+            } catch (IOException ex) {
+                log.error("Error uploading image for product {}: {}", productId, ex.getMessage(), ex);
+                throw new IOException("Không thể upload hình ảnh: " + ex.getMessage(), ex);
+            }
+        }
     }
 }

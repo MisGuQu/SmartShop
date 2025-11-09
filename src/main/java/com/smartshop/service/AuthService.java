@@ -59,7 +59,14 @@ public class AuthService {
     public User register(RegisterRequest request) {
         validateRegisterRequest(request);
 
-        if (userRepository.existsByEmail(request.getEmail())) {
+        String normalizedEmail = request.getEmail().toLowerCase().trim();
+        
+        if (userRepository.existsByEmail(normalizedEmail)) {
+            throw new AuthException("Email đã được sử dụng. Vui lòng chọn email khác.");
+        }
+
+        // Kiểm tra username trùng lặp (username = email)
+        if (userRepository.existsByUsername(normalizedEmail)) {
             throw new AuthException("Email đã được sử dụng. Vui lòng chọn email khác.");
         }
 
@@ -67,9 +74,9 @@ public class AuthService {
                 .orElseGet(() -> roleRepository.save(new Role(null, DEFAULT_ROLE)));
 
         User user = User.builder()
-                .email(request.getEmail().toLowerCase())
-                .username(request.getEmail().toLowerCase())
-                .fullName(request.getFullName())
+                .email(normalizedEmail)
+                .username(normalizedEmail)
+                .fullName(request.getFullName().trim())
                 .password(passwordEncoder.encode(request.getPassword()))
                 .roles(List.of(userRole))
                 .isActive(true)
@@ -77,7 +84,20 @@ public class AuthService {
                 .authProvider(AuthProvider.LOCAL)
                 .build();
 
-        return userRepository.save(user);
+        try {
+            return userRepository.save(user);
+        } catch (Exception ex) {
+            log.error("Lỗi khi đăng ký người dùng - Exception type: {}, Message: {}", 
+                    ex.getClass().getName(), ex.getMessage(), ex);
+            // Kiểm tra nếu là lỗi constraint violation
+            if (ex.getMessage() != null && 
+                (ex.getMessage().contains("Duplicate entry") || 
+                 ex.getMessage().contains("constraint") ||
+                 ex.getMessage().contains("unique"))) {
+                throw new AuthException("Email hoặc tên đăng nhập đã được sử dụng. Vui lòng chọn email khác.");
+            }
+            throw new AuthException("Không thể đăng ký tài khoản. Vui lòng thử lại sau.");
+        }
     }
 
     public AuthResult login(LoginRequest request) {

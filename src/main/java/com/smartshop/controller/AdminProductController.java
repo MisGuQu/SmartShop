@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.List;
@@ -65,6 +66,7 @@ public class AdminProductController {
     @PostMapping
     public String createProduct(@Valid @ModelAttribute("productForm") ProductForm productForm,
                                 BindingResult bindingResult,
+                                @RequestParam(value = "images", required = false) MultipartFile[] images,
                                 Model model,
                                 RedirectAttributes redirectAttributes) {
         if (bindingResult.hasErrors()) {
@@ -72,7 +74,11 @@ public class AdminProductController {
         }
 
         try {
-            productService.createProduct(mapToEntity(productForm), productForm.getCategoryId());
+            Product product = productService.createProduct(mapToEntity(productForm), productForm.getCategoryId());
+            // Upload hình ảnh nếu có
+            if (images != null && images.length > 0) {
+                productService.uploadProductImages(product.getId(), images);
+            }
             redirectAttributes.addFlashAttribute("successMessage", "Thêm sản phẩm thành công");
             return "redirect:/admin/products";
         } catch (EntityNotFoundException | IllegalArgumentException ex) {
@@ -80,6 +86,8 @@ public class AdminProductController {
         } catch (DataIntegrityViolationException ex) {
             String message = safeMessage(ex.getMessage(), "Không thể lưu sản phẩm");
             bindingResult.reject("product.error", "Không thể lưu sản phẩm: " + message);
+        } catch (Exception ex) {
+            bindingResult.reject("product.error", "Lỗi khi upload hình ảnh: " + ex.getMessage());
         }
 
         return handleValidationErrors(model, null);
@@ -89,6 +97,7 @@ public class AdminProductController {
     public String updateProduct(@PathVariable Long id,
                                 @Valid @ModelAttribute("productForm") ProductForm productForm,
                                 BindingResult bindingResult,
+                                @RequestParam(value = "images", required = false) MultipartFile[] images,
                                 Model model,
                                 RedirectAttributes redirectAttributes) {
         if (bindingResult.hasErrors()) {
@@ -97,6 +106,10 @@ public class AdminProductController {
 
         try {
             productService.updateProduct(id, mapToEntity(productForm), productForm.getCategoryId());
+            // Upload hình ảnh mới nếu có
+            if (images != null && images.length > 0) {
+                productService.uploadProductImages(id, images);
+            }
             redirectAttributes.addFlashAttribute("successMessage", "Cập nhật sản phẩm thành công");
             return "redirect:/admin/products";
         } catch (EntityNotFoundException | IllegalArgumentException ex) {
@@ -104,6 +117,8 @@ public class AdminProductController {
         } catch (DataIntegrityViolationException ex) {
             String message = safeMessage(ex.getMessage(), "Không thể cập nhật sản phẩm");
             bindingResult.reject("product.error", "Không thể cập nhật sản phẩm: " + message);
+        } catch (Exception ex) {
+            bindingResult.reject("product.error", "Lỗi khi upload hình ảnh: " + ex.getMessage());
         }
 
         return handleValidationErrors(model, id);
@@ -155,6 +170,19 @@ public class AdminProductController {
         return "admin/products";
     }
 
+    @PostMapping("/categories/{id}/delete")
+    public String deleteCategory(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+        try {
+            categoryService.deleteCategory(id);
+            redirectAttributes.addFlashAttribute("successMessage", "Đã xóa danh mục");
+        } catch (EntityNotFoundException ex) {
+            redirectAttributes.addFlashAttribute("errorMessage", safeMessage(ex.getMessage(), "Danh mục không tồn tại"));
+        } catch (DataIntegrityViolationException ex) {
+            redirectAttributes.addFlashAttribute("errorMessage", safeMessage(ex.getMessage(), "Không thể xóa danh mục đang chứa sản phẩm"));
+        }
+        return "redirect:/admin/products";
+    }
+
     private String handleValidationErrors(Model model, Long editingProductId) {
         model.addAttribute("products", productService.getAllProducts());
         if (!model.containsAttribute("categoryForm")) {
@@ -170,9 +198,16 @@ public class AdminProductController {
         Product product = new Product();
         product.setId(form.getId());
         product.setName(form.getName());
+        product.setSlug(form.getSlug());
         product.setDescription(form.getDescription());
         product.setBasePrice(form.getBasePrice());
+        product.setHasVariants(form.isHasVariants());
+        product.setStockQuantity(form.getStockQuantity() != null ? form.getStockQuantity() : 0);
         product.setActive(form.isActive());
+        product.setBrand(form.getBrand());
+        product.setWeight(form.getWeight());
+        product.setMetaTitle(form.getMetaTitle());
+        product.setMetaDescription(form.getMetaDescription());
         return product;
     }
 
@@ -180,9 +215,16 @@ public class AdminProductController {
         ProductForm form = new ProductForm();
         form.setId(product.getId());
         form.setName(product.getName());
+        form.setSlug(product.getSlug());
         form.setDescription(product.getDescription());
         form.setBasePrice(product.getBasePrice());
+        form.setHasVariants(product.isHasVariants());
+        form.setStockQuantity(product.getStockQuantity());
         form.setActive(product.isActive());
+        form.setBrand(product.getBrand());
+        form.setWeight(product.getWeight());
+        form.setMetaTitle(product.getMetaTitle());
+        form.setMetaDescription(product.getMetaDescription());
         if (product.getCategory() != null) {
             form.setCategoryId(product.getCategory().getId());
         }

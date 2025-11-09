@@ -12,15 +12,11 @@ public class AdminController {
         return "admin/index";
     }
 
-    @GetMapping("/users")
-    public String manageUsers() {
-        return "admin/users";
+    @GetMapping("/dashboard")
+    public String dashboard() {
+        return "admin/dashboard";
     }
 
-    @GetMapping("/orders")
-    public String manageOrders() {
-        return "admin/orders";
-    }
 
     @GetMapping("/vouchers")
     public String manageVouchers() {

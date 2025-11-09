@@ -138,14 +138,86 @@ public class OrderService {
 
         OrderStatus newStatus;
         try {
-            newStatus = OrderStatus.valueOf(status.toUpperCase());
+            // Convert SHIPPED to SHIPPING if needed
+            String statusStr = status.toUpperCase();
+            if ("SHIPPED".equals(statusStr)) {
+                statusStr = "SHIPPING";
+            }
+            newStatus = OrderStatus.valueOf(statusStr);
         } catch (IllegalArgumentException ex) {
             throw new IllegalArgumentException("Invalid order status: " + status);
         }
 
+        // Validate status transition
+        validateStatusTransition(order.getStatus(), newStatus);
+
         order.setStatus(newStatus);
         order.setUpdatedAt(LocalDateTime.now());
         return orderRepository.save(order);
+    }
+
+    /**
+     * Validate status transition
+     * Valid flows: PENDING -> PROCESSING -> SHIPPING -> DELIVERED
+     * Can cancel from PENDING or PROCESSING
+     */
+    private void validateStatusTransition(OrderStatus currentStatus, OrderStatus newStatus) {
+        if (currentStatus == newStatus) {
+            return; // No change
+        }
+
+        if (newStatus == OrderStatus.CANCELLED) {
+            if (currentStatus != OrderStatus.PENDING && currentStatus != OrderStatus.PROCESSING) {
+                throw new IllegalArgumentException("Chỉ có thể hủy đơn hàng ở trạng thái PENDING hoặc PROCESSING");
+            }
+            return;
+        }
+
+        // Normal flow validation
+        switch (currentStatus) {
+            case PENDING:
+                if (newStatus != OrderStatus.PROCESSING && newStatus != OrderStatus.CANCELLED) {
+                    throw new IllegalArgumentException("Đơn hàng PENDING chỉ có thể chuyển sang PROCESSING hoặc CANCELLED");
+                }
+                break;
+            case PROCESSING:
+                if (newStatus != OrderStatus.SHIPPING && newStatus != OrderStatus.CANCELLED) {
+                    throw new IllegalArgumentException("Đơn hàng PROCESSING chỉ có thể chuyển sang SHIPPING hoặc CANCELLED");
+                }
+                break;
+            case SHIPPING:
+                if (newStatus != OrderStatus.DELIVERED) {
+                    throw new IllegalArgumentException("Đơn hàng SHIPPING chỉ có thể chuyển sang DELIVERED");
+                }
+                break;
+            case DELIVERED:
+                throw new IllegalArgumentException("Đơn hàng DELIVERED không thể thay đổi trạng thái");
+            case CANCELLED:
+                throw new IllegalArgumentException("Đơn hàng CANCELLED không thể thay đổi trạng thái");
+            case REFUNDED:
+                throw new IllegalArgumentException("Đơn hàng REFUNDED không thể thay đổi trạng thái");
+            case CONFIRMED:
+                if (newStatus != OrderStatus.PROCESSING) {
+                    throw new IllegalArgumentException("Đơn hàng CONFIRMED chỉ có thể chuyển sang PROCESSING");
+                }
+                break;
+        }
+    }
+
+    /**
+     * Lấy tất cả đơn hàng
+     */
+    public List<Order> getAllOrders() {
+        return orderRepository.findAllOrderByOrderDateDesc();
+    }
+
+    /**
+     * Tìm kiếm và lọc đơn hàng
+     */
+    public List<Order> searchAndFilterOrders(OrderStatus status, String keyword) {
+        // Normalize keyword - convert empty string to null
+        String normalizedKeyword = (keyword != null && !keyword.trim().isEmpty()) ? keyword.trim() : null;
+        return orderRepository.findOrdersWithFilters(status, normalizedKeyword);
     }
 
     private String generateOrderNumber() {

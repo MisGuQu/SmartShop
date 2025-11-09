@@ -1,5 +1,8 @@
+CREATE DATABASE smartshop_db;
+USE smartshop_db;
+
 -- ═══════════════════════════════════════════════════════════════
--- DATABASE smartShop-db HOÀN CHỈNH
+-- DATABASE E-COMMERCE HOÀN CHỈNH
 -- Bao gồm: Products, Variants, Cloudinary, Wishlist, Orders, Reviews, 
 --          VNPay/MoMo Payment, Vouchers, Notifications
 -- ═══════════════════════════════════════════════════════════════
@@ -59,7 +62,7 @@ CREATE TABLE products (
     
     -- QUAN TRỌNG: Xác định sản phẩm có variants hay không
     has_variants BOOLEAN NOT NULL DEFAULT FALSE COMMENT 'TRUE = có size/màu/inch, FALSE = mua ngay',
-    
+    stock_quantity INT DEFAULT 0 COMMENT 'Tồn kho cho sản phẩm đơn giản',
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
     category_id BIGINT,
     brand VARCHAR(100) COMMENT 'Thương hiệu',

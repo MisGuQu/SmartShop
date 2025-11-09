@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SmartShop | Quản lý người dùng</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+    <link rel="stylesheet" th:href="@{/css/admin.css}">
+</head>
+<body>
+<header class="admin-header">
+    <div class="admin-header__title">
+        <a class="admin-header__logo" href="/">SmartShop</a>
+        <span class="admin-header__subtitle">Bảng điều khiển quản trị</span>
+    </div>
+    <nav class="admin-header__nav">
+        <a class="admin-header__link" href="/admin/dashboard">Dashboard</a>
+        <a class="admin-header__link" href="/admin/products">Sản phẩm</a>
+        <a class="admin-header__link admin-header__link--active" href="/admin/users">Người dùng</a>
+        <a class="admin-header__link" href="/admin/orders">Đơn hàng</a>
+    </nav>
+</header>
+
+<main class="admin-main">
+    <section class="admin-card admin-card--stack">
+        <div class="admin-card__header">
+            <div>
+                <h1 class="admin-card__title">Quản lý người dùng</h1>
+                <p class="admin-card__subtitle">Quản lý tài khoản người dùng đã đăng ký trong hệ thống.</p>
+            </div>
+            <div class="admin-card__actions">
+                <a class="admin-chip" href="/admin/dashboard">Dashboard</a>
+                <a class="admin-chip" href="/admin/products">Quản lý sản phẩm</a>
+                <a class="admin-chip" href="/admin">Về trang quản trị</a>
+            </div>
+        </div>
+
+        <div th:if="${successMessage}" class="alert alert--success" th:text="${successMessage}"></div>
+        <div th:if="${errorMessage}" class="alert alert--error" th:text="${errorMessage}"></div>
+    </section>
+
+    <section class="admin-card">
+        <div class="admin-card__header">
+            <div>
+                <h2 class="admin-card__title">Danh sách người dùng</h2>
+                <p class="admin-card__subtitle">Tất cả tài khoản người dùng trong hệ thống.</p>
+            </div>
+            <div class="admin-card__actions">
+                <a class="admin-link" href="/admin/products">Xem sản phẩm →</a>
+            </div>
+        </div>
+
+        <div class="table-wrapper">
+            <table class="table">
+                <thead>
+                <tr>
+                    <th>Thông tin người dùng</th>
+                    <th>Email</th>
+                    <th>Số điện thoại</th>
+                    <th>Vai trò</th>
+                    <th>Trạng thái</th>
+                    <th>Ngày tạo</th>
+                    <th class="table__actions-col">Hành động</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="user : ${users}">
+                    <td>
+                        <div class="table__primary">
+                            <span th:text="${user.fullName}"></span>
+                        </div>
+                        <p class="table__secondary" th:text="${user.username ?: 'N/A'}"></p>
+                    </td>
+                    <td th:text="${user.email}"></td>
+                    <td th:text="${user.phone ?: '-'}"></td>
+                    <td>
+                        <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                            <!-- Hiển thị vai trò hiện tại -->
+                            <div style="display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center;">
+                                <span th:each="role : ${user.roles}" 
+                                      class="badge" 
+                                      th:classappend="${role.name == 'ROLE_ADMIN'} ? 'badge--accent' : ''"
+                                      style="padding: 0.35rem 0.75rem;">
+                                    <span th:text="${role.name}"></span>
+                                </span>
+                                <span th:if="${#lists.isEmpty(user.roles)}" class="badge badge--secondary" style="padding: 0.35rem 0.75rem;">Chưa có vai trò</span>
+                            </div>
+                            <!-- Form thay đổi vai trò -->
+                            <form th:action="@{/admin/users/{id}/roles/change(id=${user.id})}" 
+                                  method="post" 
+                                  style="display: flex; align-items: center;"
+                                  th:id="'roleForm_' + ${user.id}">
+                                <select name="roleId" 
+                                        th:id="'roleSelect_' + ${user.id}"
+                                        onchange="if(this.value) { if(confirm('Bạn có chắc chắn muốn thay đổi vai trò này?')) { this.form.submit(); } else { this.value = ''; } }"
+                                        style="width: 100%; padding: 0.5rem 0.75rem; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 0.875rem; background: #ffffff; color: #0f172a; cursor: pointer; transition: border-color 0.2s;"
+                                        onfocus="this.style.borderColor='#4c6ef5'"
+                                        onblur="this.style.borderColor='#e2e8f0'">
+                                    <option value="">-- Thay đổi vai trò --</option>
+                                    <option th:each="role : ${roles}" 
+                                            th:value="${role.id}" 
+                                            th:text="${role.name}"
+                                            th:selected="${#lists.contains(user.roles, role)}"></option>
+                                </select>
+                            </form>
+                        </div>
+                    </td>
+                    <td>
+                        <span class="status" 
+                              th:classappend="${user.active} ? 'status--active' : 'status--inactive'"
+                              th:text="${user.active} ? 'Đang hoạt động' : 'Đã vô hiệu hóa'"></span>
+                    </td>
+                    <td th:text="${user.createdAt != null ? #temporals.format(user.createdAt, 'dd/MM/yyyy HH:mm') : '-'}"></td>
+                    <td class="table__actions">
+                        <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                            <form class="table__delete-form" 
+                                  th:action="@{/admin/users/{id}/toggle-active(id=${user.id})}" 
+                                  method="post" 
+                                  th:attr="onsubmit=${user.active} ? 'return confirm(\'Bạn có chắc chắn muốn vô hiệu hóa tài khoản này?\');' : 'return confirm(\'Bạn có chắc chắn muốn kích hoạt tài khoản này?\');'">
+                                <button class="button" 
+                                        th:classappend="${user.active} ? 'button--secondary' : 'button--primary'"
+                                        type="submit" 
+                                        style="width: 100%;"
+                                        th:title="${user.active} ? 'Vô hiệu hóa tài khoản' : 'Kích hoạt tài khoản'">
+                                    <span th:text="${user.active} ? 'Vô hiệu hóa' : 'Kích hoạt'"></span>
+                                </button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                <tr th:if="${#lists.isEmpty(users)}">
+                    <td colspan="7" class="table__empty">Chưa có người dùng nào trong hệ thống.</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+</main>
+
+</body>
+</html>
+
