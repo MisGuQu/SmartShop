@@ -4,7 +4,9 @@ import com.smartshop.entity.product.Category;
 import com.smartshop.entity.product.Product;
 import com.smartshop.entity.product.ProductImage;
 import com.smartshop.entity.product.ProductVariant;
+import com.smartshop.repository.CartItemRepository;
 import com.smartshop.repository.CategoryRepository;
+import com.smartshop.repository.OrderItemRepository;
 import com.smartshop.repository.ProductImageRepository;
 import com.smartshop.repository.ProductRepository;
 import com.smartshop.repository.ProductVariantRepository;
@@ -43,6 +45,8 @@ public class ProductService {
     private final CategoryRepository categoryRepository;
     private final ProductVariantRepository productVariantRepository;
     private final ProductImageRepository productImageRepository;
+    private final CartItemRepository cartItemRepository;
+    private final OrderItemRepository orderItemRepository;
     private final CloudinaryService cloudinaryService;
 
     public List<Product> getAllProducts() {
@@ -150,11 +154,26 @@ public class ProductService {
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Sản phẩm không tồn tại"));
 
-        if (product.getVariants() != null && !product.getVariants().isEmpty()) {
-            throw new DataIntegrityViolationException("Không thể xóa sản phẩm đang có phiên bản");
+        // Kiểm tra xem sản phẩm có trong đơn hàng không - nếu có thì không cho xóa
+        List<com.smartshop.entity.order.OrderItem> orderItems = orderItemRepository.findByProductId(id);
+        if (!orderItems.isEmpty()) {
+            throw new DataIntegrityViolationException("Không thể xóa sản phẩm đã có trong đơn hàng");
         }
 
+        // Xóa các cart items liên quan đến sản phẩm này
+        List<com.smartshop.entity.cart.CartItem> cartItems = cartItemRepository.findByProductId(id);
+        if (!cartItems.isEmpty()) {
+            cartItemRepository.deleteAll(cartItems);
+            log.info("Đã xóa {} cart items liên quan đến sản phẩm {}", cartItems.size(), id);
+        }
+
+        // Load variants và images để đảm bảo cascade hoạt động đúng
+        Hibernate.initialize(product.getVariants());
+        Hibernate.initialize(product.getImages());
+
+        // Xóa sản phẩm - variants và images sẽ tự động bị xóa nhờ cascade = CascadeType.ALL, orphanRemoval = true
         productRepository.delete(product);
+        log.info("Đã xóa sản phẩm {}", id);
     }
 
     public List<Product> searchProducts(String keyword) {

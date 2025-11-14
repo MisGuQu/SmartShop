@@ -22,4 +22,7 @@ public interface OrderItemRepository extends JpaRepository<OrderItem, Long> {
            "GROUP BY oi.product.id, oi.product.name " +
            "ORDER BY totalQuantity DESC")
     List<Object[]> findTopSellingProducts(@Param("startDate") LocalDateTime startDate, @Param("endDate") LocalDateTime endDate);
+
+    @Query("SELECT oi FROM OrderItem oi WHERE oi.product.id = :productId")
+    List<OrderItem> findByProductId(@Param("productId") Long productId);
 }

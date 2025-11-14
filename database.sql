@@ -38,7 +38,7 @@ CREATE TABLE users_roles (
 ) COMMENT 'Liên kết user với role';
 
 -- ═══════════════════════════════════════════════════════════════
--- 2. QUẢN LÝ SẢN PHẨM (5 bảng)
+-- 2. QUẢN LÝ SẢN PHẨM (7 bảng - Thiết kế linh hoạt)
 -- ═══════════════════════════════════════════════════════════════
 
 CREATE TABLE categories (
@@ -61,8 +61,8 @@ CREATE TABLE products (
     base_price DECIMAL(10, 2) NOT NULL COMMENT 'Giá cơ bản',
     
     -- QUAN TRỌNG: Xác định sản phẩm có variants hay không
-    has_variants BOOLEAN NOT NULL DEFAULT FALSE COMMENT 'TRUE = có size/màu/inch, FALSE = mua ngay',
-    stock_quantity INT DEFAULT 0 COMMENT 'Tồn kho cho sản phẩm đơn giản',
+    has_variants BOOLEAN NOT NULL DEFAULT FALSE COMMENT 'TRUE = có variants, FALSE = mua ngay',
+    stock_quantity INT DEFAULT 0 COMMENT 'Tồn kho cho sản phẩm đơn giản (không variants)',
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
     category_id BIGINT,
     brand VARCHAR(100) COMMENT 'Thương hiệu',
@@ -89,24 +89,50 @@ CREATE TABLE product_images (
     FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
 ) COMMENT 'Ảnh sản phẩm (lưu trên Cloudinary)';
 
+-- ═══════════════════════════════════════════════════════════════
+-- HỆ THỐNG ATTRIBUTE LINH HOẠT (EAV Pattern)
+-- ═══════════════════════════════════════════════════════════════
+
+-- Định nghĩa các thuộc tính có thể dùng (Size, Color, Storage, etc.)
+CREATE TABLE product_attributes (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    code VARCHAR(50) NOT NULL UNIQUE COMMENT 'Mã định danh: SIZE, COLOR, STORAGE, SCREEN_SIZE, MATERIAL, etc.',
+    name VARCHAR(100) NOT NULL COMMENT 'Tên hiển thị: Kích thước, Màu sắc, Bộ nhớ, etc.',
+    description TEXT COMMENT 'Mô tả thuộc tính',
+    data_type ENUM('TEXT', 'NUMBER', 'DECIMAL', 'BOOLEAN', 'COLOR_HEX', 'URL') NOT NULL DEFAULT 'TEXT' COMMENT 'Kiểu dữ liệu',
+    unit VARCHAR(20) COMMENT 'Đơn vị: inch, GB, kg, etc.',
+    is_searchable BOOLEAN NOT NULL DEFAULT TRUE COMMENT 'Có thể dùng để tìm kiếm/lọc',
+    is_required BOOLEAN NOT NULL DEFAULT FALSE COMMENT 'Bắt buộc khi tạo variant',
+    display_order INT DEFAULT 0 COMMENT 'Thứ tự hiển thị',
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at DATETIME NOT NULL,
+    updated_at DATETIME NOT NULL
+) COMMENT 'Định nghĩa các thuộc tính sản phẩm (Size, Color, Storage, etc.)';
+
+-- Liên kết category với attributes (mỗi category có thể có các attributes riêng)
+CREATE TABLE category_attributes (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    category_id BIGINT NOT NULL,
+    attribute_id BIGINT NOT NULL,
+    is_required BOOLEAN NOT NULL DEFAULT FALSE COMMENT 'Bắt buộc cho category này',
+    display_order INT DEFAULT 0,
+    created_at DATETIME NOT NULL,
+    UNIQUE KEY unique_category_attribute (category_id, attribute_id),
+    FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE CASCADE,
+    FOREIGN KEY (attribute_id) REFERENCES product_attributes(id) ON DELETE CASCADE
+) COMMENT 'Liên kết category với attributes';
+
+-- Variant đơn giản hóa (không còn các cột cứng)
 CREATE TABLE product_variants (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
     product_id BIGINT NOT NULL,
-    
-    -- CÁC THUỘC TÍNH (để NULL nếu không dùng)
-    size VARCHAR(50) COMMENT 'Size: S, M, L, XL (áo)',
-    color VARCHAR(50) COMMENT 'Màu: Đỏ, Xanh, Đen (áo, loa)',
-    color_code VARCHAR(20) COMMENT 'Mã màu HEX: #FF0000',
-    screen_size VARCHAR(50) COMMENT 'Inch: 43", 55", 65" (tivi)',
-    storage VARCHAR(50) COMMENT 'Bộ nhớ: 64GB, 128GB (điện thoại)',
-    material VARCHAR(50) COMMENT 'Chất liệu: Cotton, Polyester',
     
     -- Giá và kho
     price DECIMAL(10, 2) NOT NULL COMMENT 'Giá bán',
     compare_at_price DECIMAL(10, 2) COMMENT 'Giá gốc (hiển thị sale)',
     stock_quantity INT NOT NULL DEFAULT 0 COMMENT 'Tồn kho',
     
-    sku VARCHAR(100) UNIQUE COMMENT 'Mã SKU: SHIRT-RED-M',
+    sku VARCHAR(100) UNIQUE COMMENT 'Mã SKU: SHIRT-RED-M, PHONE-128GB-BLACK',
     barcode VARCHAR(100) COMMENT 'Mã vạch',
     
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
@@ -114,7 +140,30 @@ CREATE TABLE product_variants (
     updated_at DATETIME NOT NULL,
     
     FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
-) COMMENT 'Phân loại sản phẩm (size, màu, inch...)';
+) COMMENT 'Phân loại sản phẩm (variant)';
+
+-- Giá trị của từng attribute cho từng variant
+CREATE TABLE variant_attribute_values (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    variant_id BIGINT NOT NULL,
+    attribute_id BIGINT NOT NULL,
+    
+    -- Giá trị lưu dưới dạng text (linh hoạt cho mọi kiểu dữ liệu)
+    value_text VARCHAR(500) COMMENT 'Giá trị text: "M", "Đỏ", "128GB", "43 inch"',
+    value_number DECIMAL(15, 4) COMMENT 'Giá trị số: 128, 43.5, etc.',
+    value_boolean BOOLEAN COMMENT 'Giá trị boolean',
+    value_color_hex VARCHAR(20) COMMENT 'Mã màu HEX: #FF0000 (cho COLOR attribute)',
+    value_url VARCHAR(500) COMMENT 'URL (nếu cần)',
+    
+    display_value VARCHAR(500) COMMENT 'Giá trị hiển thị: "M - Medium", "Đỏ - Red"',
+    
+    created_at DATETIME NOT NULL,
+    updated_at DATETIME NOT NULL,
+    
+    UNIQUE KEY unique_variant_attribute (variant_id, attribute_id),
+    FOREIGN KEY (variant_id) REFERENCES product_variants(id) ON DELETE CASCADE,
+    FOREIGN KEY (attribute_id) REFERENCES product_attributes(id) ON DELETE CASCADE
+) COMMENT 'Giá trị attributes của variant (EAV pattern)';
 
 CREATE TABLE variant_images (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
@@ -468,6 +517,16 @@ CREATE INDEX idx_variants_product ON product_variants(product_id);
 CREATE INDEX idx_variants_sku ON product_variants(sku);
 CREATE INDEX idx_variant_images_variant ON variant_images(variant_id);
 
+-- Attributes (EAV Pattern)
+CREATE INDEX idx_product_attributes_code ON product_attributes(code);
+CREATE INDEX idx_product_attributes_active ON product_attributes(is_active);
+CREATE INDEX idx_category_attributes_category ON category_attributes(category_id);
+CREATE INDEX idx_category_attributes_attribute ON category_attributes(attribute_id);
+CREATE INDEX idx_variant_attribute_values_variant ON variant_attribute_values(variant_id);
+CREATE INDEX idx_variant_attribute_values_attribute ON variant_attribute_values(attribute_id);
+CREATE INDEX idx_variant_attribute_values_text ON variant_attribute_values(value_text);
+CREATE INDEX idx_variant_attribute_values_number ON variant_attribute_values(value_number);
+
 -- Cart & Wishlist
 CREATE INDEX idx_cart_items_cart ON cart_items(cart_id);
 CREATE INDEX idx_cart_items_product ON cart_items(product_id);
@@ -533,7 +592,45 @@ INSERT INTO vouchers (code, description, discount_type, discount_value, max_disc
 ('FREESHIP', 'Miễn phí vận chuyển', 'FIXED_AMOUNT', 30000.00, NULL, 200000.00, NULL, '2024-01-01', '2025-12-31', TRUE, NOW(), NOW());
 
 -- ═══════════════════════════════════════════════════════════════
--- VÍ DỤ SẢN PHẨM
+-- DỮ LIỆU MẪU - ATTRIBUTES
+-- ═══════════════════════════════════════════════════════════════
+
+-- Định nghĩa các attributes phổ biến
+INSERT INTO product_attributes (code, name, description, data_type, unit, is_searchable, is_required, display_order, is_active, created_at, updated_at) VALUES
+('SIZE', 'Kích thước', 'Kích thước sản phẩm (S, M, L, XL, etc.)', 'TEXT', NULL, TRUE, FALSE, 1, TRUE, NOW(), NOW()),
+('COLOR', 'Màu sắc', 'Màu sắc sản phẩm', 'COLOR_HEX', NULL, TRUE, FALSE, 2, TRUE, NOW(), NOW()),
+('STORAGE', 'Bộ nhớ', 'Dung lượng lưu trữ (64GB, 128GB, etc.)', 'TEXT', 'GB', TRUE, FALSE, 3, TRUE, NOW(), NOW()),
+('SCREEN_SIZE', 'Kích thước màn hình', 'Kích thước màn hình (inch)', 'TEXT', 'inch', TRUE, FALSE, 4, TRUE, NOW(), NOW()),
+('MATERIAL', 'Chất liệu', 'Chất liệu sản phẩm', 'TEXT', NULL, TRUE, FALSE, 5, TRUE, NOW(), NOW()),
+('RAM', 'RAM', 'Dung lượng RAM', 'TEXT', 'GB', TRUE, FALSE, 6, TRUE, NOW(), NOW()),
+('PROCESSOR', 'Bộ xử lý', 'Loại bộ xử lý', 'TEXT', NULL, TRUE, FALSE, 7, TRUE, NOW(), NOW()),
+('BATTERY', 'Pin', 'Dung lượng pin', 'TEXT', 'mAh', TRUE, FALSE, 8, TRUE, NOW(), NOW()),
+('WEIGHT', 'Trọng lượng', 'Trọng lượng sản phẩm', 'DECIMAL', 'kg', TRUE, FALSE, 9, TRUE, NOW(), NOW()),
+('DIMENSIONS', 'Kích thước', 'Kích thước (D x R x C)', 'TEXT', 'cm', FALSE, FALSE, 10, TRUE, NOW(), NOW());
+
+-- Liên kết attributes với categories
+-- Quần áo: Size, Color, Material
+INSERT INTO category_attributes (category_id, attribute_id, is_required, display_order, created_at) VALUES
+(1, 1, TRUE, 1, NOW()),  -- Quần áo -> SIZE (required)
+(1, 2, TRUE, 2, NOW()),  -- Quần áo -> COLOR (required)
+(1, 5, FALSE, 3, NOW()); -- Quần áo -> MATERIAL (optional)
+
+-- Điện tử: Screen Size, Storage, RAM, Processor, Battery
+INSERT INTO category_attributes (category_id, attribute_id, is_required, display_order, created_at) VALUES
+(2, 4, FALSE, 1, NOW()), -- Điện tử -> SCREEN_SIZE
+(2, 3, FALSE, 2, NOW()), -- Điện tử -> STORAGE
+(2, 6, FALSE, 3, NOW()), -- Điện tử -> RAM
+(2, 7, FALSE, 4, NOW()), -- Điện tử -> PROCESSOR
+(2, 8, FALSE, 5, NOW()); -- Điện tử -> BATTERY
+
+-- Âm thanh: Color, Weight, Dimensions
+INSERT INTO category_attributes (category_id, attribute_id, is_required, display_order, created_at) VALUES
+(3, 2, FALSE, 1, NOW()), -- Âm thanh -> COLOR
+(3, 9, FALSE, 2, NOW()), -- Âm thanh -> WEIGHT
+(3, 10, FALSE, 3, NOW()); -- Âm thanh -> DIMENSIONS
+
+-- ═══════════════════════════════════════════════════════════════
+-- VÍ DỤ SẢN PHẨM (Sử dụng EAV Pattern)
 -- ═══════════════════════════════════════════════════════════════
 
 -- 1. ÁO THUN (có Size + Màu)
@@ -544,10 +641,29 @@ INSERT INTO product_images (product_id, public_id, is_primary, display_order, al
 (1, 'products/shirt/main', TRUE, 1, 'Áo thun basic', NOW()),
 (1, 'products/shirt/detail1', FALSE, 2, 'Chi tiết áo', NOW());
 
-INSERT INTO product_variants (product_id, size, color, color_code, price, stock_quantity, sku, is_active, created_at, updated_at) VALUES
-(1, 'M', 'Đỏ', '#FF0000', 199000, 50, 'SHIRT-RED-M', TRUE, NOW(), NOW()),
-(1, 'M', 'Xanh', '#0000FF', 199000, 30, 'SHIRT-BLUE-M', TRUE, NOW(), NOW()),
-(1, 'L', 'Đỏ', '#FF0000', 199000, 40, 'SHIRT-RED-L', TRUE, NOW(), NOW());
+-- Variant 1: M - Đỏ
+INSERT INTO product_variants (product_id, price, stock_quantity, sku, is_active, created_at, updated_at) VALUES
+(1, 199000, 50, 'SHIRT-RED-M', TRUE, NOW(), NOW());
+
+INSERT INTO variant_attribute_values (variant_id, attribute_id, value_text, value_color_hex, display_value, created_at, updated_at) VALUES
+(1, 1, 'M', NULL, 'M - Medium', NOW(), NOW()),  -- SIZE
+(1, 2, 'Đỏ', '#FF0000', 'Đỏ - Red', NOW(), NOW()); -- COLOR
+
+-- Variant 2: M - Xanh
+INSERT INTO product_variants (product_id, price, stock_quantity, sku, is_active, created_at, updated_at) VALUES
+(1, 199000, 30, 'SHIRT-BLUE-M', TRUE, NOW(), NOW());
+
+INSERT INTO variant_attribute_values (variant_id, attribute_id, value_text, value_color_hex, display_value, created_at, updated_at) VALUES
+(2, 1, 'M', NULL, 'M - Medium', NOW(), NOW()),  -- SIZE
+(2, 2, 'Xanh', '#0000FF', 'Xanh - Blue', NOW(), NOW()); -- COLOR
+
+-- Variant 3: L - Đỏ
+INSERT INTO product_variants (product_id, price, stock_quantity, sku, is_active, created_at, updated_at) VALUES
+(1, 199000, 40, 'SHIRT-RED-L', TRUE, NOW(), NOW());
+
+INSERT INTO variant_attribute_values (variant_id, attribute_id, value_text, value_color_hex, display_value, created_at, updated_at) VALUES
+(3, 1, 'L', NULL, 'L - Large', NOW(), NOW()),  -- SIZE
+(3, 2, 'Đỏ', '#FF0000', 'Đỏ - Red', NOW(), NOW()); -- COLOR
 
 INSERT INTO variant_images (variant_id, public_id, is_primary, created_at) VALUES
 (1, 'variants/shirt-red-m', TRUE, NOW()),
@@ -560,22 +676,70 @@ VALUES ('Loa JBL Flip 5', 'loa-jbl-flip-5', 'Loa Bluetooth chống nước IPX7'
 INSERT INTO product_images (product_id, public_id, is_primary, display_order, created_at) VALUES
 (2, 'products/speaker/main', TRUE, 1, NOW());
 
-INSERT INTO product_variants (product_id, color, color_code, price, stock_quantity, sku, is_active, created_at, updated_at) VALUES
-(2, 'Đen', '#000000', 2490000, 100, 'SPEAKER-BLACK', TRUE, NOW(), NOW()),
-(2, 'Xanh', '#0000FF', 2490000, 80, 'SPEAKER-BLUE', TRUE, NOW(), NOW());
+-- Variant 1: Đen
+INSERT INTO product_variants (product_id, price, stock_quantity, sku, is_active, created_at, updated_at) VALUES
+(2, 2490000, 100, 'SPEAKER-BLACK', TRUE, NOW(), NOW());
 
--- 3. TIVI (chỉ Inch)
+INSERT INTO variant_attribute_values (variant_id, attribute_id, value_text, value_color_hex, display_value, created_at, updated_at) VALUES
+(4, 2, 'Đen', '#000000', 'Đen - Black', NOW(), NOW()); -- COLOR
+
+-- Variant 2: Xanh
+INSERT INTO product_variants (product_id, price, stock_quantity, sku, is_active, created_at, updated_at) VALUES
+(2, 2490000, 80, 'SPEAKER-BLUE', TRUE, NOW(), NOW());
+
+INSERT INTO variant_attribute_values (variant_id, attribute_id, value_text, value_color_hex, display_value, created_at, updated_at) VALUES
+(5, 2, 'Xanh', '#0000FF', 'Xanh - Blue', NOW(), NOW()); -- COLOR
+
+-- 3. TIVI (chỉ Screen Size)
 INSERT INTO products (name, slug, description, base_price, has_variants, category_id, brand, is_active, created_at, updated_at)
 VALUES ('Smart TV Samsung 4K', 'smart-tv-samsung-4k', 'Tivi Samsung Crystal UHD 4K', 12990000, TRUE, 2, 'Samsung', TRUE, NOW(), NOW());
 
-INSERT INTO product_variants (product_id, screen_size, price, stock_quantity, sku, is_active, created_at, updated_at) VALUES
-(3, '43 inch', 9990000, 30, 'TV-43INCH', TRUE, NOW(), NOW()),
-(3, '55 inch', 12990000, 25, 'TV-55INCH', TRUE, NOW(), NOW()),
-(3, '65 inch', 18990000, 15, 'TV-65INCH', TRUE, NOW(), NOW());
+-- Variant 1: 43 inch
+INSERT INTO product_variants (product_id, price, stock_quantity, sku, is_active, created_at, updated_at) VALUES
+(3, 9990000, 30, 'TV-43INCH', TRUE, NOW(), NOW());
 
--- 4. SẢN PHẨM ĐơN GIẢN (không variants)
+INSERT INTO variant_attribute_values (variant_id, attribute_id, value_text, display_value, created_at, updated_at) VALUES
+(6, 4, '43', '43 inch', NOW(), NOW()); -- SCREEN_SIZE
+
+-- Variant 2: 55 inch
+INSERT INTO product_variants (product_id, price, stock_quantity, sku, is_active, created_at, updated_at) VALUES
+(3, 12990000, 25, 'TV-55INCH', TRUE, NOW(), NOW());
+
+INSERT INTO variant_attribute_values (variant_id, attribute_id, value_text, display_value, created_at, updated_at) VALUES
+(7, 4, '55', '55 inch', NOW(), NOW()); -- SCREEN_SIZE
+
+-- Variant 3: 65 inch
+INSERT INTO product_variants (product_id, price, stock_quantity, sku, is_active, created_at, updated_at) VALUES
+(3, 18990000, 15, 'TV-65INCH', TRUE, NOW(), NOW());
+
+INSERT INTO variant_attribute_values (variant_id, attribute_id, value_text, display_value, created_at, updated_at) VALUES
+(8, 4, '65', '65 inch', NOW(), NOW()); -- SCREEN_SIZE
+
+-- 4. ĐIỆN THOẠI (Storage + RAM + Color) - Ví dụ mới
 INSERT INTO products (name, slug, description, base_price, has_variants, category_id, brand, is_active, created_at, updated_at)
-VALUES ('Chuột Gaming Logitech G102', 'chuot-gaming-logitech-g102', 'Chuột gaming RGB 8000 DPI', 399000, FALSE, 4, 'Logitech', TRUE, NOW(), NOW());
+VALUES ('iPhone 15 Pro', 'iphone-15-pro', 'iPhone 15 Pro với chip A17 Pro', 24990000, TRUE, 2, 'Apple', TRUE, NOW(), NOW());
+
+-- Variant 1: 128GB - 8GB RAM - Đen
+INSERT INTO product_variants (product_id, price, stock_quantity, sku, is_active, created_at, updated_at) VALUES
+(4, 24990000, 20, 'IPHONE-15PRO-128GB-BLACK', TRUE, NOW(), NOW());
+
+INSERT INTO variant_attribute_values (variant_id, attribute_id, value_text, value_color_hex, display_value, created_at, updated_at) VALUES
+(9, 3, '128', NULL, '128GB', NOW(), NOW()),  -- STORAGE
+(9, 6, '8', NULL, '8GB', NOW(), NOW()),      -- RAM
+(9, 2, 'Đen', '#000000', 'Đen - Black', NOW(), NOW()); -- COLOR
+
+-- Variant 2: 256GB - 8GB RAM - Xanh
+INSERT INTO product_variants (product_id, price, stock_quantity, sku, is_active, created_at, updated_at) VALUES
+(4, 27990000, 15, 'IPHONE-15PRO-256GB-BLUE', TRUE, NOW(), NOW());
+
+INSERT INTO variant_attribute_values (variant_id, attribute_id, value_text, value_color_hex, display_value, created_at, updated_at) VALUES
+(10, 3, '256', NULL, '256GB', NOW(), NOW()),  -- STORAGE
+(10, 6, '8', NULL, '8GB', NOW(), NOW()),      -- RAM
+(10, 2, 'Xanh', '#007AFF', 'Xanh - Blue', NOW(), NOW()); -- COLOR
+
+-- 5. SẢN PHẨM ĐƠN GIẢN (không variants)
+INSERT INTO products (name, slug, description, base_price, has_variants, stock_quantity, category_id, brand, is_active, created_at, updated_at)
+VALUES ('Chuột Gaming Logitech G102', 'chuot-gaming-logitech-g102', 'Chuột gaming RGB 8000 DPI', 399000, FALSE, 100, 4, 'Logitech', TRUE, NOW(), NOW());
 
 INSERT INTO product_images (product_id, public_id, is_primary, created_at) VALUES
-(4, 'products/mouse-g102', TRUE, NOW());
+(5, 'products/mouse-g102', TRUE, NOW());
