@@ -1,6 +1,5 @@
 package com.smartshop.entity.user;
 
-import com.smartshop.entity.enums.AuthProvider;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -26,7 +25,7 @@ public class User implements UserDetails {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, unique = true)
+    @Column(name = "username", nullable = false, unique = true)
     private String username;
 
     @Column(nullable = false, unique = true)
@@ -35,36 +34,16 @@ public class User implements UserDetails {
     @Column(nullable = false)
     private String password;
 
-    @Column(name = "full_name", nullable = false)
+    @Column(name = "full_name")
     private String fullName;
 
     private String phone;
 
-    @Column(name = "avatar_public_id")
-    private String avatarPublicId;
+    private String avatar;
 
     @Builder.Default
     @Column(name = "is_active", nullable = false)
     private boolean isActive = true;
-
-    @Builder.Default
-    @Column(name = "is_email_verified", nullable = false)
-    private boolean emailVerified = false;
-
-    @Builder.Default
-    @Column(name = "failed_login_attempts", nullable = false)
-    private int failedLoginAttempts = 0;
-
-    @Column(name = "account_locked_until")
-    private LocalDateTime accountLockedUntil;
-
-    @Column(name = "last_login_at")
-    private LocalDateTime lastLoginAt;
-
-    @Builder.Default
-    @Enumerated(EnumType.STRING)
-    @Column(name = "auth_provider", nullable = false, length = 20)
-    private AuthProvider authProvider = AuthProvider.LOCAL;
 
     @Builder.Default
     @ManyToMany(fetch = FetchType.EAGER)
@@ -92,10 +71,9 @@ public class User implements UserDetails {
         return password;
     }
 
-    // Cập nhật phương thức getUsername để trả về username
     @Override
     public String getUsername() {
-        return email;
+        return username;
     }
 
     @Override
@@ -105,7 +83,7 @@ public class User implements UserDetails {
 
     @Override
     public boolean isAccountNonLocked() {
-        return accountLockedUntil == null || accountLockedUntil.isBefore(LocalDateTime.now());
+        return true;
     }
 
     @Override

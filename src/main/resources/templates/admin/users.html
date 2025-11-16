@@ -6,6 +6,37 @@
     <title>SmartShop | Quản lý người dùng</title>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
     <link rel="stylesheet" th:href="@{/css/admin.css}">
+    <style>
+        .user-role {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+        .user-role__badges {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            align-items: center;
+        }
+        .user-role__select {
+            width: 100%;
+            padding: 0.55rem 0.75rem;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            background: #ffffff;
+        }
+        .user-role__form {
+            display: flex;
+            align-items: center;
+            width: 100%;
+        }
+        .user-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+        }
+    </style>
 </head>
 <body>
 <header class="admin-header">
@@ -74,28 +105,23 @@
                     <td th:text="${user.email}"></td>
                     <td th:text="${user.phone ?: '-'}"></td>
                     <td>
-                        <div style="display: flex; flex-direction: column; gap: 0.75rem;">
-                            <!-- Hiển thị vai trò hiện tại -->
-                            <div style="display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center;">
+                        <div class="user-role">
+                            <div class="user-role__badges">
                                 <span th:each="role : ${user.roles}" 
                                       class="badge" 
-                                      th:classappend="${role.name == 'ROLE_ADMIN'} ? 'badge--accent' : ''"
-                                      style="padding: 0.35rem 0.75rem;">
+                                      th:classappend="${role.name == 'ROLE_ADMIN'} ? 'badge--accent' : ''">
                                     <span th:text="${role.name}"></span>
                                 </span>
-                                <span th:if="${#lists.isEmpty(user.roles)}" class="badge badge--secondary" style="padding: 0.35rem 0.75rem;">Chưa có vai trò</span>
+                                <span th:if="${#lists.isEmpty(user.roles)}" class="badge badge--secondary">Chưa có vai trò</span>
                             </div>
-                            <!-- Form thay đổi vai trò -->
                             <form th:action="@{/admin/users/{id}/roles/change(id=${user.id})}" 
                                   method="post" 
-                                  style="display: flex; align-items: center;"
+                                  class="user-role__form"
                                   th:id="'roleForm_' + ${user.id}">
                                 <select name="roleId" 
                                         th:id="'roleSelect_' + ${user.id}"
-                                        onchange="if(this.value) { if(confirm('Bạn có chắc chắn muốn thay đổi vai trò này?')) { this.form.submit(); } else { this.value = ''; } }"
-                                        style="width: 100%; padding: 0.5rem 0.75rem; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 0.875rem; background: #ffffff; color: #0f172a; cursor: pointer; transition: border-color 0.2s;"
-                                        onfocus="this.style.borderColor='#4c6ef5'"
-                                        onblur="this.style.borderColor='#e2e8f0'">
+                                        class="user-role__select"
+                                        onchange="if(this.value){ if(confirm('Bạn có chắc chắn muốn thay đổi vai trò này?')) { this.form.submit(); } else { this.value = ''; } }">
                                     <option value="">-- Thay đổi vai trò --</option>
                                     <option th:each="role : ${roles}" 
                                             th:value="${role.id}" 
@@ -106,7 +132,7 @@
                         </div>
                     </td>
                     <td>
-                        <span class="status" 
+                        <span class="status user-status" 
                               th:classappend="${user.active} ? 'status--active' : 'status--inactive'"
                               th:text="${user.active} ? 'Đang hoạt động' : 'Đã vô hiệu hóa'"></span>
                     </td>

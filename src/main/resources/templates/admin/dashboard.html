@@ -6,6 +6,50 @@
     <title>SmartShop | Dashboard Thống kê</title>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
     <link rel="stylesheet" th:href="@{/css/admin.css}">
+    <style>
+        .admin-grid--metrics {
+            display: grid;
+            gap: 1.25rem;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        }
+        .dashboard-metric__value {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-top: 1rem;
+            color: #0f172a;
+        }
+        .dashboard-metric__unit {
+            font-size: 0.9rem;
+            color: #64748b;
+            margin-top: 0.25rem;
+        }
+        .dashboard-chart {
+            position: relative;
+            height: 300px;
+            margin-top: 1rem;
+        }
+        .dashboard-list {
+            margin-top: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+        .dashboard-section__grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 1.25rem;
+        }
+        .dashboard-actions {
+            display: flex;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+        }
+        .dashboard-empty {
+            text-align: center;
+            padding: 2rem;
+            color: #64748b;
+        }
+    </style>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
 <body>
@@ -36,30 +80,30 @@
     </section>
 
     <!-- Statistics Cards -->
-    <section class="admin-grid" style="grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));">
+    <section class="admin-grid admin-grid--metrics">
         <article class="admin-card">
             <div class="admin-card__header">
                 <div>
-                    <h2 class="admin-card__title" style="font-size: 1.1rem; margin-bottom: 0.5rem;">Doanh thu 7 ngày</h2>
-                    <p class="admin-card__subtitle" style="margin: 0;">Tổng doanh thu trong 7 ngày gần nhất</p>
+                    <h2 class="admin-card__title">Doanh thu 7 ngày</h2>
+                    <p class="admin-card__subtitle">Tổng doanh thu trong 7 ngày gần nhất</p>
                 </div>
             </div>
-            <div style="margin-top: 1rem;">
-                <div id="totalRevenue" style="font-size: 2rem; font-weight: 700; color: #4c6ef5;">0</div>
-                <div style="font-size: 0.9rem; color: #64748b; margin-top: 0.25rem;">VNĐ</div>
+            <div>
+                <div id="totalRevenue" class="dashboard-metric__value" th:text="${#numbers.formatInteger(totalRevenueLast7Days != null ? totalRevenueLast7Days.intValue() : 0, 0, 'COMMA')}">0</div>
+                <div class="dashboard-metric__unit">VNĐ</div>
             </div>
         </article>
 
         <article class="admin-card">
             <div class="admin-card__header">
                 <div>
-                    <h2 class="admin-card__title" style="font-size: 1.1rem; margin-bottom: 0.5rem;">Đơn hàng mới</h2>
-                    <p class="admin-card__subtitle" style="margin: 0;">Số lượng đơn hàng trong 24 giờ qua</p>
+                    <h2 class="admin-card__title">Đơn hàng mới</h2>
+                    <p class="admin-card__subtitle">Số lượng đơn hàng trong 24 giờ qua</p>
                 </div>
             </div>
-            <div style="margin-top: 1rem;">
-                <div id="newOrders" style="font-size: 2rem; font-weight: 700; color: #10b981;">0</div>
-                <div style="font-size: 0.9rem; color: #64748b; margin-top: 0.25rem;">đơn hàng</div>
+            <div>
+                <div id="newOrders" class="dashboard-metric__value" style="color: #10b981;" th:text="${#numbers.formatInteger(newOrdersLast24Hours, 0, 'COMMA')}">0</div>
+                <div class="dashboard-metric__unit">đơn hàng</div>
             </div>
         </article>
     </section>
@@ -72,7 +116,7 @@
                 <p class="admin-card__subtitle">Doanh thu theo từng ngày</p>
             </div>
         </div>
-        <div style="position: relative; height: 300px; margin-top: 1rem;">
+        <div class="dashboard-chart">
             <canvas id="revenueChart"></canvas>
         </div>
     </section>
@@ -88,16 +132,14 @@
                 <a class="admin-link" href="/admin/products">Xem tất cả sản phẩm →</a>
             </div>
         </div>
-        <div style="position: relative; height: 300px; margin-top: 1rem;">
+        <div class="dashboard-chart">
             <canvas id="topProductsChart"></canvas>
         </div>
-        <div id="topProductsList" style="margin-top: 1.5rem;">
-            <!-- Top products list will be populated here -->
-        </div>
+        <div id="topProductsList" class="dashboard-list"></div>
     </section>
 
     <!-- Revenue by Category and Payment Method -->
-    <div class="admin-grid" style="grid-template-columns: 1fr 1fr;">
+    <div class="dashboard-section__grid">
         <!-- Revenue by Category -->
         <section class="admin-card">
             <div class="admin-card__header">
@@ -106,7 +148,7 @@
                     <p class="admin-card__subtitle">Thống kê doanh thu theo từng danh mục sản phẩm trong tháng</p>
                 </div>
             </div>
-            <div style="position: relative; height: 300px; margin-top: 1rem;">
+            <div class="dashboard-chart">
                 <canvas id="revenueByCategoryChart"></canvas>
             </div>
         </section>
@@ -119,7 +161,7 @@
                     <p class="admin-card__subtitle">Thống kê doanh thu theo phương thức thanh toán trong tháng</p>
                 </div>
             </div>
-            <div style="position: relative; height: 300px; margin-top: 1rem;">
+            <div class="dashboard-chart">
                 <canvas id="revenueByPaymentChart"></canvas>
             </div>
         </section>
@@ -146,7 +188,7 @@
                 </thead>
                 <tbody id="topCustomersTableBody">
                 <tr>
-                    <td colspan="5" style="text-align: center; padding: 2rem; color: #64748b;">Đang tải dữ liệu...</td>
+                    <td colspan="5" class="dashboard-empty">Đang tải dữ liệu...</td>
                 </tr>
                 </tbody>
             </table>
@@ -160,9 +202,9 @@
                 <h2 class="admin-card__title">Hiệu quả voucher khuyến mãi</h2>
                 <p class="admin-card__subtitle">Thống kê hiệu quả sử dụng của các voucher trong hệ thống</p>
             </div>
-            <div class="admin-card__actions">
-                <button class="button button--primary" onclick="exportReport('excel')" style="padding: 0.5rem 1rem;">Xuất Excel</button>
-                <button class="button button--secondary" onclick="exportReport('pdf')" style="padding: 0.5rem 1rem;">Xuất PDF</button>
+            <div class="admin-card__actions dashboard-actions">
+                <button class="button button--primary" onclick="exportReport('excel')">Xuất Excel</button>
+                <button class="button button--secondary" onclick="exportReport('pdf')">Xuất PDF</button>
             </div>
         </div>
         <div class="table-wrapper">
@@ -181,7 +223,7 @@
                 </thead>
                 <tbody id="voucherEffectivenessTableBody">
                 <tr>
-                    <td colspan="8" style="text-align: center; padding: 2rem; color: #64748b;">Đang tải dữ liệu...</td>
+                    <td colspan="8" class="dashboard-empty">Đang tải dữ liệu...</td>
                 </tr>
                 </tbody>
             </table>
@@ -211,28 +253,27 @@
         return `${day}/${month}`;
     }
 
+    // Dashboard data from server (Thymeleaf model)
+    const dashboardData = {
+        revenueByDayLast7Days: /*[[${revenueByDayLast7Days}]]*/ {},
+        top5BestSellingProducts: /*[[${top5BestSellingProducts}]]*/ [],
+        revenueByCategory: /*[[${revenueByCategory}]]*/ [],
+        revenueByPaymentMethod: /*[[${revenueByPaymentMethod}]]*/ {},
+        topCustomers: /*[[${topCustomers}]]*/ [],
+        voucherEffectiveness: /*[[${voucherEffectiveness}]]*/ []
+    };
+
     // Load dashboard statistics
-    async function loadDashboardStats() {
+    function loadDashboardStats() {
         try {
-            const response = await fetch('/api/admin/dashboard/stats');
-            const data = await response.json();
-
-            // Update total revenue
-            const totalRevenue = data.totalRevenueLast7Days || 0;
-            document.getElementById('totalRevenue').textContent = formatNumber(Math.round(totalRevenue));
-
-            // Update new orders
-            const newOrders = data.newOrdersLast24Hours || 0;
-            document.getElementById('newOrders').textContent = formatNumber(newOrders);
-
             // Update revenue chart
-            updateRevenueChart(data.revenueByDayLast7Days);
+            updateRevenueChart(dashboardData.revenueByDayLast7Days);
 
             // Update top products chart
-            updateTopProductsChart(data.top5BestSellingProducts);
+            updateTopProductsChart(dashboardData.top5BestSellingProducts);
 
             // Load additional statistics
-            await loadAdditionalStats();
+            loadAdditionalStats();
 
         } catch (error) {
             console.error('Error loading dashboard stats:', error);
@@ -240,27 +281,19 @@
     }
 
     // Load additional statistics
-    async function loadAdditionalStats() {
+    function loadAdditionalStats() {
         try {
-            // Load revenue by category
-            const categoryResponse = await fetch('/api/admin/dashboard/revenue/by-category');
-            const categoryData = await categoryResponse.json();
-            updateRevenueByCategoryChart(categoryData);
+            // Update revenue by category chart
+            updateRevenueByCategoryChart(dashboardData.revenueByCategory);
 
-            // Load revenue by payment method
-            const paymentResponse = await fetch('/api/admin/dashboard/revenue/by-payment-method');
-            const paymentData = await paymentResponse.json();
-            updateRevenueByPaymentChart(paymentData);
+            // Update revenue by payment method chart
+            updateRevenueByPaymentChart(dashboardData.revenueByPaymentMethod);
 
-            // Load top customers
-            const customersResponse = await fetch('/api/admin/dashboard/customers/top');
-            const customersData = await customersResponse.json();
-            updateTopCustomersTable(customersData);
+            // Update top customers table
+            updateTopCustomersTable(dashboardData.topCustomers);
 
-            // Load voucher effectiveness
-            const vouchersResponse = await fetch('/api/admin/dashboard/vouchers/effectiveness');
-            const vouchersData = await vouchersResponse.json();
-            updateVoucherEffectivenessTable(vouchersData);
+            // Update voucher effectiveness table
+            updateVoucherEffectivenessTable(dashboardData.voucherEffectiveness);
 
         } catch (error) {
             console.error('Error loading additional stats:', error);
@@ -578,7 +611,7 @@
 
     // Export report function
     function exportReport(format) {
-        window.location.href = `/api/admin/dashboard/export?format=${format}`;
+        window.location.href = `/admin/dashboard/export?format=${format}`;
     }
 
     // Load dashboard on page load

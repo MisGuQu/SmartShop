@@ -30,14 +30,12 @@ public class CategoryService {
                 .orElseThrow(() -> new EntityNotFoundException("Danh mục không tồn tại"));
     }
 
-    public Category createCategory(String name, String description, Long parentId, boolean active) {
+    public Category createCategory(String name, Long parentId) {
         Objects.requireNonNull(name, "name must not be null");
         validateUniqueName(name, null);
 
         Category category = new Category();
         category.setName(name.trim());
-        category.setDescription(description);
-        category.setActive(active);
 
         if (parentId != null) {
             Category parent = categoryRepository.findById(parentId)
@@ -48,7 +46,7 @@ public class CategoryService {
         return categoryRepository.save(category);
     }
 
-    public Category updateCategory(Long id, String name, String description, Long parentId, boolean active) {
+    public Category updateCategory(Long id, String name, Long parentId) {
         Objects.requireNonNull(id, "id must not be null");
         Objects.requireNonNull(name, "name must not be null");
 
@@ -58,8 +56,6 @@ public class CategoryService {
         validateUniqueName(name, id);
 
         existing.setName(name.trim());
-        existing.setDescription(description);
-        existing.setActive(active);
 
         if (parentId != null) {
             if (parentId.equals(id)) {

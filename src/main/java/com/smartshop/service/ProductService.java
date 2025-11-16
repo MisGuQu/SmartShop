@@ -11,7 +11,6 @@ import com.smartshop.repository.ProductImageRepository;
 import com.smartshop.repository.ProductRepository;
 import com.smartshop.repository.ProductVariantRepository;
 import com.smartshop.repository.spec.ProductSpecifications;
-import com.smartshop.service.CloudinaryService;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -70,7 +69,7 @@ public class ProductService {
         String name = normalizeName(product.getName());
         product.setName(name);
 
-        if (product.getBasePrice() == null || product.getBasePrice() <= 0) {
+        if (product.getPrice() == null || product.getPrice() <= 0) {
             throw new IllegalArgumentException("Giá sản phẩm phải lớn hơn 0");
         }
 
@@ -78,8 +77,7 @@ public class ProductService {
 
         product.setId(null);
         product.setCategory(category);
-        
-        // Xử lý slug: nếu có slug từ form thì dùng (sẽ được slugify), không thì tự động tạo từ tên
+
         if (StringUtils.hasText(product.getSlug())) {
             product.setSlug(generateUniqueSlug(product.getSlug(), null));
         } else {
@@ -88,17 +86,6 @@ public class ProductService {
 
         if (!StringUtils.hasText(product.getDescription())) {
             product.setDescription(null);
-        }
-        
-        // Xử lý các trường optional
-        if (!StringUtils.hasText(product.getBrand())) {
-            product.setBrand(null);
-        }
-        if (!StringUtils.hasText(product.getMetaTitle())) {
-            product.setMetaTitle(null);
-        }
-        if (!StringUtils.hasText(product.getMetaDescription())) {
-            product.setMetaDescription(null);
         }
 
         return productRepository.save(product);
@@ -113,23 +100,18 @@ public class ProductService {
 
         String newName = normalizeName(updatedProduct.getName());
         existing.setName(newName);
-        
-        // Xử lý slug: nếu có slug từ form thì dùng (sẽ được slugify), nếu tên thay đổi thì tự động tạo lại
+
         if (StringUtils.hasText(updatedProduct.getSlug())) {
-            // Nếu slug thay đổi, cần kiểm tra unique
             String newSlug = generateUniqueSlug(updatedProduct.getSlug(), existing.getId());
-            if (!newSlug.equals(existing.getSlug())) {
-                existing.setSlug(newSlug);
-            }
-        } else if (!existing.getName().equals(newName)) {
-            // Nếu không có slug và tên thay đổi, tự động tạo slug mới
+            existing.setSlug(newSlug);
+        } else {
             existing.setSlug(generateUniqueSlug(newName, existing.getId()));
         }
 
-        if (updatedProduct.getBasePrice() == null || updatedProduct.getBasePrice() <= 0) {
+        if (updatedProduct.getPrice() == null || updatedProduct.getPrice() <= 0) {
             throw new IllegalArgumentException("Giá sản phẩm phải lớn hơn 0");
         }
-        existing.setBasePrice(updatedProduct.getBasePrice());
+        existing.setPrice(updatedProduct.getPrice());
 
         existing.setDescription(StringUtils.hasText(updatedProduct.getDescription())
                 ? updatedProduct.getDescription()
@@ -137,11 +119,6 @@ public class ProductService {
 
         existing.setActive(updatedProduct.isActive());
         existing.setHasVariants(updatedProduct.isHasVariants());
-        existing.setStockQuantity(updatedProduct.getStockQuantity() != null ? updatedProduct.getStockQuantity() : 0);
-        existing.setBrand(StringUtils.hasText(updatedProduct.getBrand()) ? updatedProduct.getBrand() : null);
-        existing.setWeight(updatedProduct.getWeight());
-        existing.setMetaTitle(StringUtils.hasText(updatedProduct.getMetaTitle()) ? updatedProduct.getMetaTitle() : null);
-        existing.setMetaDescription(StringUtils.hasText(updatedProduct.getMetaDescription()) ? updatedProduct.getMetaDescription() : null);
 
         Category category = resolveCategory(categoryId);
         existing.setCategory(category);
@@ -154,26 +131,20 @@ public class ProductService {
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Sản phẩm không tồn tại"));
 
-        // Kiểm tra xem sản phẩm có trong đơn hàng không - nếu có thì không cho xóa
-        List<com.smartshop.entity.order.OrderItem> orderItems = orderItemRepository.findByProductId(id);
-        if (!orderItems.isEmpty()) {
+        if (!orderItemRepository.findByProductId(id).isEmpty()) {
             throw new DataIntegrityViolationException("Không thể xóa sản phẩm đã có trong đơn hàng");
         }
 
-        // Xóa các cart items liên quan đến sản phẩm này
         List<com.smartshop.entity.cart.CartItem> cartItems = cartItemRepository.findByProductId(id);
         if (!cartItems.isEmpty()) {
             cartItemRepository.deleteAll(cartItems);
             log.info("Đã xóa {} cart items liên quan đến sản phẩm {}", cartItems.size(), id);
         }
 
-        // Load variants và images để đảm bảo cascade hoạt động đúng
         Hibernate.initialize(product.getVariants());
         Hibernate.initialize(product.getImages());
 
-        // Xóa sản phẩm - variants và images sẽ tự động bị xóa nhờ cascade = CascadeType.ALL, orphanRemoval = true
         productRepository.delete(product);
-        log.info("Đã xóa sản phẩm {}", id);
     }
 
     public List<Product> searchProducts(String keyword) {
@@ -219,7 +190,7 @@ public class ProductService {
         Hibernate.initialize(product.getImages());
         Hibernate.initialize(product.getVariants());
         product.getImages().sort(Comparator.comparing(ProductImage::isPrimary).reversed()
-                .thenComparing(ProductImage::getDisplayOrder));
+                .thenComparing(ProductImage::getId));
         product.getVariants().sort(Comparator.comparing(ProductVariant::getId));
         return product;
     }
@@ -233,13 +204,13 @@ public class ProductService {
         Hibernate.initialize(product.getImages());
         Hibernate.initialize(product.getVariants());
         product.getImages().sort(Comparator.comparing(ProductImage::isPrimary).reversed()
-                .thenComparing(ProductImage::getDisplayOrder));
+                .thenComparing(ProductImage::getId));
         product.getVariants().sort(Comparator.comparing(ProductVariant::getId));
         return product;
     }
 
     public List<ProductVariant> getActiveVariants(Long productId) {
-        return productVariantRepository.findByProductIdAndIsActiveTrue(productId);
+        return productVariantRepository.findByProductId(productId);
     }
 
     public Optional<ProductVariant> getVariant(Long productId, Long variantId) {
@@ -257,7 +228,7 @@ public class ProductService {
         if (Hibernate.isInitialized(product.getImages()) && !product.getImages().isEmpty()) {
             return product.getImages().stream()
                     .sorted(Comparator.comparing(ProductImage::isPrimary).reversed()
-                            .thenComparing(ProductImage::getDisplayOrder))
+                            .thenComparing(ProductImage::getId))
                     .findFirst();
         }
         return getPrimaryImage(product.getId());
@@ -269,8 +240,10 @@ public class ProductService {
         }
         return productImageRepository.findByProductIdAndIsPrimaryTrue(productId)
                 .or(() -> {
-                    List<ProductImage> images = productImageRepository.findByProductIdOrderByDisplayOrderAsc(productId);
-                    return images.stream().findFirst();
+                    List<ProductImage> images = productImageRepository.findByProductId(productId);
+                    return images.stream()
+                            .sorted(Comparator.comparing(ProductImage::getId))
+                            .findFirst();
                 });
     }
 
@@ -279,10 +252,10 @@ public class ProductService {
         if (variant == null || quantity <= 0) {
             return;
         }
-        if (variant.getStockQuantity() < quantity) {
+        if (variant.getStock() < quantity) {
             throw new IllegalStateException("Sản phẩm không đủ tồn kho");
         }
-        variant.setStockQuantity(variant.getStockQuantity() - quantity);
+        variant.setStock(variant.getStock() - quantity);
         productVariantRepository.save(variant);
     }
 
@@ -291,7 +264,7 @@ public class ProductService {
         if (variant == null || quantity <= 0) {
             return;
         }
-        variant.setStockQuantity(variant.getStockQuantity() + quantity);
+        variant.setStock(variant.getStock() + quantity);
         productVariantRepository.save(variant);
     }
 
@@ -338,21 +311,14 @@ public class ProductService {
         return slug;
     }
 
-    /**
-     * Upload và lưu hình ảnh sản phẩm vào Cloudinary và database
-     */
     public void uploadProductImages(Long productId, MultipartFile[] files) throws IOException {
         if (productId == null || files == null || files.length == 0) {
             return;
         }
 
         Product product = getProductOrThrow(productId);
-        
-        // Lấy số lượng hình ảnh hiện tại để tính displayOrder
-        List<ProductImage> existingImages = productImageRepository.findByProductIdOrderByDisplayOrderAsc(productId);
-        int displayOrder = existingImages.size();
 
-        // Kiểm tra xem đã có ảnh chính chưa
+        List<ProductImage> existingImages = productImageRepository.findByProductId(productId);
         boolean hasPrimary = existingImages.stream().anyMatch(ProductImage::isPrimary);
 
         for (int i = 0; i < files.length; i++) {
@@ -362,35 +328,23 @@ public class ProductService {
             }
 
             try {
-                // Upload lên Cloudinary
                 String folder = "products/" + productId;
                 Map<String, Object> uploadResult = cloudinaryService.upload(file, folder);
-                
-                String publicId = (String) uploadResult.get("public_id");
-                Integer width = (Integer) uploadResult.get("width");
-                Integer height = (Integer) uploadResult.get("height");
-                String format = (String) uploadResult.get("format");
 
+                String publicId = (String) uploadResult.get("public_id");
                 if (publicId == null) {
                     log.warn("Upload image failed: public_id is null for product {}", productId);
                     continue;
                 }
 
-                // Tạo ProductImage entity
                 ProductImage productImage = ProductImage.builder()
                         .product(product)
                         .publicId(publicId)
-                        .isPrimary(!hasPrimary && i == 0) // Ảnh đầu tiên là ảnh chính nếu chưa có
-                        .displayOrder(displayOrder + i)
-                        .width(width)
-                        .height(height)
-                        .format(format)
+                        .isPrimary(!hasPrimary && i == 0)
                         .build();
 
                 productImageRepository.save(productImage);
-                log.info("Uploaded image {} for product {}", publicId, productId);
-                
-                // Đánh dấu đã có ảnh chính
+
                 if (!hasPrimary && i == 0) {
                     hasPrimary = true;
                 }

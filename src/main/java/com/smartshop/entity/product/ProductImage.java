@@ -2,10 +2,6 @@ package com.smartshop.entity.product;
 
 import jakarta.persistence.*;
 import lombok.*;
-import org.hibernate.annotations.CreationTimestamp;
-
-import java.time.LocalDateTime;
-
 @Entity
 @Table(name = "product_images")
 @Getter
@@ -28,22 +24,4 @@ public class ProductImage {
     @Builder.Default
     @Column(name = "is_primary")
     private boolean isPrimary = false;
-
-    @Builder.Default
-    @Column(name = "display_order")
-    private int displayOrder = 0;
-
-    @Column(name = "alt_text")
-    private String altText;
-
-    private Integer width;
-
-    private Integer height;
-
-    @Column(name = "format")
-    private String format;
-
-    @CreationTimestamp
-    @Column(name = "created_at")
-    private LocalDateTime createdAt;
 }

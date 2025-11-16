@@ -5,5 +5,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 import com.smartshop.entity.review.ReviewMedia;
 public interface ReviewMediaRepository extends JpaRepository<ReviewMedia, Long> {
-    List<ReviewMedia> findByReviewIdOrderByDisplayOrderAsc(Long reviewId);
+    List<ReviewMedia> findByReviewIdOrderByIdAsc(Long reviewId);
 }

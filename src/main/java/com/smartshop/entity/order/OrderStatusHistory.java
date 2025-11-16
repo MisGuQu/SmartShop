@@ -7,7 +7,7 @@ import org.hibernate.annotations.CreationTimestamp;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "order_status_history")
+@Table(name = "order_status")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -28,12 +28,7 @@ public class OrderStatusHistory {
     @Column(name = "new_status", nullable = false)
     private String newStatus;
 
-    private String note;
-
-    @Column(name = "changed_by")
-    private String changedBy;
-
     @CreationTimestamp
-    @Column(name = "changed_at")
-    private LocalDateTime changedAt;
+    @Column(name = "created_at")
+    private LocalDateTime createdAt;
 }

@@ -1,113 +1,75 @@
 package com.smartshop.service;
 
-import com.smartshop.entity.cart.Wishlist;
-import com.smartshop.entity.cart.WishlistItem;
+import com.smartshop.entity.cart.CartItem;
+import com.smartshop.entity.cart.ShoppingCart;
 import com.smartshop.entity.product.Product;
 import com.smartshop.entity.product.ProductVariant;
-import com.smartshop.entity.user.User;
-import com.smartshop.repository.ProductRepository;
-import com.smartshop.repository.ProductVariantRepository;
-import com.smartshop.repository.UserRepository;
-import com.smartshop.repository.WishlistItemRepository;
-import com.smartshop.repository.WishlistRepository;
+import com.smartshop.repository.CartItemRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.Objects;
 
 @Service
 @Transactional
 @RequiredArgsConstructor
-@SuppressWarnings({"DataFlowIssue", "NullAway"})
 public class WishlistService {
 
-    private final WishlistRepository wishlistRepository;
-    private final WishlistItemRepository wishlistItemRepository;
-    private final UserRepository userRepository;
-    private final ProductRepository productRepository;
-    private final ProductVariantRepository productVariantRepository;
+    private final CartService cartService;
+    private final ProductService productService;
+    private final CartItemRepository cartItemRepository;
 
-    public Wishlist getWishlistByUser(Long userId) {
-        Objects.requireNonNull(userId, "userId must not be null");
-        return loadOrCreateWishlist(userId);
+    public List<CartItem> getWishlistItems(Long userId) {
+        ShoppingCart cart = cartService.getCartByUserId(userId);
+        return cartItemRepository.findByCartIdAndWishlistTrue(cart.getId());
     }
 
-    @SuppressWarnings("DataFlowIssue")
-    public Wishlist addToWishlist(Long userId, Long productId, Long variantId) {
-        Objects.requireNonNull(userId, "userId must not be null");
+    public void addToWishlist(Long userId, Long productId, Long variantId) {
         Objects.requireNonNull(productId, "productId must not be null");
 
-        Wishlist wishlist = loadOrCreateWishlist(userId);
+        ShoppingCart cart = cartService.getCartByUserId(userId);
+        Product product = productService.getProductOrThrow(productId);
+        ProductVariant variant = productService.getVariant(productId, variantId).orElse(null);
 
-        Product product = productRepository.findById(productId)
-                .orElseThrow(() -> new EntityNotFoundException("Product not found"));
-
-        ProductVariant variant = null;
-        if (variantId != null) {
-            variant = productVariantRepository.findById(variantId)
-                    .orElseThrow(() -> new EntityNotFoundException("Product variant not found"));
+        if (product.isHasVariants() && variant == null) {
+            throw new IllegalArgumentException("Vui lòng chọn phiên bản sản phẩm");
         }
 
-        boolean exists = variant != null
-                ? wishlistItemRepository.existsByWishlistIdAndProductIdAndVariantId(wishlist.getId(), productId, variant.getId())
-                : wishlistItemRepository.existsByWishlistIdAndProductId(wishlist.getId(), productId);
+        boolean alreadyExists = cart.getItems().stream()
+                .anyMatch(item -> item.isWishlist()
+                        && item.getProduct().getId().equals(productId)
+                        && ((variant == null && item.getVariant() == null)
+                        || (variant != null && item.getVariant() != null
+                        && item.getVariant().getId().equals(variant.getId()))));
 
-        if (!exists) {
-            WishlistItem item = WishlistItem.builder()
-                    .wishlist(wishlist)
-                    .product(product)
-                    .variant(variant)
-                    .build();
-            wishlist.getItems().add(item);
-            wishlistRepository.save(wishlist);
+        if (alreadyExists) {
+            return;
         }
 
-        return Objects.requireNonNull(loadOrCreateWishlist(userId));
+        CartItem wishlistItem = CartItem.builder()
+                .cart(cart)
+                .product(product)
+                .variant(variant)
+                .quantity(1)
+                .wishlist(true)
+                .build();
+
+        cart.getItems().add(wishlistItem);
+        cartItemRepository.save(wishlistItem);
     }
 
-    public Wishlist removeFromWishlist(Long userId, Long itemId) {
-        Objects.requireNonNull(userId, "userId must not be null");
-        Objects.requireNonNull(itemId, "itemId must not be null");
-
-        Wishlist wishlist = loadOrCreateWishlist(userId);
-
-        WishlistItem item = wishlistItemRepository.findById(itemId)
+    public void removeFromWishlist(Long userId, Long itemId) {
+        ShoppingCart cart = cartService.getCartByUserId(userId);
+        CartItem item = cart.getItems().stream()
+                .filter(cartItem -> cartItem.isWishlist() && cartItem.getId().equals(itemId))
+                .findFirst()
                 .orElseThrow(() -> new EntityNotFoundException("Wishlist item not found"));
 
-        Wishlist owner = item.getWishlist();
-        if (owner == null) {
-            throw new IllegalStateException("Permission denied");
-        }
-        Long ownerId = owner.getId();
-        if (ownerId == null || !ownerId.equals(wishlist.getId())) {
-            throw new IllegalStateException("Permission denied");
-        }
-
-        if (owner.getItems() != null) {
-            owner.getItems().remove(item);
-        }
-        wishlistItemRepository.delete(item);
-        wishlistRepository.save(owner);
-        Wishlist refreshed = loadOrCreateWishlist(userId);
-        return Objects.requireNonNull(refreshed);
-    }
-
-    @SuppressWarnings("NullAway")
-    private Wishlist loadOrCreateWishlist(Long userId) {
-        Objects.requireNonNull(userId, "userId must not be null");
-        Wishlist existing = wishlistRepository.findByUserId(userId).orElse(null);
-        if (existing != null) {
-            return existing;
-        }
-
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new EntityNotFoundException("User not found"));
-        Wishlist wishlist = Wishlist.builder()
-                .user(user)
-                .build();
-        wishlistRepository.save(wishlist);
-        return Objects.requireNonNull(wishlist);
+        cart.getItems().remove(item);
+        cartItemRepository.delete(item);
     }
 }
+

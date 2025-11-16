@@ -1,33 +1,26 @@
 CREATE DATABASE smartshop_db;
 USE smartshop_db;
 
--- ═══════════════════════════════════════════════════════════════
--- DATABASE E-COMMERCE HOÀN CHỈNH
--- Bao gồm: Products, Variants, Cloudinary, Wishlist, Orders, Reviews, 
---          VNPay/MoMo Payment, Vouchers, Notifications
--- ═══════════════════════════════════════════════════════════════
-
--- ═══════════════════════════════════════════════════════════════
--- 1. QUẢN LÝ NGƯỜI DÙNG (3 bảng)
--- ═══════════════════════════════════════════════════════════════
-
+-- ============================================================
+-- 1. USERS
+-- ============================================================
 CREATE TABLE users (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
-    username VARCHAR(255) NOT NULL UNIQUE COMMENT 'Tên đăng nhập',
-    password VARCHAR(255) NOT NULL COMMENT 'Mật khẩu mã hóa BCrypt',
-    email VARCHAR(255) NOT NULL UNIQUE COMMENT 'Email',
-    full_name VARCHAR(255) NOT NULL COMMENT 'Họ tên đầy đủ',
-    phone VARCHAR(20) COMMENT 'Số điện thoại',
-    avatar_public_id VARCHAR(255) COMMENT 'Cloudinary public_id avatar',
-    is_active BOOLEAN NOT NULL DEFAULT TRUE COMMENT 'Trạng thái tài khoản',
-    created_at DATETIME NOT NULL,
-    updated_at DATETIME NOT NULL
-) COMMENT 'Thông tin người dùng';
+    username VARCHAR(150) UNIQUE NOT NULL,
+    password VARCHAR(255) NOT NULL,
+    email VARCHAR(255) UNIQUE NOT NULL,
+    full_name VARCHAR(255),
+    phone VARCHAR(20),
+    avatar VARCHAR(255),
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
 
 CREATE TABLE roles (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
-    name VARCHAR(50) NOT NULL UNIQUE COMMENT 'ROLE_USER, ROLE_ADMIN'
-) COMMENT 'Vai trò người dùng';
+    name VARCHAR(50) UNIQUE NOT NULL
+);
 
 CREATE TABLE users_roles (
     user_id BIGINT,
@@ -35,711 +28,244 @@ CREATE TABLE users_roles (
     PRIMARY KEY (user_id, role_id),
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE CASCADE
-) COMMENT 'Liên kết user với role';
+);
 
--- ═══════════════════════════════════════════════════════════════
--- 2. QUẢN LÝ SẢN PHẨM (7 bảng - Thiết kế linh hoạt)
--- ═══════════════════════════════════════════════════════════════
-
+-- ============================================================
+-- 2. PRODUCT & CATEGORY
+-- ============================================================
 CREATE TABLE categories (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
-    name VARCHAR(100) NOT NULL UNIQUE COMMENT 'Tên danh mục',
-    description TEXT COMMENT 'Mô tả danh mục',
-    image_public_id VARCHAR(255) COMMENT 'Cloudinary public_id',
-    parent_id BIGINT COMMENT 'Danh mục cha (nếu có)',
-    is_active BOOLEAN NOT NULL DEFAULT TRUE,
-    created_at DATETIME NOT NULL,
-    updated_at DATETIME NOT NULL,
+    name VARCHAR(150) NOT NULL UNIQUE,
+    parent_id BIGINT,
     FOREIGN KEY (parent_id) REFERENCES categories(id) ON DELETE SET NULL
-) COMMENT 'Danh mục sản phẩm';
+);
 
 CREATE TABLE products (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
-    name VARCHAR(255) NOT NULL COMMENT 'Tên sản phẩm',
-    slug VARCHAR(255) UNIQUE COMMENT 'URL-friendly: ao-thun-basic',
-    description TEXT COMMENT 'Mô tả chi tiết',
-    base_price DECIMAL(10, 2) NOT NULL COMMENT 'Giá cơ bản',
-    
-    -- QUAN TRỌNG: Xác định sản phẩm có variants hay không
-    has_variants BOOLEAN NOT NULL DEFAULT FALSE COMMENT 'TRUE = có variants, FALSE = mua ngay',
-    stock_quantity INT DEFAULT 0 COMMENT 'Tồn kho cho sản phẩm đơn giản (không variants)',
-    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    name VARCHAR(255) NOT NULL,
+    slug VARCHAR(255) UNIQUE,
+    description TEXT,
+    price DECIMAL(12,2) NOT NULL,
+    has_variants BOOLEAN DEFAULT FALSE,
     category_id BIGINT,
-    brand VARCHAR(100) COMMENT 'Thương hiệu',
-    weight DECIMAL(8, 2) COMMENT 'Trọng lượng (kg)',
-    meta_title VARCHAR(255) COMMENT 'SEO title',
-    meta_description TEXT COMMENT 'SEO description',
-    created_at DATETIME NOT NULL,
-    updated_at DATETIME NOT NULL,
-    
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE SET NULL
-) COMMENT 'Sản phẩm chính';
+);
 
 CREATE TABLE product_images (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
     product_id BIGINT NOT NULL,
-    public_id VARCHAR(255) NOT NULL COMMENT 'Cloudinary public_id',
-    is_primary BOOLEAN DEFAULT FALSE COMMENT 'Ảnh chính',
-    display_order INT DEFAULT 0 COMMENT 'Thứ tự hiển thị',
-    alt_text VARCHAR(255) COMMENT 'Mô tả ảnh (SEO)',
-    width INT COMMENT 'Chiều rộng (px)',
-    height INT COMMENT 'Chiều cao (px)',
-    format VARCHAR(10) COMMENT 'jpg, png, webp',
-    created_at DATETIME NOT NULL,
+    public_id VARCHAR(255) NOT NULL,
+    is_primary BOOLEAN DEFAULT FALSE,
     FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
-) COMMENT 'Ảnh sản phẩm (lưu trên Cloudinary)';
+);
 
--- ═══════════════════════════════════════════════════════════════
--- HỆ THỐNG ATTRIBUTE LINH HOẠT (EAV Pattern)
--- ═══════════════════════════════════════════════════════════════
-
--- Định nghĩa các thuộc tính có thể dùng (Size, Color, Storage, etc.)
-CREATE TABLE product_attributes (
-    id BIGINT PRIMARY KEY AUTO_INCREMENT,
-    code VARCHAR(50) NOT NULL UNIQUE COMMENT 'Mã định danh: SIZE, COLOR, STORAGE, SCREEN_SIZE, MATERIAL, etc.',
-    name VARCHAR(100) NOT NULL COMMENT 'Tên hiển thị: Kích thước, Màu sắc, Bộ nhớ, etc.',
-    description TEXT COMMENT 'Mô tả thuộc tính',
-    data_type ENUM('TEXT', 'NUMBER', 'DECIMAL', 'BOOLEAN', 'COLOR_HEX', 'URL') NOT NULL DEFAULT 'TEXT' COMMENT 'Kiểu dữ liệu',
-    unit VARCHAR(20) COMMENT 'Đơn vị: inch, GB, kg, etc.',
-    is_searchable BOOLEAN NOT NULL DEFAULT TRUE COMMENT 'Có thể dùng để tìm kiếm/lọc',
-    is_required BOOLEAN NOT NULL DEFAULT FALSE COMMENT 'Bắt buộc khi tạo variant',
-    display_order INT DEFAULT 0 COMMENT 'Thứ tự hiển thị',
-    is_active BOOLEAN NOT NULL DEFAULT TRUE,
-    created_at DATETIME NOT NULL,
-    updated_at DATETIME NOT NULL
-) COMMENT 'Định nghĩa các thuộc tính sản phẩm (Size, Color, Storage, etc.)';
-
--- Liên kết category với attributes (mỗi category có thể có các attributes riêng)
-CREATE TABLE category_attributes (
-    id BIGINT PRIMARY KEY AUTO_INCREMENT,
-    category_id BIGINT NOT NULL,
-    attribute_id BIGINT NOT NULL,
-    is_required BOOLEAN NOT NULL DEFAULT FALSE COMMENT 'Bắt buộc cho category này',
-    display_order INT DEFAULT 0,
-    created_at DATETIME NOT NULL,
-    UNIQUE KEY unique_category_attribute (category_id, attribute_id),
-    FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE CASCADE,
-    FOREIGN KEY (attribute_id) REFERENCES product_attributes(id) ON DELETE CASCADE
-) COMMENT 'Liên kết category với attributes';
-
--- Variant đơn giản hóa (không còn các cột cứng)
 CREATE TABLE product_variants (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
     product_id BIGINT NOT NULL,
-    
-    -- Giá và kho
-    price DECIMAL(10, 2) NOT NULL COMMENT 'Giá bán',
-    compare_at_price DECIMAL(10, 2) COMMENT 'Giá gốc (hiển thị sale)',
-    stock_quantity INT NOT NULL DEFAULT 0 COMMENT 'Tồn kho',
-    
-    sku VARCHAR(100) UNIQUE COMMENT 'Mã SKU: SHIRT-RED-M, PHONE-128GB-BLACK',
-    barcode VARCHAR(100) COMMENT 'Mã vạch',
-    
-    is_active BOOLEAN NOT NULL DEFAULT TRUE,
-    created_at DATETIME NOT NULL,
-    updated_at DATETIME NOT NULL,
-    
+    variant_name VARCHAR(150) NOT NULL,
+    price DECIMAL(12,2) NOT NULL,
+    stock INT DEFAULT 0,
+    sku VARCHAR(100) UNIQUE,
     FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
-) COMMENT 'Phân loại sản phẩm (variant)';
-
--- Giá trị của từng attribute cho từng variant
-CREATE TABLE variant_attribute_values (
-    id BIGINT PRIMARY KEY AUTO_INCREMENT,
-    variant_id BIGINT NOT NULL,
-    attribute_id BIGINT NOT NULL,
-    
-    -- Giá trị lưu dưới dạng text (linh hoạt cho mọi kiểu dữ liệu)
-    value_text VARCHAR(500) COMMENT 'Giá trị text: "M", "Đỏ", "128GB", "43 inch"',
-    value_number DECIMAL(15, 4) COMMENT 'Giá trị số: 128, 43.5, etc.',
-    value_boolean BOOLEAN COMMENT 'Giá trị boolean',
-    value_color_hex VARCHAR(20) COMMENT 'Mã màu HEX: #FF0000 (cho COLOR attribute)',
-    value_url VARCHAR(500) COMMENT 'URL (nếu cần)',
-    
-    display_value VARCHAR(500) COMMENT 'Giá trị hiển thị: "M - Medium", "Đỏ - Red"',
-    
-    created_at DATETIME NOT NULL,
-    updated_at DATETIME NOT NULL,
-    
-    UNIQUE KEY unique_variant_attribute (variant_id, attribute_id),
-    FOREIGN KEY (variant_id) REFERENCES product_variants(id) ON DELETE CASCADE,
-    FOREIGN KEY (attribute_id) REFERENCES product_attributes(id) ON DELETE CASCADE
-) COMMENT 'Giá trị attributes của variant (EAV pattern)';
+);
 
 CREATE TABLE variant_images (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
     variant_id BIGINT NOT NULL,
-    public_id VARCHAR(255) NOT NULL COMMENT 'Cloudinary public_id',
+    public_id VARCHAR(255) NOT NULL,
     is_primary BOOLEAN DEFAULT FALSE,
-    display_order INT DEFAULT 0,
-    width INT,
-    height INT,
-    format VARCHAR(10),
-    created_at DATETIME NOT NULL,
     FOREIGN KEY (variant_id) REFERENCES product_variants(id) ON DELETE CASCADE
-) COMMENT 'Ảnh riêng cho từng variant';
+);
 
--- ═══════════════════════════════════════════════════════════════
--- 3. GIỎ HÀNG VÀ WISHLIST (4 bảng)
--- ═══════════════════════════════════════════════════════════════
-
-CREATE TABLE shopping_carts (
+-- ============================================================
+-- 3. CART (gộp wishlist)
+-- ============================================================
+CREATE TABLE carts (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
-    user_id BIGINT NOT NULL UNIQUE,
-    created_at DATETIME NOT NULL,
-    updated_at DATETIME NOT NULL,
+    user_id BIGINT UNIQUE,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-) COMMENT 'Giỏ hàng';
+);
 
 CREATE TABLE cart_items (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
     cart_id BIGINT NOT NULL,
-    product_id BIGINT COMMENT 'Sản phẩm (nếu không có variants)',
-    variant_id BIGINT COMMENT 'Variant đã chọn (nếu có variants)',
-    quantity INT NOT NULL DEFAULT 1,
-    added_at DATETIME NOT NULL,
-    
-    FOREIGN KEY (cart_id) REFERENCES shopping_carts(id) ON DELETE CASCADE,
-    FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE,
-    FOREIGN KEY (variant_id) REFERENCES product_variants(id) ON DELETE CASCADE
-) COMMENT 'Sản phẩm trong giỏ hàng';
-
-CREATE TABLE wishlists (
-    id BIGINT PRIMARY KEY AUTO_INCREMENT,
-    user_id BIGINT NOT NULL UNIQUE,
-    created_at DATETIME NOT NULL,
-    updated_at DATETIME NOT NULL,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-) COMMENT 'Danh sách yêu thích';
-
-CREATE TABLE wishlist_items (
-    id BIGINT PRIMARY KEY AUTO_INCREMENT,
-    wishlist_id BIGINT NOT NULL,
     product_id BIGINT NOT NULL,
-    variant_id BIGINT COMMENT 'Variant cụ thể (nếu có)',
-    added_at DATETIME NOT NULL,
-    
-    FOREIGN KEY (wishlist_id) REFERENCES wishlists(id) ON DELETE CASCADE,
+    variant_id BIGINT,
+    quantity INT DEFAULT 1,
+    is_wishlist BOOLEAN DEFAULT FALSE,
+    FOREIGN KEY (cart_id) REFERENCES carts(id) ON DELETE CASCADE,
     FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE,
-    FOREIGN KEY (variant_id) REFERENCES product_variants(id) ON DELETE CASCADE,
-    UNIQUE KEY unique_wishlist_item (wishlist_id, product_id, variant_id)
-) COMMENT 'Sản phẩm yêu thích';
+    FOREIGN KEY (variant_id) REFERENCES product_variants(id) ON DELETE SET NULL
+);
 
--- ═══════════════════════════════════════════════════════════════
--- 4. VOUCHER (2 bảng)
--- ═══════════════════════════════════════════════════════════════
-
-CREATE TABLE vouchers (
-    id BIGINT PRIMARY KEY AUTO_INCREMENT,
-    code VARCHAR(50) NOT NULL UNIQUE COMMENT 'Mã: WELCOME10, FLASH50K',
-    description VARCHAR(255),
-    discount_type ENUM('PERCENTAGE', 'FIXED_AMOUNT') NOT NULL COMMENT 'Giảm % hoặc số tiền',
-    discount_value DECIMAL(10, 2) NOT NULL COMMENT 'Giá trị giảm',
-    max_discount_amount DECIMAL(10, 2) COMMENT 'Giảm tối đa (cho %)',
-    min_order_amount DECIMAL(10, 2) DEFAULT 0 COMMENT 'Đơn tối thiểu',
-    
-    usage_limit INT COMMENT 'Số lần dùng tối đa (NULL = vô hạn)',
-    usage_per_user INT DEFAULT 1 COMMENT 'Số lần/user',
-    used_count INT DEFAULT 0 COMMENT 'Đã dùng',
-    
-    start_date DATETIME NOT NULL,
-    end_date DATETIME NOT NULL,
-    is_active BOOLEAN NOT NULL DEFAULT TRUE,
-    created_at DATETIME NOT NULL,
-    updated_at DATETIME NOT NULL
-) COMMENT 'Mã giảm giá';
-
-CREATE TABLE user_vouchers (
-    id BIGINT PRIMARY KEY AUTO_INCREMENT,
-    user_id BIGINT NOT NULL,
-    voucher_id BIGINT NOT NULL,
-    is_used BOOLEAN DEFAULT FALSE,
-    used_at DATETIME,
-    order_id BIGINT COMMENT 'Đơn hàng đã dùng voucher',
-    received_at DATETIME NOT NULL,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-    FOREIGN KEY (voucher_id) REFERENCES vouchers(id) ON DELETE CASCADE
-) COMMENT 'Voucher của user';
-
--- ═══════════════════════════════════════════════════════════════
--- 5. ĐƠN HÀNG (3 bảng)
--- ═══════════════════════════════════════════════════════════════
-
+-- ============================================================
+-- 4. ORDERS
+-- ============================================================
 CREATE TABLE orders (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
-    order_number VARCHAR(50) UNIQUE NOT NULL COMMENT 'Mã: ORD-20250102-001',
+    order_number VARCHAR(50) UNIQUE,
     user_id BIGINT,
-    
-    order_date DATETIME NOT NULL,
-    status ENUM('PENDING', 'CONFIRMED', 'PROCESSING', 'SHIPPING', 'DELIVERED', 'CANCELLED', 'REFUNDED') NOT NULL DEFAULT 'PENDING',
-    
-    -- Giá tiền
-    subtotal DECIMAL(12, 2) NOT NULL COMMENT 'Tổng tiền hàng',
-    shipping_fee DECIMAL(10, 2) DEFAULT 0 COMMENT 'Phí ship',
-    discount_amount DECIMAL(12, 2) DEFAULT 0 COMMENT 'Giảm từ voucher',
-    total_amount DECIMAL(12, 2) NOT NULL COMMENT 'Tổng thanh toán',
-    
-    voucher_id BIGINT COMMENT 'Voucher đã dùng',
-    
-    -- Thông tin giao hàng (snapshot)
-    customer_name VARCHAR(100) NOT NULL,
-    customer_email VARCHAR(255),
-    customer_phone VARCHAR(20) NOT NULL,
-    shipping_address VARCHAR(500) NOT NULL,
-    shipping_city VARCHAR(100),
-    shipping_district VARCHAR(100),
-    shipping_ward VARCHAR(100),
-    
-    -- Thanh toán
-    payment_method ENUM('COD', 'BANK_TRANSFER', 'CREDIT_CARD', 'MOMO', 'VNPAY', 'ZALOPAY') NOT NULL,
-    payment_status ENUM('PENDING', 'PAID', 'FAILED', 'REFUNDED') DEFAULT 'PENDING',
-    paid_at DATETIME COMMENT 'Thời điểm thanh toán',
-    
-    -- Ghi chú
-    customer_note TEXT COMMENT 'Ghi chú của khách',
-    admin_note TEXT COMMENT 'Ghi chú nội bộ',
-    
-    -- Vận chuyển
-    shipping_carrier VARCHAR(100) COMMENT 'GHTK, GHN, Ninja Van',
-    tracking_number VARCHAR(100) COMMENT 'Mã vận đơn',
-    
-    cancelled_at DATETIME,
-    cancelled_reason TEXT,
-    
-    created_at DATETIME NOT NULL,
-    updated_at DATETIME NOT NULL,
-    updated_by VARCHAR(50) COMMENT 'Admin cập nhật',
-    
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL,
-    FOREIGN KEY (voucher_id) REFERENCES vouchers(id) ON DELETE SET NULL
-) COMMENT 'Đơn hàng';
+    status VARCHAR(30) DEFAULT 'PENDING',
+    total_amount DECIMAL(12,2) NOT NULL,
+    payment_method VARCHAR(20),
+    payment_status VARCHAR(20) DEFAULT 'PENDING',
+    shipping_address TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
+);
 
 CREATE TABLE order_items (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
     order_id BIGINT NOT NULL,
     product_id BIGINT,
     variant_id BIGINT,
-    
-    -- Snapshot thông tin
-    product_name VARCHAR(255) NOT NULL,
-    variant_details VARCHAR(500) COMMENT 'Size: M, Màu: Đỏ',
-    product_image_public_id VARCHAR(255) COMMENT 'Cloudinary public_id ảnh lúc mua',
-    
-    quantity INT NOT NULL,
-    price_per_unit DECIMAL(10, 2) NOT NULL COMMENT 'Giá lúc mua',
-    subtotal DECIMAL(12, 2) NOT NULL COMMENT 'Thành tiền',
-    
-    FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
-    FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE SET NULL,
-    FOREIGN KEY (variant_id) REFERENCES product_variants(id) ON DELETE SET NULL
-) COMMENT 'Chi tiết sản phẩm trong đơn hàng';
+    quantity INT,
+    price DECIMAL(12,2),
+    FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE
+);
 
-CREATE TABLE order_status_history (
+CREATE TABLE order_status (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
     order_id BIGINT NOT NULL,
-    old_status VARCHAR(50),
-    new_status VARCHAR(50) NOT NULL,
-    note TEXT COMMENT 'Ghi chú',
-    changed_by VARCHAR(100) COMMENT 'Người thực hiện',
-    changed_at DATETIME NOT NULL,
+    old_status VARCHAR(30),
+    new_status VARCHAR(30),
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE
-) COMMENT 'Lịch sử trạng thái đơn hàng';
+);
 
--- ═══════════════════════════════════════════════════════════════
--- 6. ĐÁNH GIÁ (4 bảng)
--- ═══════════════════════════════════════════════════════════════
+-- ============================================================
+-- 5. VOUCHER
+-- ============================================================
+CREATE TABLE vouchers (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    code VARCHAR(50) UNIQUE NOT NULL,
+    type VARCHAR(20),
+    value DECIMAL(12,2),
+    min_order DECIMAL(12,2),
+    start_date DATETIME,
+    end_date DATETIME,
+    is_active BOOLEAN DEFAULT TRUE
+);
 
+CREATE TABLE user_vouchers (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    user_id BIGINT,
+    voucher_id BIGINT,
+    is_used BOOLEAN DEFAULT FALSE,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (voucher_id) REFERENCES vouchers(id) ON DELETE CASCADE
+);
+
+-- ============================================================
+-- 6. PAYMENT (VNPay / MoMo API)
+-- ============================================================
+CREATE TABLE payment_transactions (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    order_id BIGINT NOT NULL,
+    method VARCHAR(20),
+    amount DECIMAL(12,2),
+    status VARCHAR(20) DEFAULT 'PENDING',
+    transaction_no VARCHAR(100),
+    gateway_response TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE
+);
+
+-- ============================================================
+-- 7. REVIEW + MULTIPLE MEDIA
+-- ============================================================
 CREATE TABLE reviews (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
-    product_id BIGINT NOT NULL,
-    variant_id BIGINT COMMENT 'Variant được đánh giá',
     user_id BIGINT NOT NULL,
-    order_id BIGINT COMMENT 'Đơn hàng liên quan',
-    
-    rating INT NOT NULL COMMENT 'Số sao 1-5',
-    title VARCHAR(255) COMMENT 'Tiêu đề',
-    comment TEXT COMMENT 'Nội dung',
-    
-    is_verified_purchase BOOLEAN DEFAULT FALSE COMMENT 'Đã mua hàng',
-    status ENUM('PENDING', 'APPROVED', 'REJECTED') DEFAULT 'PENDING',
-    helpful_count INT DEFAULT 0 COMMENT 'Số lượt hữu ích',
-    
-    created_at DATETIME NOT NULL,
-    updated_at DATETIME NOT NULL,
-    
-    FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE,
-    FOREIGN KEY (variant_id) REFERENCES product_variants(id) ON DELETE SET NULL,
+    product_id BIGINT NOT NULL,
+    rating INT CHECK (rating BETWEEN 1 AND 5),
+    comment TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-    FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE SET NULL,
-    CHECK (rating >= 1 AND rating <= 5)
-) COMMENT 'Đánh giá sản phẩm';
+    FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
+);
 
 CREATE TABLE review_media (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
     review_id BIGINT NOT NULL,
-    media_type ENUM('IMAGE', 'VIDEO') NOT NULL,
-    public_id VARCHAR(255) NOT NULL COMMENT 'Cloudinary public_id',
-    resource_type VARCHAR(20) DEFAULT 'image' COMMENT 'image hoặc video',
-    width INT,
-    height INT,
-    format VARCHAR(10) COMMENT 'jpg, png, mp4',
-    duration DECIMAL(10, 2) COMMENT 'Thời lượng video (giây)',
-    file_size BIGINT COMMENT 'Kích thước (bytes)',
-    display_order INT DEFAULT 0,
-    created_at DATETIME NOT NULL,
+    url VARCHAR(255) NOT NULL,
+    type ENUM('IMAGE','VIDEO') DEFAULT 'IMAGE',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (review_id) REFERENCES reviews(id) ON DELETE CASCADE
-) COMMENT 'Ảnh/video đánh giá (Cloudinary)';
+);
 
-CREATE TABLE review_replies (
-    id BIGINT PRIMARY KEY AUTO_INCREMENT,
-    review_id BIGINT NOT NULL,
-    user_id BIGINT NOT NULL,
-    reply_text TEXT NOT NULL,
-    is_admin_reply BOOLEAN DEFAULT FALSE COMMENT 'Phản hồi từ shop',
-    created_at DATETIME NOT NULL,
-    updated_at DATETIME NOT NULL,
-    FOREIGN KEY (review_id) REFERENCES reviews(id) ON DELETE CASCADE,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-) COMMENT 'Trả lời đánh giá';
-
-CREATE TABLE review_helpful (
-    user_id BIGINT,
-    review_id BIGINT,
-    created_at DATETIME NOT NULL,
-    PRIMARY KEY (user_id, review_id),
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-    FOREIGN KEY (review_id) REFERENCES reviews(id) ON DELETE CASCADE
-) COMMENT 'User đánh dấu review hữu ích';
-
--- ═══════════════════════════════════════════════════════════════
--- 7. THANH TOÁN VNPAY/MOMO (2 bảng)
--- ═══════════════════════════════════════════════════════════════
-
-CREATE TABLE payment_transactions (
-    id BIGINT PRIMARY KEY AUTO_INCREMENT,
-    order_id BIGINT NOT NULL,
-    
-    -- Thông tin giao dịch
-    transaction_no VARCHAR(100) UNIQUE COMMENT 'Mã nội bộ: TXN-20250102-001',
-    payment_method ENUM('COD', 'BANK_TRANSFER', 'CREDIT_CARD', 'MOMO', 'VNPAY', 'ZALOPAY') NOT NULL,
-    amount DECIMAL(12, 2) NOT NULL COMMENT 'Số tiền',
-    currency VARCHAR(10) DEFAULT 'VND',
-    
-    -- Thông tin VNPay
-    vnp_txn_ref VARCHAR(100) COMMENT 'Mã gửi cho VNPay',
-    vnp_transaction_no VARCHAR(100) COMMENT 'Mã GD từ VNPay',
-    vnp_bank_code VARCHAR(50) COMMENT 'Ngân hàng: NCB, VNPAYQR...',
-    vnp_card_type VARCHAR(50) COMMENT 'Loại thẻ: ATM, QRCODE',
-    vnp_order_info TEXT COMMENT 'Nội dung thanh toán',
-    vnp_pay_date DATETIME COMMENT 'Thời điểm thanh toán VNPay',
-    vnp_response_code VARCHAR(10) COMMENT 'Mã phản hồi: 00=success',
-    vnp_secure_hash TEXT COMMENT 'Chữ ký bảo mật',
-    
-    -- Trạng thái
-    status ENUM('PENDING', 'PROCESSING', 'SUCCESS', 'FAILED', 'CANCELLED', 'REFUNDED') NOT NULL DEFAULT 'PENDING',
-    
-    -- Thông tin bổ sung
-    ip_address VARCHAR(50),
-    user_agent TEXT,
-    callback_url TEXT,
-    return_url TEXT,
-    
-    -- Hoàn tiền
-    refund_amount DECIMAL(12, 2) DEFAULT 0,
-    refund_date DATETIME,
-    refund_reason TEXT,
-    
-    -- Log
-    request_data JSON COMMENT 'Data gửi đi',
-    response_data JSON COMMENT 'Data nhận về',
-    error_message TEXT,
-    
-    created_at DATETIME NOT NULL,
-    updated_at DATETIME NOT NULL,
-    
-    FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE RESTRICT
-) COMMENT 'Lịch sử giao dịch thanh toán';
-
-CREATE TABLE payment_webhooks (
-    id BIGINT PRIMARY KEY AUTO_INCREMENT,
-    payment_transaction_id BIGINT,
-    
-    webhook_type VARCHAR(50) NOT NULL COMMENT 'payment, refund',
-    payment_gateway VARCHAR(50) NOT NULL COMMENT 'VNPAY, MOMO',
-    
-    raw_data JSON NOT NULL COMMENT 'Toàn bộ data từ webhook',
-    signature VARCHAR(500) COMMENT 'Chữ ký',
-    is_verified BOOLEAN DEFAULT FALSE COMMENT 'Đã xác thực',
-    
-    is_processed BOOLEAN DEFAULT FALSE COMMENT 'Đã xử lý',
-    processed_at DATETIME,
-    error_message TEXT,
-    
-    ip_address VARCHAR(50),
-    received_at DATETIME NOT NULL,
-    
-    FOREIGN KEY (payment_transaction_id) REFERENCES payment_transactions(id) ON DELETE SET NULL
-) COMMENT 'Log webhook từ VNPay/MoMo';
-
--- ═══════════════════════════════════════════════════════════════
--- 8. THÔNG BÁO (1 bảng)
--- ═══════════════════════════════════════════════════════════════
-
-CREATE TABLE notifications (
-    id BIGINT PRIMARY KEY AUTO_INCREMENT,
-    user_id BIGINT NOT NULL,
-    title VARCHAR(255) NOT NULL,
-    message TEXT NOT NULL,
-    type ENUM('ORDER', 'PROMOTION', 'REVIEW', 'SYSTEM', 'PAYMENT') NOT NULL,
-    link VARCHAR(500) COMMENT 'Link đến chi tiết',
-    is_read BOOLEAN DEFAULT FALSE,
-    created_at DATETIME NOT NULL,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-) COMMENT 'Thông báo cho user';
-
--- ═══════════════════════════════════════════════════════════════
--- 9. INDEX TỐI ƯU
--- ═══════════════════════════════════════════════════════════════
-
--- Users
-CREATE INDEX idx_users_email ON users(email);
-CREATE INDEX idx_users_username ON users(username);
-
--- Products
-CREATE INDEX idx_products_category ON products(category_id);
-CREATE INDEX idx_products_slug ON products(slug);
-CREATE INDEX idx_products_active ON products(is_active);
-CREATE INDEX idx_products_has_variants ON products(has_variants);
-CREATE INDEX idx_product_images_product ON product_images(product_id);
-CREATE INDEX idx_product_images_primary ON product_images(is_primary);
-
--- Variants
-CREATE INDEX idx_variants_product ON product_variants(product_id);
-CREATE INDEX idx_variants_sku ON product_variants(sku);
-CREATE INDEX idx_variant_images_variant ON variant_images(variant_id);
-
--- Attributes (EAV Pattern)
-CREATE INDEX idx_product_attributes_code ON product_attributes(code);
-CREATE INDEX idx_product_attributes_active ON product_attributes(is_active);
-CREATE INDEX idx_category_attributes_category ON category_attributes(category_id);
-CREATE INDEX idx_category_attributes_attribute ON category_attributes(attribute_id);
-CREATE INDEX idx_variant_attribute_values_variant ON variant_attribute_values(variant_id);
-CREATE INDEX idx_variant_attribute_values_attribute ON variant_attribute_values(attribute_id);
-CREATE INDEX idx_variant_attribute_values_text ON variant_attribute_values(value_text);
-CREATE INDEX idx_variant_attribute_values_number ON variant_attribute_values(value_number);
-
--- Cart & Wishlist
-CREATE INDEX idx_cart_items_cart ON cart_items(cart_id);
-CREATE INDEX idx_cart_items_product ON cart_items(product_id);
-CREATE INDEX idx_cart_items_variant ON cart_items(variant_id);
-CREATE INDEX idx_wishlist_items_wishlist ON wishlist_items(wishlist_id);
-CREATE INDEX idx_wishlist_items_product ON wishlist_items(product_id);
-
--- Orders
-CREATE INDEX idx_orders_user ON orders(user_id);
-CREATE INDEX idx_orders_status ON orders(status);
-CREATE INDEX idx_orders_payment_status ON orders(payment_status);
-CREATE INDEX idx_orders_date ON orders(order_date);
-CREATE INDEX idx_orders_number ON orders(order_number);
-CREATE INDEX idx_order_items_order ON order_items(order_id);
-CREATE INDEX idx_order_status_history_order ON order_status_history(order_id);
-
--- Reviews
-CREATE INDEX idx_reviews_product ON reviews(product_id);
-CREATE INDEX idx_reviews_user ON reviews(user_id);
-CREATE INDEX idx_reviews_status ON reviews(status);
-CREATE INDEX idx_review_media_review ON review_media(review_id);
-CREATE INDEX idx_review_replies_review ON review_replies(review_id);
-
--- Vouchers
-CREATE INDEX idx_vouchers_code ON vouchers(code);
-CREATE INDEX idx_vouchers_dates ON vouchers(start_date, end_date);
-CREATE INDEX idx_vouchers_active ON vouchers(is_active);
-CREATE INDEX idx_user_vouchers_user ON user_vouchers(user_id);
-
--- Payment
-CREATE INDEX idx_payment_transactions_order ON payment_transactions(order_id);
-CREATE INDEX idx_payment_transactions_status ON payment_transactions(status);
-CREATE INDEX idx_payment_transactions_method ON payment_transactions(payment_method);
-CREATE INDEX idx_payment_transactions_vnp_txn ON payment_transactions(vnp_txn_ref);
-CREATE INDEX idx_payment_webhooks_transaction ON payment_webhooks(payment_transaction_id);
-CREATE INDEX idx_payment_webhooks_processed ON payment_webhooks(is_processed);
-
--- Notifications
-CREATE INDEX idx_notifications_user ON notifications(user_id);
-CREATE INDEX idx_notifications_read ON notifications(is_read);
-CREATE INDEX idx_notifications_type ON notifications(type);
-
--- ═══════════════════════════════════════════════════════════════
--- 10. DỮ LIỆU MẪU
--- ═══════════════════════════════════════════════════════════════
+-- ============================================================
+-- DỮ LIỆU MẪU
+-- ============================================================
 
 -- Roles
-INSERT INTO roles (name) VALUES 
-('ROLE_USER'), 
-('ROLE_ADMIN');
+INSERT INTO roles(name) VALUES ('ROLE_USER'), ('ROLE_ADMIN');
+
+-- Users
+INSERT INTO users(username, password, email, full_name)
+VALUES ('admin', '123456', 'admin@shop.com', 'Administrator'),
+       ('nhi', '123456', 'nhi@example.com', 'Nhi Tran');
+
+INSERT INTO users_roles VALUES (1,2), (2,1);
 
 -- Categories
-INSERT INTO categories (name, description, image_public_id, is_active, created_at, updated_at) VALUES
-('Quần áo', 'Thời trang nam nữ', 'categories/fashion', TRUE, NOW(), NOW()),
-('Điện tử', 'Thiết bị điện tử', 'categories/electronics', TRUE, NOW(), NOW()),
-('Âm thanh', 'Loa, tai nghe', 'categories/audio', TRUE, NOW(), NOW()),
-('Phụ kiện', 'Phụ kiện thời trang', 'categories/accessories', TRUE, NOW(), NOW());
+INSERT INTO categories(name) VALUES
+('Thời trang'),
+('Điện tử'),
+('Phụ kiện');
 
--- Vouchers
-INSERT INTO vouchers (code, description, discount_type, discount_value, max_discount_amount, min_order_amount, usage_limit, start_date, end_date, is_active, created_at, updated_at) VALUES
-('WELCOME10', 'Giảm 10% đơn đầu tiên', 'PERCENTAGE', 10.00, 100000.00, 0, NULL, '2024-01-01', '2025-12-31', TRUE, NOW(), NOW()),
-('FLASH50K', 'Giảm 50k cho đơn từ 500k', 'FIXED_AMOUNT', 50000.00, NULL, 500000.00, 1000, '2024-01-01', '2025-12-31', TRUE, NOW(), NOW()),
-('FREESHIP', 'Miễn phí vận chuyển', 'FIXED_AMOUNT', 30000.00, NULL, 200000.00, NULL, '2024-01-01', '2025-12-31', TRUE, NOW(), NOW());
+-- Products
+INSERT INTO products(name, slug, description, price, has_variants, category_id)
+VALUES 
+('Áo Thun Cotton', 'ao-thun-cotton', 'Áo thun cotton thoáng mát', 150000, TRUE, 1),
+('Loa Bluetooth JBL', 'loa-jbl', 'JBL Flip 5 chống nước IPX7', 2300000, FALSE, 2),
+('Chuột Gaming G102', 'chuot-g102', 'Chuột gaming Logitech G102', 350000, FALSE, 3);
 
--- ═══════════════════════════════════════════════════════════════
--- DỮ LIỆU MẪU - ATTRIBUTES
--- ═══════════════════════════════════════════════════════════════
+-- Product images
+INSERT INTO product_images(product_id, public_id, is_primary)
+VALUES
+(1, 'product/shirt/main', TRUE),
+(2, 'product/jbl/main', TRUE),
+(3, 'product/g102/main', TRUE);
 
--- Định nghĩa các attributes phổ biến
-INSERT INTO product_attributes (code, name, description, data_type, unit, is_searchable, is_required, display_order, is_active, created_at, updated_at) VALUES
-('SIZE', 'Kích thước', 'Kích thước sản phẩm (S, M, L, XL, etc.)', 'TEXT', NULL, TRUE, FALSE, 1, TRUE, NOW(), NOW()),
-('COLOR', 'Màu sắc', 'Màu sắc sản phẩm', 'COLOR_HEX', NULL, TRUE, FALSE, 2, TRUE, NOW(), NOW()),
-('STORAGE', 'Bộ nhớ', 'Dung lượng lưu trữ (64GB, 128GB, etc.)', 'TEXT', 'GB', TRUE, FALSE, 3, TRUE, NOW(), NOW()),
-('SCREEN_SIZE', 'Kích thước màn hình', 'Kích thước màn hình (inch)', 'TEXT', 'inch', TRUE, FALSE, 4, TRUE, NOW(), NOW()),
-('MATERIAL', 'Chất liệu', 'Chất liệu sản phẩm', 'TEXT', NULL, TRUE, FALSE, 5, TRUE, NOW(), NOW()),
-('RAM', 'RAM', 'Dung lượng RAM', 'TEXT', 'GB', TRUE, FALSE, 6, TRUE, NOW(), NOW()),
-('PROCESSOR', 'Bộ xử lý', 'Loại bộ xử lý', 'TEXT', NULL, TRUE, FALSE, 7, TRUE, NOW(), NOW()),
-('BATTERY', 'Pin', 'Dung lượng pin', 'TEXT', 'mAh', TRUE, FALSE, 8, TRUE, NOW(), NOW()),
-('WEIGHT', 'Trọng lượng', 'Trọng lượng sản phẩm', 'DECIMAL', 'kg', TRUE, FALSE, 9, TRUE, NOW(), NOW()),
-('DIMENSIONS', 'Kích thước', 'Kích thước (D x R x C)', 'TEXT', 'cm', FALSE, FALSE, 10, TRUE, NOW(), NOW());
+-- Variants
+INSERT INTO product_variants(product_id, variant_name, price, stock, sku)
+VALUES
+(1, 'Size M', 150000, 100, 'ATC-M'),
+(1, 'Size L', 150000, 80, 'ATC-L');
 
--- Liên kết attributes với categories
--- Quần áo: Size, Color, Material
-INSERT INTO category_attributes (category_id, attribute_id, is_required, display_order, created_at) VALUES
-(1, 1, TRUE, 1, NOW()),  -- Quần áo -> SIZE (required)
-(1, 2, TRUE, 2, NOW()),  -- Quần áo -> COLOR (required)
-(1, 5, FALSE, 3, NOW()); -- Quần áo -> MATERIAL (optional)
+-- Cart
+INSERT INTO carts(user_id) VALUES (2);
 
--- Điện tử: Screen Size, Storage, RAM, Processor, Battery
-INSERT INTO category_attributes (category_id, attribute_id, is_required, display_order, created_at) VALUES
-(2, 4, FALSE, 1, NOW()), -- Điện tử -> SCREEN_SIZE
-(2, 3, FALSE, 2, NOW()), -- Điện tử -> STORAGE
-(2, 6, FALSE, 3, NOW()), -- Điện tử -> RAM
-(2, 7, FALSE, 4, NOW()), -- Điện tử -> PROCESSOR
-(2, 8, FALSE, 5, NOW()); -- Điện tử -> BATTERY
+INSERT INTO cart_items(cart_id, product_id, quantity)
+VALUES (1, 3, 1);
 
--- Âm thanh: Color, Weight, Dimensions
-INSERT INTO category_attributes (category_id, attribute_id, is_required, display_order, created_at) VALUES
-(3, 2, FALSE, 1, NOW()), -- Âm thanh -> COLOR
-(3, 9, FALSE, 2, NOW()), -- Âm thanh -> WEIGHT
-(3, 10, FALSE, 3, NOW()); -- Âm thanh -> DIMENSIONS
+-- Voucher
+INSERT INTO vouchers(code, type, value, min_order, start_date, end_date)
+VALUES ('WELCOME10', 'PERCENT', 10, 0, NOW(), '2026-12-31');
 
--- ═══════════════════════════════════════════════════════════════
--- VÍ DỤ SẢN PHẨM (Sử dụng EAV Pattern)
--- ═══════════════════════════════════════════════════════════════
+INSERT INTO user_vouchers(user_id, voucher_id) VALUES (2,1);
 
--- 1. ÁO THUN (có Size + Màu)
-INSERT INTO products (name, slug, description, base_price, has_variants, category_id, brand, is_active, created_at, updated_at)
-VALUES ('Áo Thun Basic Cotton', 'ao-thun-basic-cotton', 'Áo thun 100% cotton co giãn thoáng mát', 199000, TRUE, 1, 'Local Brand', TRUE, NOW(), NOW());
+-- Order
+INSERT INTO orders(order_number, user_id, total_amount, payment_method, shipping_address)
+VALUES ('ORD-001', 2, 350000, 'COD', '123 Lê Lợi, TP HCM');
 
-INSERT INTO product_images (product_id, public_id, is_primary, display_order, alt_text, created_at) VALUES
-(1, 'products/shirt/main', TRUE, 1, 'Áo thun basic', NOW()),
-(1, 'products/shirt/detail1', FALSE, 2, 'Chi tiết áo', NOW());
+INSERT INTO order_items(order_id, product_id, quantity, price)
+VALUES (1, 3, 1, 350000);
 
--- Variant 1: M - Đỏ
-INSERT INTO product_variants (product_id, price, stock_quantity, sku, is_active, created_at, updated_at) VALUES
-(1, 199000, 50, 'SHIRT-RED-M', TRUE, NOW(), NOW());
+INSERT INTO payment_transactions(order_id, method, amount, status)
+VALUES (1, 'COD', 350000, 'SUCCESS');
 
-INSERT INTO variant_attribute_values (variant_id, attribute_id, value_text, value_color_hex, display_value, created_at, updated_at) VALUES
-(1, 1, 'M', NULL, 'M - Medium', NOW(), NOW()),  -- SIZE
-(1, 2, 'Đỏ', '#FF0000', 'Đỏ - Red', NOW(), NOW()); -- COLOR
+-- Review
+INSERT INTO reviews(user_id, product_id, rating, comment)
+VALUES (2, 3, 5, 'Chuột dùng rất tốt và mượt!');
 
--- Variant 2: M - Xanh
-INSERT INTO product_variants (product_id, price, stock_quantity, sku, is_active, created_at, updated_at) VALUES
-(1, 199000, 30, 'SHIRT-BLUE-M', TRUE, NOW(), NOW());
-
-INSERT INTO variant_attribute_values (variant_id, attribute_id, value_text, value_color_hex, display_value, created_at, updated_at) VALUES
-(2, 1, 'M', NULL, 'M - Medium', NOW(), NOW()),  -- SIZE
-(2, 2, 'Xanh', '#0000FF', 'Xanh - Blue', NOW(), NOW()); -- COLOR
-
--- Variant 3: L - Đỏ
-INSERT INTO product_variants (product_id, price, stock_quantity, sku, is_active, created_at, updated_at) VALUES
-(1, 199000, 40, 'SHIRT-RED-L', TRUE, NOW(), NOW());
-
-INSERT INTO variant_attribute_values (variant_id, attribute_id, value_text, value_color_hex, display_value, created_at, updated_at) VALUES
-(3, 1, 'L', NULL, 'L - Large', NOW(), NOW()),  -- SIZE
-(3, 2, 'Đỏ', '#FF0000', 'Đỏ - Red', NOW(), NOW()); -- COLOR
-
-INSERT INTO variant_images (variant_id, public_id, is_primary, created_at) VALUES
-(1, 'variants/shirt-red-m', TRUE, NOW()),
-(2, 'variants/shirt-blue-m', TRUE, NOW());
-
--- 2. LOA BLUETOOTH (chỉ Màu)
-INSERT INTO products (name, slug, description, base_price, has_variants, category_id, brand, is_active, created_at, updated_at)
-VALUES ('Loa JBL Flip 5', 'loa-jbl-flip-5', 'Loa Bluetooth chống nước IPX7', 2490000, TRUE, 3, 'JBL', TRUE, NOW(), NOW());
-
-INSERT INTO product_images (product_id, public_id, is_primary, display_order, created_at) VALUES
-(2, 'products/speaker/main', TRUE, 1, NOW());
-
--- Variant 1: Đen
-INSERT INTO product_variants (product_id, price, stock_quantity, sku, is_active, created_at, updated_at) VALUES
-(2, 2490000, 100, 'SPEAKER-BLACK', TRUE, NOW(), NOW());
-
-INSERT INTO variant_attribute_values (variant_id, attribute_id, value_text, value_color_hex, display_value, created_at, updated_at) VALUES
-(4, 2, 'Đen', '#000000', 'Đen - Black', NOW(), NOW()); -- COLOR
-
--- Variant 2: Xanh
-INSERT INTO product_variants (product_id, price, stock_quantity, sku, is_active, created_at, updated_at) VALUES
-(2, 2490000, 80, 'SPEAKER-BLUE', TRUE, NOW(), NOW());
-
-INSERT INTO variant_attribute_values (variant_id, attribute_id, value_text, value_color_hex, display_value, created_at, updated_at) VALUES
-(5, 2, 'Xanh', '#0000FF', 'Xanh - Blue', NOW(), NOW()); -- COLOR
-
--- 3. TIVI (chỉ Screen Size)
-INSERT INTO products (name, slug, description, base_price, has_variants, category_id, brand, is_active, created_at, updated_at)
-VALUES ('Smart TV Samsung 4K', 'smart-tv-samsung-4k', 'Tivi Samsung Crystal UHD 4K', 12990000, TRUE, 2, 'Samsung', TRUE, NOW(), NOW());
-
--- Variant 1: 43 inch
-INSERT INTO product_variants (product_id, price, stock_quantity, sku, is_active, created_at, updated_at) VALUES
-(3, 9990000, 30, 'TV-43INCH', TRUE, NOW(), NOW());
-
-INSERT INTO variant_attribute_values (variant_id, attribute_id, value_text, display_value, created_at, updated_at) VALUES
-(6, 4, '43', '43 inch', NOW(), NOW()); -- SCREEN_SIZE
-
--- Variant 2: 55 inch
-INSERT INTO product_variants (product_id, price, stock_quantity, sku, is_active, created_at, updated_at) VALUES
-(3, 12990000, 25, 'TV-55INCH', TRUE, NOW(), NOW());
-
-INSERT INTO variant_attribute_values (variant_id, attribute_id, value_text, display_value, created_at, updated_at) VALUES
-(7, 4, '55', '55 inch', NOW(), NOW()); -- SCREEN_SIZE
-
--- Variant 3: 65 inch
-INSERT INTO product_variants (product_id, price, stock_quantity, sku, is_active, created_at, updated_at) VALUES
-(3, 18990000, 15, 'TV-65INCH', TRUE, NOW(), NOW());
-
-INSERT INTO variant_attribute_values (variant_id, attribute_id, value_text, display_value, created_at, updated_at) VALUES
-(8, 4, '65', '65 inch', NOW(), NOW()); -- SCREEN_SIZE
-
--- 4. ĐIỆN THOẠI (Storage + RAM + Color) - Ví dụ mới
-INSERT INTO products (name, slug, description, base_price, has_variants, category_id, brand, is_active, created_at, updated_at)
-VALUES ('iPhone 15 Pro', 'iphone-15-pro', 'iPhone 15 Pro với chip A17 Pro', 24990000, TRUE, 2, 'Apple', TRUE, NOW(), NOW());
-
--- Variant 1: 128GB - 8GB RAM - Đen
-INSERT INTO product_variants (product_id, price, stock_quantity, sku, is_active, created_at, updated_at) VALUES
-(4, 24990000, 20, 'IPHONE-15PRO-128GB-BLACK', TRUE, NOW(), NOW());
-
-INSERT INTO variant_attribute_values (variant_id, attribute_id, value_text, value_color_hex, display_value, created_at, updated_at) VALUES
-(9, 3, '128', NULL, '128GB', NOW(), NOW()),  -- STORAGE
-(9, 6, '8', NULL, '8GB', NOW(), NOW()),      -- RAM
-(9, 2, 'Đen', '#000000', 'Đen - Black', NOW(), NOW()); -- COLOR
-
--- Variant 2: 256GB - 8GB RAM - Xanh
-INSERT INTO product_variants (product_id, price, stock_quantity, sku, is_active, created_at, updated_at) VALUES
-(4, 27990000, 15, 'IPHONE-15PRO-256GB-BLUE', TRUE, NOW(), NOW());
-
-INSERT INTO variant_attribute_values (variant_id, attribute_id, value_text, value_color_hex, display_value, created_at, updated_at) VALUES
-(10, 3, '256', NULL, '256GB', NOW(), NOW()),  -- STORAGE
-(10, 6, '8', NULL, '8GB', NOW(), NOW()),      -- RAM
-(10, 2, 'Xanh', '#007AFF', 'Xanh - Blue', NOW(), NOW()); -- COLOR
-
--- 5. SẢN PHẨM ĐƠN GIẢN (không variants)
-INSERT INTO products (name, slug, description, base_price, has_variants, stock_quantity, category_id, brand, is_active, created_at, updated_at)
-VALUES ('Chuột Gaming Logitech G102', 'chuot-gaming-logitech-g102', 'Chuột gaming RGB 8000 DPI', 399000, FALSE, 100, 4, 'Logitech', TRUE, NOW(), NOW());
-
-INSERT INTO product_images (product_id, public_id, is_primary, created_at) VALUES
-(5, 'products/mouse-g102', TRUE, NOW());
+-- Review Media
+INSERT INTO review_media(review_id, url, type)
+VALUES 
+(1, 'review/g102_1.png', 'IMAGE'),
+(1, 'review/g102_2.png', 'IMAGE'),
+(1, 'review/g102_video.mp4', 'VIDEO');

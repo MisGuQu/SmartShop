@@ -24,32 +24,13 @@ public class ReviewMedia {
     @JoinColumn(name = "review_id", nullable = false)
     private Review review;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "media_type", nullable = false)
-    private MediaType mediaType;
-
-    @Column(name = "public_id", nullable = false)
-    private String publicId;
-
-    @Column(name = "resource_type")
-    private String resourceType;
-
-    private Integer width;
-
-    private Integer height;
-
-    @Column(name = "format")
-    private String format;
-
-    @Column(name = "duration")
-    private Double duration;
-
-    @Column(name = "file_size")
-    private Long fileSize;
+    @Column(nullable = false)
+    private String url;
 
     @Builder.Default
-    @Column(name = "display_order")
-    private int displayOrder = 0;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "type")
+    private MediaType type = MediaType.IMAGE;
 
     @CreationTimestamp
     @Column(name = "created_at")

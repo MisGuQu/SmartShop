@@ -18,28 +18,37 @@
 <div class="container" th:if="${cartMessage}">
     <div class="alert alert--success" th:text="${cartMessage}"></div>
 </div>
+<div class="container" th:if="${cartError}">
+    <div class="alert alert--danger" th:text="${cartError}"></div>
+</div>
 
 <main class="container cart-layout" data-cart-page th:if="${!cart.empty}">
     <section class="cart-panel">
         <h2>Sản phẩm</h2>
         <div class="cart-table">
-            <article class="cart-item" th:each="item : ${cart.items}" th:data-item-id="${item.id}">
+            <article class="cart-item" th:each="item : ${cart.items}">
                 <div class="cart-item__thumb"
                      th:style="${item.imageUrl} != null ? 'background-image:url(' + item.imageUrl + ')' : ''"></div>
                 <div class="cart-item__info">
                     <h3 class="cart-item__title" th:text="${item.productName}"></h3>
                     <p class="cart-item__variant" th:if="${item.variantLabel}" th:text="${item.variantLabel}"></p>
                     <div class="cart-item__controls">
-                        <div class="cart-quantity">
+                        <form class="cart-quantity" th:action="@{/cart/update}" method="post">
+                            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                            <input type="hidden" name="itemId" th:value="${item.id}">
                             <label>Số lượng
-                                <input type="number" min="1" th:value="${item.quantity}"
-                                       th:data-cart-quantity="${item.id}">
+                                <input type="number" min="1" name="quantity" th:value="${item.quantity}">
                             </label>
-                        </div>
-                        <button class="button--danger" type="button" data-remove-item th:data-item-id="${item.id}">Xóa</button>
+                            <button class="button" type="submit">Cập nhật</button>
+                        </form>
+                        <form th:action="@{/cart/remove}" method="post">
+                            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                            <input type="hidden" name="itemId" th:value="${item.id}">
+                            <button class="button button--danger" type="submit">Xóa</button>
+                        </form>
                     </div>
                 </div>
-                <div class="cart-item__price" data-item-subtotal th:data-item-id="${item.id}"
+                <div class="cart-item__price"
                      th:text="${#numbers.formatDecimal(item.subtotal, 0, 'COMMA', 0, 'POINT')} + '₫'"></div>
             </article>
         </div>
@@ -66,9 +75,6 @@
     <p>Giỏ hàng của bạn đang trống. Hãy khám phá thêm sản phẩm tại <a href="/products">SmartShop</a>.</p>
 </section>
 
-<div class="cart-toast" id="cartToast" hidden></div>
-
-<script src="/js/cart.js" defer></script>
 </body>
 </html>
 

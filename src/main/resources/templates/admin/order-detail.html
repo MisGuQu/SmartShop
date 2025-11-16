@@ -6,6 +6,49 @@
     <title>SmartShop | Chi tiết đơn hàng</title>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
     <link rel="stylesheet" th:href="@{/css/admin.css}">
+    <style>
+        .order-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.25rem;
+        }
+        .order-info__item {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+        .order-info__label {
+            font-weight: 600;
+            color: #64748b;
+            font-size: 0.875rem;
+        }
+        .order-info__value {
+            font-weight: 600;
+            color: #0f172a;
+        }
+        .order-form__group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        .order-form__select {
+            width: 100%;
+            padding: 0.55rem 0.75rem;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            background: #fff;
+        }
+        .order-table__price {
+            font-weight: 600;
+            color: #10b981;
+        }
+        .order-summary__row {
+            display: flex;
+            justify-content: space-between;
+            color: #64748b;
+        }
+    </style>
 </head>
 <body>
 <header class="admin-header">
@@ -37,7 +80,7 @@
         <div th:if="${errorMessage}" class="alert alert--error" th:text="${errorMessage}"></div>
     </section>
 
-    <div th:if="${order}" class="admin-grid" style="grid-template-columns: 1fr 1fr;">
+    <div th:if="${order}" class="order-details">
         <!-- Thông tin đơn hàng -->
         <section class="admin-card">
             <div class="admin-card__header">
@@ -46,41 +89,36 @@
                 </div>
             </div>
             <div style="display: flex; flex-direction: column; gap: 1rem;">
-                <div>
-                    <div style="font-weight: 600; color: #64748b; font-size: 0.875rem; margin-bottom: 0.25rem;">Mã đơn hàng</div>
-                    <div style="font-weight: 600; color: #0f172a;" th:text="${order.orderNumber}"></div>
+                <div class="order-info__item">
+                    <span class="order-info__label">Mã đơn hàng</span>
+                    <span class="order-info__value" th:text="${order.orderNumber}"></span>
                 </div>
-                <div>
-                    <div style="font-weight: 600; color: #64748b; font-size: 0.875rem; margin-bottom: 0.25rem;">Ngày đặt hàng</div>
-                    <div th:text="${order.orderDate != null ? #temporals.format(order.orderDate, 'dd/MM/yyyy HH:mm') : '-'}"></div>
+                <div class="order-info__item">
+                    <span class="order-info__label">Ngày đặt hàng</span>
+                    <span th:text="${order.createdAt != null ? #temporals.format(order.createdAt, 'dd/MM/yyyy HH:mm') : '-'}"></span>
                 </div>
-                <div>
-                    <div style="font-weight: 600; color: #64748b; font-size: 0.875rem; margin-bottom: 0.25rem;">Trạng thái</div>
-                    <div>
-                        <span class="status" 
-                              th:classappend="${order.status.name() == 'PENDING'} ? 'status--warning' : 
-                                             (${order.status.name() == 'PROCESSING'} ? 'status--info' :
-                                             (${order.status.name() == 'SHIPPING'} ? 'status--info' :
-                                             (${order.status.name() == 'DELIVERED'} ? 'status--active' :
-                                             (${order.status.name() == 'CANCELLED'} ? 'status--inactive' : 'status--secondary'))))"
-                              th:text="${order.status.name()}"></span>
-                    </div>
+                <div class="order-info__item">
+                    <span class="order-info__label">Trạng thái</span>
+                    <span class="status"
+                          th:classappend="${order.status.name() == 'PENDING'} ? 'status--warning' :
+                                          (${order.status.name() == 'PROCESSING' || order.status.name() == 'SHIPPING'} ? 'status--info' :
+                                          (${order.status.name() == 'DELIVERED'} ? 'status--active' :
+                                          (${order.status.name() == 'CANCELLED'} ? 'status--inactive' : 'status--secondary')))}"
+                          th:text="${order.status.name()}"></span>
                 </div>
-                <div>
-                    <div style="font-weight: 600; color: #64748b; font-size: 0.875rem; margin-bottom: 0.25rem;">Phương thức thanh toán</div>
-                    <div th:text="${order.paymentMethod.name()}"></div>
+                <div class="order-info__item">
+                    <span class="order-info__label">Phương thức thanh toán</span>
+                    <span th:text="${order.paymentMethod.name()}"></span>
                 </div>
-                <div>
-                    <div style="font-weight: 600; color: #64748b; font-size: 0.875rem; margin-bottom: 0.25rem;">Trạng thái thanh toán</div>
-                    <div>
-                        <span class="status" 
-                              th:classappend="${order.paymentStatus.name() == 'PAID'} ? 'status--active' : 'status--warning'"
-                              th:text="${order.paymentStatus.name()}"></span>
-                    </div>
+                <div class="order-info__item">
+                    <span class="order-info__label">Trạng thái thanh toán</span>
+                    <span class="status"
+                          th:classappend="${order.paymentStatus.name() == 'PAID'} ? 'status--active' : 'status--warning'"
+                          th:text="${order.paymentStatus.name()}"></span>
                 </div>
-                <div>
-                    <div style="font-weight: 600; color: #64748b; font-size: 0.875rem; margin-bottom: 0.25rem;">Cập nhật lần cuối</div>
-                    <div th:text="${order.updatedAt != null ? #temporals.format(order.updatedAt, 'dd/MM/yyyy HH:mm') : '-'}"></div>
+                <div class="order-info__item">
+                    <span class="order-info__label">Tổng giá trị</span>
+                    <span class="order-info__value" th:text="${#numbers.formatDecimal(order.totalAmount, 1, 'POINT', 0, 'COMMA')} + ' ₫'"></span>
                 </div>
             </div>
         </section>
@@ -93,38 +131,21 @@
                 </div>
             </div>
             <div style="display: flex; flex-direction: column; gap: 1rem;">
-                <div>
-                    <div style="font-weight: 600; color: #64748b; font-size: 0.875rem; margin-bottom: 0.25rem;">Họ tên</div>
-                    <div th:text="${order.customerName}"></div>
+                <div class="order-info__item">
+                    <span class="order-info__label">Họ tên</span>
+                    <span th:text="${order.user != null ? order.user.fullName : 'Khách lẻ'}"></span>
                 </div>
-                <div>
-                    <div style="font-weight: 600; color: #64748b; font-size: 0.875rem; margin-bottom: 0.25rem;">Email</div>
-                    <div th:text="${order.customerEmail ?: '-'}"></div>
+                <div class="order-info__item">
+                    <span class="order-info__label">Email</span>
+                    <span th:text="${order.user != null && order.user.email != null ? order.user.email : '-'}"></span>
                 </div>
-                <div>
-                    <div style="font-weight: 600; color: #64748b; font-size: 0.875rem; margin-bottom: 0.25rem;">Số điện thoại</div>
-                    <div th:text="${order.customerPhone}"></div>
+                <div class="order-info__item">
+                    <span class="order-info__label">Số điện thoại</span>
+                    <span th:text="${order.user != null && order.user.phone != null ? order.user.phone : '-'}"></span>
                 </div>
             </div>
         </section>
     </div>
-
-    <!-- Địa chỉ giao hàng -->
-    <section class="admin-card">
-        <div class="admin-card__header">
-            <div>
-                <h2 class="admin-card__title">Địa chỉ giao hàng</h2>
-            </div>
-        </div>
-        <div style="display: flex; flex-direction: column; gap: 0.5rem;">
-            <div th:text="${order.shippingAddress}"></div>
-            <div style="color: #64748b; font-size: 0.875rem;">
-                <span th:if="${order.shippingWard}" th:text="${order.shippingWard} + ', '"></span>
-                <span th:if="${order.shippingDistrict}" th:text="${order.shippingDistrict} + ', '"></span>
-                <span th:if="${order.shippingCity}" th:text="${order.shippingCity}"></span>
-            </div>
-        </div>
-    </section>
 
     <!-- Danh sách sản phẩm -->
     <section class="admin-card">
@@ -148,18 +169,17 @@
                 <tr th:each="item : ${order.items}">
                     <td>
                         <div class="table__primary">
-                            <span th:text="${item.productName}"></span>
+                            <span th:text="${item.product != null ? item.product.name : 'Sản phẩm'}"></span>
                         </div>
                     </td>
-                    <td th:text="${item.variantDetails ?: '-'}"></td>
+                    <td th:text="${item.variant != null ? item.variant.variantName : '-'}"></td>
                     <td th:text="${item.quantity}"></td>
                     <td>
-                        <span th:text="${#numbers.formatDecimal(item.pricePerUnit, 1, 'POINT', 0, 'COMMA')} + ' ₫'"></span>
+                        <span th:text="${#numbers.formatDecimal(item.price, 1, 'POINT', 0, 'COMMA')} + ' ₫'"></span>
                     </td>
                     <td>
-                        <span style="font-weight: 600; color: #10b981;">
-                            <span th:text="${#numbers.formatDecimal(item.subtotal, 1, 'POINT', 0, 'COMMA')}"></span> ₫
-                        </span>
+                        <span class="order-table__price"
+                              th:text="${#numbers.formatDecimal(item.price * item.quantity, 1, 'POINT', 0, 'COMMA')} + ' ₫'"></span>
                     </td>
                 </tr>
                 </tbody>
@@ -168,7 +188,7 @@
     </section>
 
     <!-- Tổng tiền và Cập nhật trạng thái -->
-    <div class="admin-grid" style="grid-template-columns: 1fr 1fr;">
+    <div class="order-details">
         <!-- Tổng tiền -->
         <section class="admin-card">
             <div class="admin-card__header">
@@ -176,25 +196,14 @@
                     <h2 class="admin-card__title">Tổng tiền</h2>
                 </div>
             </div>
-            <div style="display: flex; flex-direction: column; gap: 0.75rem;">
-                <div style="display: flex; justify-content: space-between;">
-                    <span style="color: #64748b;">Tạm tính:</span>
-                    <span th:text="${#numbers.formatDecimal(order.subtotal, 1, 'POINT', 0, 'COMMA')} + ' ₫'"></span>
-                </div>
-                <div style="display: flex; justify-content: space-between;" th:if="${order.shippingFee > 0}">
-                    <span style="color: #64748b;">Phí vận chuyển:</span>
-                    <span th:text="${#numbers.formatDecimal(order.shippingFee, 1, 'POINT', 0, 'COMMA')} + ' ₫'"></span>
-                </div>
-                <div style="display: flex; justify-content: space-between;" th:if="${order.discountAmount > 0}">
-                    <span style="color: #64748b;">Giảm giá:</span>
-                    <span style="color: #10b981;">-<span th:text="${#numbers.formatDecimal(order.discountAmount, 1, 'POINT', 0, 'COMMA')}"></span> ₫</span>
-                </div>
-                <div style="display: flex; justify-content: space-between; padding-top: 0.75rem; border-top: 1px solid #e2e8f0; font-size: 1.1rem; font-weight: 600;">
-                    <span>Tổng cộng:</span>
-                    <span style="color: #10b981;">
-                        <span th:text="${#numbers.formatDecimal(order.totalAmount, 1, 'POINT', 0, 'COMMA')}"></span> ₫
-                    </span>
-                </div>
+            <div class="order-info__item" style="margin-top: 0.5rem;">
+                <span class="order-info__label">Tổng thanh toán</span>
+                <span class="order-info__value" style="color: #10b981;"
+                      th:text="${#numbers.formatDecimal(order.totalAmount, 1, 'POINT', 0, 'COMMA')} + ' ₫'"></span>
+            </div>
+            <div class="order-info__item">
+                <span class="order-info__label">Địa chỉ giao hàng</span>
+                <span th:text="${order.shippingAddress != null ? order.shippingAddress : 'Chưa cập nhật'}"></span>
             </div>
         </section>
 
@@ -205,68 +214,36 @@
                     <h2 class="admin-card__title">Cập nhật trạng thái</h2>
                 </div>
             </div>
-            <form th:action="@{/admin/orders/{id}/status(id=${order.id})}" method="post" style="display: flex; flex-direction: column; gap: 1rem;">
-                <div>
-                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: #0f172a;">Trạng thái mới</label>
-                    <select name="status" 
-                            style="width: 100%; padding: 0.5rem 0.75rem; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 0.875rem; background: #ffffff; cursor: pointer;">
+            <form th:action="@{/admin/orders/{id}/status(id=${order.id})}" method="post" class="order-form__group">
+                <div class="order-form__group">
+                    <label class="order-info__label">Trạng thái mới</label>
+                    <select name="status" class="order-form__select">
                         <option value="">-- Chọn trạng thái --</option>
-                        <!-- PENDING can go to PROCESSING or CANCELLED -->
-                        <option th:if="${order.status.name() == 'PENDING'}" 
-                                value="PROCESSING">PROCESSING</option>
-                        <option th:if="${order.status.name() == 'PENDING'}" 
-                                value="CANCELLED">CANCELLED</option>
-                        <!-- PROCESSING can go to SHIPPING or CANCELLED -->
-                        <option th:if="${order.status.name() == 'PROCESSING'}" 
-                                value="SHIPPING">SHIPPING</option>
-                        <option th:if="${order.status.name() == 'PROCESSING'}" 
-                                value="CANCELLED">CANCELLED</option>
-                        <!-- SHIPPING can go to DELIVERED -->
-                        <option th:if="${order.status.name() == 'SHIPPING'}" 
-                                value="DELIVERED">DELIVERED</option>
-                        <!-- CONFIRMED can go to PROCESSING -->
-                        <option th:if="${order.status.name() == 'CONFIRMED'}" 
-                                value="PROCESSING">PROCESSING</option>
+                        <option th:if="${order.status.name() == 'PENDING'}" value="PROCESSING">PROCESSING</option>
+                        <option th:if="${order.status.name() == 'PENDING'}" value="CANCELLED">CANCELLED</option>
+                        <option th:if="${order.status.name() == 'PROCESSING'}" value="SHIPPING">SHIPPING</option>
+                        <option th:if="${order.status.name() == 'PROCESSING'}" value="CANCELLED">CANCELLED</option>
+                        <option th:if="${order.status.name() == 'SHIPPING'}" value="DELIVERED">DELIVERED</option>
+                        <option th:if="${order.status.name() == 'CONFIRMED'}" value="PROCESSING">PROCESSING</option>
                     </select>
-                    <p style="font-size: 0.75rem; color: #64748b; margin-top: 0.5rem;">
-                        <span th:if="${order.status.name() == 'PENDING'}">
-                            Luồng hợp lệ: PENDING → PROCESSING hoặc CANCELLED
-                        </span>
-                        <span th:if="${order.status.name() == 'PROCESSING'}">
-                            Luồng hợp lệ: PROCESSING → SHIPPING hoặc CANCELLED
-                        </span>
-                        <span th:if="${order.status.name() == 'SHIPPING'}">
-                            Luồng hợp lệ: SHIPPING → DELIVERED
-                        </span>
-                        <span th:if="${order.status.name() == 'CONFIRMED'}">
-                            Luồng hợp lệ: CONFIRMED → PROCESSING
-                        </span>
+                    <p class="order-info__label" style="font-weight: 400;">
+                        <span th:if="${order.status.name() == 'PENDING'}">Luồng hợp lệ: PENDING → PROCESSING hoặc CANCELLED</span>
+                        <span th:if="${order.status.name() == 'PROCESSING'}">Luồng hợp lệ: PROCESSING → SHIPPING hoặc CANCELLED</span>
+                        <span th:if="${order.status.name() == 'SHIPPING'}">Luồng hợp lệ: SHIPPING → DELIVERED</span>
+                        <span th:if="${order.status.name() == 'CONFIRMED'}">Luồng hợp lệ: CONFIRMED → PROCESSING</span>
                         <span th:if="${order.status.name() == 'DELIVERED' || order.status.name() == 'CANCELLED' || order.status.name() == 'REFUNDED'}">
-                            Đơn hàng này không thể thay đổi trạng thái
+                            Đơn hàng này đã kết thúc, không thể thay đổi trạng thái
                         </span>
                     </p>
                 </div>
-                <div>
-                    <button type="submit" 
-                            class="button button--primary" 
-                            style="width: 100%;"
-                            th:disabled="${order.status.name() == 'DELIVERED' || order.status.name() == 'CANCELLED' || order.status.name() == 'REFUNDED'}">
-                        Cập nhật trạng thái
-                    </button>
-                </div>
+                <button type="submit"
+                        class="button button--primary"
+                        th:disabled="${order.status.name() == 'DELIVERED' || order.status.name() == 'CANCELLED' || order.status.name() == 'REFUNDED'}">
+                    Cập nhật trạng thái
+                </button>
             </form>
         </section>
     </div>
-
-    <!-- Ghi chú -->
-    <section class="admin-card" th:if="${order.customerNote}">
-        <div class="admin-card__header">
-            <div>
-                <h2 class="admin-card__title">Ghi chú của khách hàng</h2>
-            </div>
-        </div>
-        <div style="color: #64748b;" th:text="${order.customerNote}"></div>
-    </section>
 </main>
 
 </body>

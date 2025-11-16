@@ -29,16 +29,12 @@ public class Product {
 
     private String description;
 
-    @Column(name = "base_price", nullable = false)
-    private Double basePrice;
+    @Column(nullable = false)
+    private Double price;
 
     @Builder.Default
     @Column(name = "has_variants", nullable = false)
     private boolean hasVariants = false;
-
-    @Builder.Default
-    @Column(name = "stock_quantity")
-    private Integer stockQuantity = 0;
 
     @Builder.Default
     @Column(name = "is_active", nullable = false)
@@ -47,16 +43,6 @@ public class Product {
     @ManyToOne
     @JoinColumn(name = "category_id")
     private Category category;
-
-    private String brand;
-
-    private Double weight;
-
-    @Column(name = "meta_title")
-    private String metaTitle;
-
-    @Column(name = "meta_description")
-    private String metaDescription;
 
     @CreationTimestamp
     @Column(name = "created_at")

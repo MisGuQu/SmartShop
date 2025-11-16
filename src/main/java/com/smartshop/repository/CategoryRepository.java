@@ -9,7 +9,6 @@ import com.smartshop.entity.product.Category;
 import java.util.List;
 
 public interface CategoryRepository extends JpaRepository<Category, Long> {
-    List<Category> findByParentIsNullAndIsActiveTrue();
-    List<Category> findByIsActiveTrue();
+    List<Category> findByParentIsNull();
     Optional<Category> findByName(String name);
 }

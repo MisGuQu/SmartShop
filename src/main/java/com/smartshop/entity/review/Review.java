@@ -3,12 +3,7 @@ package com.smartshop.entity.review;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
-
-import com.smartshop.entity.enums.ReviewStatus;
-import com.smartshop.entity.order.Order;
 import com.smartshop.entity.product.Product;
-import com.smartshop.entity.product.ProductVariant;
 import com.smartshop.entity.user.User;
 
 import java.time.LocalDateTime;
@@ -32,52 +27,19 @@ public class Review {
     private Product product;
 
     @ManyToOne
-    @JoinColumn(name = "variant_id")
-    private ProductVariant variant;
-
-    @ManyToOne
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
-
-    @ManyToOne
-    @JoinColumn(name = "order_id")
-    private Order order;
 
     @Column(nullable = false)
     private int rating;
 
-    private String title;
     private String comment;
-
-    @Builder.Default
-    @Column(name = "is_verified_purchase")
-    private boolean isVerifiedPurchase = false;
-
-    @Builder.Default
-    @Enumerated(EnumType.STRING)
-    private ReviewStatus status = ReviewStatus.PENDING;
-
-    @Builder.Default
-    @Column(name = "helpful_count")
-    private int helpfulCount = 0;
 
     @CreationTimestamp
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
-    @UpdateTimestamp
-    @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
-
     @Builder.Default
     @OneToMany(mappedBy = "review", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ReviewMedia> media = new ArrayList<>();
-
-    @Builder.Default
-    @OneToMany(mappedBy = "review", cascade = CascadeType.ALL)
-    private List<ReviewReply> replies = new ArrayList<>();
-
-    @Builder.Default
-    @OneToMany(mappedBy = "review", cascade = CascadeType.ALL)
-    private List<ReviewHelpful> helpfuls = new ArrayList<>();
 }

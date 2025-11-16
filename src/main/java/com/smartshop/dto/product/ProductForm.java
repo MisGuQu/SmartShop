@@ -17,24 +17,14 @@ public class ProductForm {
 
     private String description;
 
-    @NotNull(message = "Giá cơ bản không được để trống")
-    @Positive(message = "Giá cơ bản phải lớn hơn 0")
-    private Double basePrice;
+    @NotNull(message = "Giá không được để trống")
+    @Positive(message = "Giá phải lớn hơn 0")
+    private Double price;
 
     private Long categoryId;
 
     private boolean hasVariants = false;
 
-    private Integer stockQuantity = 0;
-
     private boolean active = true;
-
-    private String brand;
-
-    private Double weight;
-
-    private String metaTitle;
-
-    private String metaDescription;
 }
 

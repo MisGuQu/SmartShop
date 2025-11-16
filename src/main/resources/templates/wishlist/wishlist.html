@@ -23,7 +23,7 @@
     <section class="wishlist-panel">
         <h2>Sản phẩm yêu thích</h2>
         <div class="wishlist-grid">
-            <article class="wishlist-item" th:each="itemView : ${items}" th:data-item-id="${itemView.item.id}">
+            <article class="wishlist-item" th:each="itemView : ${items}">
                 <a th:href="@{'/products/' + ${itemView.item.product.slug}}" class="wishlist-item__link">
                     <div class="wishlist-item__thumb"
                          th:style="${itemView.imageUrl} != null ? 'background-image:url(' + itemView.imageUrl + ')' : ''"></div>
@@ -39,15 +39,19 @@
                     </div>
                 </a>
                 <div class="wishlist-item__actions">
-                    <button class="button button--primary" type="button" data-add-to-cart-from-wishlist
-                            th:data-product-id="${itemView.item.product.id}"
-                            th:data-variant-id="${itemView.item.variant != null ? itemView.item.variant.id : ''}">
-                        Thêm vào giỏ hàng
-                    </button>
-                    <button class="button button--danger" type="button" data-remove-from-wishlist
-                            th:data-item-id="${itemView.item.id}">
-                        Xóa
-                    </button>
+                    <form th:action="@{/cart/add}" method="post">
+                        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                        <input type="hidden" name="productId" th:value="${itemView.item.product.id}">
+                        <input type="hidden" name="quantity" value="1">
+                        <input type="hidden" name="variantId"
+                               th:value="${itemView.item.variant != null ? itemView.item.variant.id : null}">
+                        <button class="button button--primary" type="submit">Thêm vào giỏ hàng</button>
+                    </form>
+                    <form th:action="@{/wishlist/remove}" method="post">
+                        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                        <input type="hidden" name="itemId" th:value="${itemView.item.id}">
+                        <button class="button button--danger" type="submit">Xóa</button>
+                    </form>
                 </div>
             </article>
         </div>
@@ -64,9 +68,5 @@
     </div>
 </section>
 
-<div class="wishlist-toast" id="wishlistToast" hidden></div>
-
-<script src="/js/wishlist.js" defer></script>
-<script src="/js/cart.js" defer></script>
 </body>
 </html>

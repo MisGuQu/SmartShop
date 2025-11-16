@@ -11,7 +11,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
 
@@ -22,6 +21,7 @@ public class PaymentService {
 
     private final PaymentTransactionRepository paymentTransactionRepository;
     private final OrderRepository orderRepository;
+    private final PaymentGatewayService paymentGatewayService;
 
     public PaymentTransaction createTransaction(Long orderId, PaymentTransaction payload) {
         Objects.requireNonNull(orderId, "orderId must not be null");
@@ -33,15 +33,10 @@ public class PaymentService {
         PaymentTransaction transaction = new PaymentTransaction();
         transaction.setOrder(order);
         transaction.setTransactionNo(generateTransactionNo());
-        transaction.setPaymentMethod(payload.getPaymentMethod());
-        transaction.setAmount(payload.getAmount());
-        transaction.setCurrency(payload.getCurrency() != null ? payload.getCurrency() : "VND");
-        transaction.setCallbackUrl(payload.getCallbackUrl());
-        transaction.setReturnUrl(payload.getReturnUrl());
+        transaction.setMethod(payload.getMethod() != null ? payload.getMethod() : order.getPaymentMethod());
+        transaction.setAmount(payload.getAmount() != null ? payload.getAmount() : order.getTotalAmount());
         transaction.setStatus(PaymentTransactionStatus.PENDING);
-        transaction.setIpAddress(payload.getIpAddress());
-        transaction.setUserAgent(payload.getUserAgent());
-        transaction.setRequestData(payload.getRequestData());
+        transaction.setGatewayResponse(payload.getGatewayResponse());
 
         return paymentTransactionRepository.save(transaction);
     }
@@ -57,33 +52,58 @@ public class PaymentService {
         return paymentTransactionRepository.findByOrderId(orderId);
     }
 
-    public PaymentTransaction markSuccess(Long transactionId) {
-        PaymentTransaction transaction = getTransaction(transactionId);
-
-        transaction.setStatus(PaymentTransactionStatus.SUCCESS);
-        transaction.setUpdatedAt(LocalDateTime.now());
-
-        Order order = transaction.getOrder();
-        if (order != null) {
-            order.setPaymentStatus(PaymentStatus.PAID);
-            order.setUpdatedAt(LocalDateTime.now());
-            orderRepository.save(order);
-        }
-
-        return paymentTransactionRepository.save(transaction);
+    public String initiateGatewayPayment(Order order) {
+        Objects.requireNonNull(order, "order must not be null");
+        PaymentTransaction transaction = PaymentTransaction.builder()
+                .order(order)
+                .method(order.getPaymentMethod())
+                .amount(order.getTotalAmount())
+                .build();
+        PaymentTransaction persisted = createTransaction(order.getId(), transaction);
+        String gatewayUrl = paymentGatewayService.createRedirectUrl(persisted);
+        persisted.setGatewayResponse(gatewayUrl);
+        paymentTransactionRepository.save(persisted);
+        return gatewayUrl;
     }
 
-    public PaymentTransaction markFailure(Long transactionId, String reason) {
+    public PaymentTransaction markSuccess(Long transactionId, String gatewayResponse) {
         PaymentTransaction transaction = getTransaction(transactionId);
+        return updateTransactionStatus(transaction, PaymentTransactionStatus.SUCCESS, gatewayResponse);
+    }
 
-        transaction.setStatus(PaymentTransactionStatus.FAILED);
-        transaction.setErrorMessage(reason);
-        transaction.setUpdatedAt(LocalDateTime.now());
+    public PaymentTransaction markFailure(Long transactionId, String reason, String gatewayResponse) {
+        PaymentTransaction transaction = getTransaction(transactionId);
+        String payload = gatewayResponse != null ? gatewayResponse : reason;
+        return updateTransactionStatus(transaction, PaymentTransactionStatus.FAILED, payload);
+    }
+
+    public PaymentTransaction markGatewaySuccess(String transactionNo, String responseData) {
+        PaymentTransaction transaction = paymentTransactionRepository.findByTransactionNo(transactionNo)
+                .orElseThrow(() -> new EntityNotFoundException("Payment transaction not found"));
+        return updateTransactionStatus(transaction, PaymentTransactionStatus.SUCCESS, responseData);
+    }
+
+    public PaymentTransaction markGatewayFailure(String transactionNo, String responseData) {
+        PaymentTransaction transaction = paymentTransactionRepository.findByTransactionNo(transactionNo)
+                .orElseThrow(() -> new EntityNotFoundException("Payment transaction not found"));
+        return updateTransactionStatus(transaction, PaymentTransactionStatus.FAILED, responseData);
+    }
+
+    private PaymentTransaction updateTransactionStatus(PaymentTransaction transaction,
+                                                       PaymentTransactionStatus status,
+                                                       String responseData) {
+        transaction.setStatus(status);
+        if (responseData != null) {
+            transaction.setGatewayResponse(responseData);
+        }
 
         Order order = transaction.getOrder();
         if (order != null) {
-            order.setPaymentStatus(PaymentStatus.FAILED);
-            order.setUpdatedAt(LocalDateTime.now());
+            if (status == PaymentTransactionStatus.SUCCESS) {
+                order.setPaymentStatus(PaymentStatus.PAID);
+            } else if (status == PaymentTransactionStatus.FAILED) {
+                order.setPaymentStatus(PaymentStatus.FAILED);
+            }
             orderRepository.save(order);
         }
 

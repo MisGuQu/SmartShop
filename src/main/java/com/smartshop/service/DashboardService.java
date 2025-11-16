@@ -130,12 +130,13 @@ public class DashboardService {
                 if (item.getProduct() != null && item.getProduct().getCategory() != null) {
                     Long categoryId = item.getProduct().getCategory().getId();
                     String categoryName = item.getProduct().getCategory().getName();
-                    
+
                     categoryMap.putIfAbsent(categoryId, new HashMap<>());
                     Map<String, Object> categoryData = categoryMap.get(categoryId);
                     categoryData.put("id", categoryId);
                     categoryData.put("name", categoryName);
-                    categoryData.put("revenue", ((Double) categoryData.getOrDefault("revenue", 0.0)) + item.getSubtotal());
+                    double revenue = item.getPrice() != null ? item.getPrice() * item.getQuantity() : 0.0;
+                    categoryData.put("revenue", ((Double) categoryData.getOrDefault("revenue", 0.0)) + revenue);
                     categoryData.put("quantity", ((Integer) categoryData.getOrDefault("quantity", 0)) + item.getQuantity());
                 }
             }
@@ -216,54 +217,19 @@ public class DashboardService {
      */
     public List<Map<String, Object>> getVoucherEffectiveness() {
         List<com.smartshop.entity.voucher.Voucher> vouchers = voucherRepository.findAll();
-        List<Map<String, Object>> voucherStats = new ArrayList<>();
-        
-        for (com.smartshop.entity.voucher.Voucher voucher : vouchers) {
+
+        return vouchers.stream().map(voucher -> {
             Map<String, Object> stats = new HashMap<>();
             stats.put("id", voucher.getId());
             stats.put("code", voucher.getCode());
-            stats.put("description", voucher.getDescription());
-            stats.put("usedCount", voucher.getUsedCount());
-            stats.put("usageLimit", voucher.getUsageLimit());
+            stats.put("type", voucher.getType());
+            stats.put("value", voucher.getValue());
+            stats.put("minOrder", voucher.getMinOrder());
+            stats.put("startDate", voucher.getStartDate());
+            stats.put("endDate", voucher.getEndDate());
             stats.put("isActive", voucher.isActive());
-            
-            // Tính tổng giảm giá từ các đơn hàng sử dụng voucher này
-            List<com.smartshop.entity.order.Order> ordersWithVoucher = orderRepository.findAll().stream()
-                    .filter(o -> o.getVoucher() != null && o.getVoucher().getId().equals(voucher.getId()))
-                    .filter(o -> o.getStatus() != OrderStatus.CANCELLED && o.getStatus() != OrderStatus.REFUNDED)
-                    .collect(Collectors.toList());
-            
-            double totalDiscount = ordersWithVoucher.stream()
-                    .mapToDouble(o -> o.getDiscountAmount() != null ? o.getDiscountAmount() : 0.0)
-                    .sum();
-            
-            double totalRevenue = ordersWithVoucher.stream()
-                    .mapToDouble(o -> o.getTotalAmount() != null ? o.getTotalAmount() : 0.0)
-                    .sum();
-            
-            stats.put("totalDiscount", totalDiscount);
-            stats.put("totalRevenue", totalRevenue);
-            stats.put("orderCount", ordersWithVoucher.size());
-            
-            // Tính tỷ lệ sử dụng
-            if (voucher.getUsageLimit() != null && voucher.getUsageLimit() > 0) {
-                double usageRate = (double) voucher.getUsedCount() / voucher.getUsageLimit() * 100;
-                stats.put("usageRate", usageRate);
-            } else {
-                stats.put("usageRate", null);
-            }
-            
-            voucherStats.add(stats);
-        }
-        
-        // Sắp xếp theo số lần sử dụng
-        voucherStats.sort((a, b) -> {
-            Integer usedA = (Integer) a.get("usedCount");
-            Integer usedB = (Integer) b.get("usedCount");
-            return usedB.compareTo(usedA);
-        });
-        
-        return voucherStats;
+            return stats;
+        }).collect(Collectors.toList());
     }
 }
 

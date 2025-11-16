@@ -33,19 +33,14 @@ public final class ProductSpecifications {
         if (minPrice == null) {
             return null;
         }
-        return (root, query, builder) -> {
-            if (Boolean.TRUE.equals(root.get("hasVariants"))) {
-                return builder.greaterThanOrEqualTo(root.get("basePrice"), minPrice);
-            }
-            return builder.greaterThanOrEqualTo(root.get("basePrice"), minPrice);
-        };
+        return (root, query, builder) -> builder.greaterThanOrEqualTo(root.get("price"), minPrice);
     }
 
     public static Specification<Product> maxPrice(Double maxPrice) {
         if (maxPrice == null) {
             return null;
         }
-        return (root, query, builder) -> builder.lessThanOrEqualTo(root.get("basePrice"), maxPrice);
+        return (root, query, builder) -> builder.lessThanOrEqualTo(root.get("price"), maxPrice);
     }
 
 }

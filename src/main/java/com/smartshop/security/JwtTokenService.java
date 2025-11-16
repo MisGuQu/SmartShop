@@ -1,5 +1,6 @@
 package com.smartshop.security;
 
+import com.smartshop.entity.user.User;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jws;
 import io.jsonwebtoken.JwtException;
@@ -7,15 +8,14 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
+import jakarta.annotation.PostConstruct;
 import lombok.Getter;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
-import jakarta.annotation.PostConstruct;
 import java.nio.charset.StandardCharsets;
 import java.security.Key;
 import java.util.Date;
@@ -61,7 +61,7 @@ public class JwtTokenService {
 
         return Jwts.builder()
                 .setClaims(Map.of("roles", roles))
-                .setSubject(principal.getUsername())
+                .setSubject(resolveSubject(principal))
                 .setIssuedAt(now)
                 .setExpiration(expiry)
                 .signWith(signingKey, SignatureAlgorithm.HS256)
@@ -80,6 +80,13 @@ public class JwtTokenService {
 
     public String extractEmail(String token) {
         return parseClaims(token).getBody().getSubject();
+    }
+
+    private String resolveSubject(UserDetails principal) {
+        if (principal instanceof User user) {
+            return user.getEmail();
+        }
+        return principal.getUsername();
     }
 
     private Jws<Claims> parseClaims(String token) {

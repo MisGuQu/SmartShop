@@ -2,12 +2,8 @@ package com.smartshop.entity.cart;
 
 import jakarta.persistence.*;
 import lombok.*;
-import org.hibernate.annotations.CreationTimestamp;
-
 import com.smartshop.entity.product.Product;
 import com.smartshop.entity.product.ProductVariant;
-
-import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "cart_items")
@@ -26,7 +22,7 @@ public class CartItem {
     private ShoppingCart cart;
 
     @ManyToOne
-    @JoinColumn(name = "product_id")
+    @JoinColumn(name = "product_id", nullable = false)
     private Product product;
 
     @ManyToOne
@@ -37,7 +33,7 @@ public class CartItem {
     @Column(nullable = false)
     private int quantity = 1;
 
-    @CreationTimestamp
-    @Column(name = "added_at")
-    private LocalDateTime addedAt;
+    @Builder.Default
+    @Column(name = "is_wishlist", nullable = false)
+    private boolean wishlist = false;
 }

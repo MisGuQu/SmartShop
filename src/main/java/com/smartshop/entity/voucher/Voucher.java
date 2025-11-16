@@ -2,9 +2,6 @@ package com.smartshop.entity.voucher;
 
 import jakarta.persistence.*;
 import lombok.*;
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
-
 import java.time.LocalDateTime;
 
 @Entity
@@ -22,49 +19,24 @@ public class Voucher {
     @Column(nullable = false, unique = true)
     private String code;
 
-    private String description;
-
     @Enumerated(EnumType.STRING)
-    @Column(name = "discount_type", nullable = false)
-    private DiscountType discountType;
+    @Column(name = "type")
+    private DiscountType type;
 
-    @Column(name = "discount_value", nullable = false)
-    private Double discountValue;
+    @Column(name = "value")
+    private Double value;
 
-    @Column(name = "max_discount_amount")
-    private Double maxDiscountAmount;
+    @Column(name = "min_order")
+    private Double minOrder;
 
-    @Builder.Default
-    @Column(name = "min_order_amount")
-    private Double minOrderAmount = 0.0;
-
-    @Column(name = "usage_limit")
-    private Integer usageLimit;
-
-    @Builder.Default
-    @Column(name = "usage_per_user")
-    private int usagePerUser = 1;
-
-    @Builder.Default
-    @Column(name = "used_count")
-    private int usedCount = 0;
-
-    @Column(name = "start_date", nullable = false)
+    @Column(name = "start_date")
     private LocalDateTime startDate;
 
-    @Column(name = "end_date", nullable = false)
+    @Column(name = "end_date")
     private LocalDateTime endDate;
 
     @Builder.Default
-    @Column(name = "is_active", nullable = false)
+    @Column(name = "is_active")
     private boolean isActive = true;
-
-    @CreationTimestamp
-    @Column(name = "created_at")
-    private LocalDateTime createdAt;
-
-    @UpdateTimestamp
-    @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
 }
 

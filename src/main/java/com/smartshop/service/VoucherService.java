@@ -1,37 +1,45 @@
 package com.smartshop.service;
 
+import com.smartshop.entity.voucher.UserVoucher;
 import com.smartshop.entity.voucher.Voucher;
+import com.smartshop.repository.UserVoucherRepository;
+import com.smartshop.repository.VoucherRepository;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 import java.util.List;
 import java.util.Optional;
 
 @Service
 @Transactional
+@RequiredArgsConstructor
 public class VoucherService {
 
+    private final VoucherRepository voucherRepository;
+    private final UserVoucherRepository userVoucherRepository;
+
     public List<Voucher> getAllVouchers() {
-        // TODO: Danh sách tất cả voucher
-        return List.of();
+        return voucherRepository.findAll();
     }
 
     public Optional<Voucher> getVoucherByCode(String code) {
-        // TODO: Tìm voucher theo mã
-        return Optional.empty();
-    }
-
-    public boolean applyVoucher(Long userId, String code) {
-        // TODO: Áp dụng voucher cho người dùng
-        return true;
+        if (!StringUtils.hasText(code)) {
+            return Optional.empty();
+        }
+        return voucherRepository.findByCodeAndIsActiveTrue(code.trim());
     }
 
     public Voucher createVoucher(Voucher voucher) {
-        // TODO: Tạo voucher mới
-        return voucher;
+        return voucherRepository.save(voucher);
     }
 
     public void deleteVoucher(Long id) {
-        // TODO: Xóa voucher
+        voucherRepository.deleteById(id);
+    }
+
+    public List<UserVoucher> getUserVouchers(Long userId) {
+        return userVoucherRepository.findByUserIdAndIsUsedFalse(userId);
     }
 }

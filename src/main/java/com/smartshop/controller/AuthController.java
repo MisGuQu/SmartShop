@@ -1,10 +1,7 @@
 package com.smartshop.controller;
 
-import com.smartshop.dto.auth.ForgotPasswordRequest;
 import com.smartshop.dto.auth.LoginRequest;
 import com.smartshop.dto.auth.RegisterRequest;
-import com.smartshop.dto.auth.ResetPasswordRequest;
-import com.smartshop.exception.AccountLockedException;
 import com.smartshop.exception.AuthException;
 import com.smartshop.security.JwtCookieService;
 import com.smartshop.service.AuthService;
@@ -32,13 +29,11 @@ public class AuthController {
 
     @GetMapping("/login")
     public String loginPage(Model model,
-                            @RequestParam(value = "error", required = false) String error,
-                            @RequestParam(value = "locked", required = false) String locked) {
+                            @RequestParam(value = "error", required = false) String error) {
         if (!model.containsAttribute("loginRequest")) {
             model.addAttribute("loginRequest", new LoginRequest());
         }
         model.addAttribute("errorMessage", error);
-        model.addAttribute("lockedMessage", locked);
         return "auth/login";
     }
 
@@ -58,9 +53,6 @@ public class AuthController {
             ResponseCookie cookie = jwtCookieService.buildAccessTokenCookie(authResult.getToken());
             response.addHeader("Set-Cookie", cookie.toString());
             return "redirect:/";
-        } catch (AccountLockedException ex) {
-            redirectAttributes.addFlashAttribute("errorMessage", "Tài khoản tạm khóa tới " + ex.getUnlockAt());
-            return "redirect:/auth/login";
         } catch (AuthException ex) {
             redirectAttributes.addFlashAttribute("errorMessage", ex.getMessage());
             return "redirect:/auth/login";
@@ -93,63 +85,6 @@ public class AuthController {
             redirectAttributes.addFlashAttribute("errorMessage", ex.getMessage());
             redirectAttributes.addFlashAttribute("registerRequest", request);
             return "redirect:/auth/register";
-        }
-    }
-
-    @GetMapping("/forgot-password")
-    public String forgotPasswordPage(Model model) {
-        if (!model.containsAttribute("forgotPasswordRequest")) {
-            model.addAttribute("forgotPasswordRequest", new ForgotPasswordRequest());
-        }
-        return "auth/forgot-password";
-    }
-
-    @PostMapping("/forgot-password")
-    public String handleForgotPassword(@Valid @ModelAttribute("forgotPasswordRequest") ForgotPasswordRequest request,
-                                       BindingResult bindingResult,
-                                       RedirectAttributes redirectAttributes) {
-        if (bindingResult.hasErrors()) {
-            redirectAttributes.addFlashAttribute("org.springframework.validation.BindingResult.forgotPasswordRequest", bindingResult);
-            redirectAttributes.addFlashAttribute("forgotPasswordRequest", request);
-            return "redirect:/auth/forgot-password";
-    }
-
-        try {
-            authService.initiatePasswordReset(request);
-            redirectAttributes.addFlashAttribute("successMessage", "Nếu email tồn tại, chúng tôi đã gửi liên kết đặt lại mật khẩu.");
-        } catch (AuthException ex) {
-            redirectAttributes.addFlashAttribute("errorMessage", ex.getMessage());
-        }
-        return "redirect:/auth/forgot-password";
-    }
-
-    @GetMapping("/reset-password")
-    public String resetPasswordPage(@RequestParam("token") String token, Model model) {
-        ResetPasswordRequest resetPasswordRequest = new ResetPasswordRequest();
-        resetPasswordRequest.setToken(token);
-        if (!model.containsAttribute("resetPasswordRequest")) {
-            model.addAttribute("resetPasswordRequest", resetPasswordRequest);
-        }
-        return "auth/reset-password";
-    }
-
-    @PostMapping("/reset-password")
-    public String handleResetPassword(@Valid @ModelAttribute("resetPasswordRequest") ResetPasswordRequest request,
-                                      BindingResult bindingResult,
-                                      RedirectAttributes redirectAttributes) {
-        if (bindingResult.hasErrors()) {
-            redirectAttributes.addFlashAttribute("org.springframework.validation.BindingResult.resetPasswordRequest", bindingResult);
-            redirectAttributes.addFlashAttribute("resetPasswordRequest", request);
-            return "redirect:/auth/reset-password?token=" + request.getToken();
-        }
-
-        try {
-            authService.resetPassword(request);
-            redirectAttributes.addFlashAttribute("successMessage", "Đặt lại mật khẩu thành công. Vui lòng đăng nhập.");
-            return "redirect:/auth/login";
-        } catch (AuthException ex) {
-            redirectAttributes.addFlashAttribute("errorMessage", ex.getMessage());
-            return "redirect:/auth/reset-password?token=" + request.getToken();
         }
     }
 }

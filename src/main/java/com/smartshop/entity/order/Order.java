@@ -1,15 +1,13 @@
 package com.smartshop.entity.order;
 
-import jakarta.persistence.*;
-import lombok.*;
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
-
 import com.smartshop.entity.enums.OrderStatus;
 import com.smartshop.entity.enums.PaymentMethod;
 import com.smartshop.entity.enums.PaymentStatus;
 import com.smartshop.entity.user.User;
-import com.smartshop.entity.voucher.Voucher;
+
+import jakarta.persistence.*;
+import lombok.*;
+import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -34,45 +32,13 @@ public class Order {
     @JoinColumn(name = "user_id")
     private User user;
 
-    @Column(name = "order_date", nullable = false)
-    private LocalDateTime orderDate;
-
     @Builder.Default
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private OrderStatus status = OrderStatus.PENDING;
 
-    private Double subtotal;
-
-    @Builder.Default
-    @Column(name = "shipping_fee")
-    private Double shippingFee = 0.0;
-
-    @Builder.Default
-    @Column(name = "discount_amount")
-    private Double discountAmount = 0.0;
-
     @Column(name = "total_amount", nullable = false)
     private Double totalAmount;
-
-    @ManyToOne
-    @JoinColumn(name = "voucher_id")
-    private Voucher voucher;
-
-    @Column(name = "customer_name", nullable = false)
-    private String customerName;
-    @Column(name = "customer_email")
-    private String customerEmail;
-    @Column(name = "customer_phone", nullable = false)
-    private String customerPhone;
-    @Column(name = "shipping_address", nullable = false)
-    private String shippingAddress;
-    @Column(name = "shipping_city")
-    private String shippingCity;
-    @Column(name = "shipping_district")
-    private String shippingDistrict;
-    @Column(name = "shipping_ward")
-    private String shippingWard;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "payment_method", nullable = false)
@@ -83,37 +49,12 @@ public class Order {
     @Column(name = "payment_status")
     private PaymentStatus paymentStatus = PaymentStatus.PENDING;
 
-    @Column(name = "paid_at")
-    private LocalDateTime paidAt;
-
-    @Column(name = "customer_note")
-    private String customerNote;
-
-    @Column(name = "admin_note")
-    private String adminNote;
-
-    @Column(name = "shipping_carrier")
-    private String shippingCarrier;
-
-    @Column(name = "tracking_number")
-    private String trackingNumber;
-
-    @Column(name = "cancelled_at")
-    private LocalDateTime cancelledAt;
-
-    @Column(name = "cancelled_reason")
-    private String cancelledReason;
+    @Column(name = "shipping_address")
+    private String shippingAddress;
 
     @CreationTimestamp
     @Column(name = "created_at")
     private LocalDateTime createdAt;
-
-    @UpdateTimestamp
-    @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
-
-    @Column(name = "updated_by")
-    private String updatedBy;
 
     @Builder.Default
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)

@@ -13,10 +13,10 @@ public interface OrderItemRepository extends JpaRepository<OrderItem, Long> {
     List<OrderItem> findByOrderId(Long orderId);
 
     // Get top selling products in a month
-    @Query("SELECT oi.product.id, oi.product.name, SUM(oi.quantity) as totalQuantity, SUM(oi.subtotal) as totalRevenue " +
+    @Query("SELECT oi.product.id, oi.product.name, SUM(oi.quantity) as totalQuantity, SUM(oi.price * oi.quantity) as totalRevenue " +
            "FROM OrderItem oi " +
            "JOIN oi.order o " +
-           "WHERE o.orderDate >= :startDate AND o.orderDate < :endDate " +
+           "WHERE o.createdAt >= :startDate AND o.createdAt < :endDate " +
            "AND o.status NOT IN (com.smartshop.entity.enums.OrderStatus.CANCELLED, com.smartshop.entity.enums.OrderStatus.REFUNDED) " +
            "AND oi.product IS NOT NULL " +
            "GROUP BY oi.product.id, oi.product.name " +

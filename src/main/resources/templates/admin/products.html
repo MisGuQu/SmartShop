@@ -76,20 +76,9 @@
                         </select>
                     </div>
                     <div class="form__group">
-                        <label for="brand">Thương hiệu</label>
-                        <input id="brand" type="text" placeholder="Ví dụ: Samsung, Apple" th:field="*{brand}">
-                    </div>
-                </div>
-
-                <div class="form__grid">
-                    <div class="form__group">
                         <label for="slug">Đường dẫn URL (Slug)</label>
                         <input id="slug" type="text" placeholder="vi-du-san-pham" th:field="*{slug}">
                         <p class="form__help">Để trống sẽ tự động tạo từ tên sản phẩm</p>
-                    </div>
-                    <div class="form__group">
-                        <label for="weight">Trọng lượng (kg)</label>
-                        <input id="weight" type="number" step="0.01" min="0" th:field="*{weight}" placeholder="0.00">
                     </div>
                 </div>
 
@@ -104,27 +93,20 @@
 
                 <!-- Form cho sản phẩm đơn giản -->
                 <div id="simpleProductGroup" style="display: none;">
-                    <div class="form__grid">
-                        <div class="form__group">
-                            <label for="basePrice" id="basePriceLabel">Giá bán (VNĐ)</label>
-                            <input id="basePrice" type="number" step="0.01" min="0" th:field="*{basePrice}" placeholder="0.00">
-                            <p class="form__error" th:if="${#fields.hasErrors('basePrice')}" th:errors="*{basePrice}"></p>
-                            <p class="form__help" id="basePriceHelp">Giá bán cho sản phẩm đơn giản</p>
-                        </div>
-                        <div class="form__group">
-                            <label for="stockQuantity">Số lượng tồn kho</label>
-                            <input id="stockQuantity" type="number" min="0" th:field="*{stockQuantity}" placeholder="0">
-                            <p class="form__help">Số lượng sản phẩm còn trong kho</p>
-                        </div>
+                    <div class="form__group">
+                        <label for="simplePrice">Giá bán (VNĐ)</label>
+                        <input id="simplePrice" type="number" step="0.01" min="0" th:field="*{price}" placeholder="0.00">
+                        <p class="form__error" th:if="${#fields.hasErrors('price')}" th:errors="*{price}"></p>
+                        <p class="form__help">Giá bán cho sản phẩm đơn giản</p>
                     </div>
                 </div>
 
                 <!-- Form cho sản phẩm có variants -->
                 <div id="variantsProductGroup" style="display: none;">
                     <div class="form__group">
-                        <label for="basePrice">Giá tham khảo (VNĐ)</label>
-                        <input id="basePrice" type="number" step="0.01" min="0" th:field="*{basePrice}" placeholder="0.00">
-                        <p class="form__error" th:if="${#fields.hasErrors('basePrice')}" th:errors="*{basePrice}"></p>
+                        <label for="variantPrice">Giá tham khảo (VNĐ)</label>
+                        <input id="variantPrice" type="number" step="0.01" min="0" th:field="*{price}" placeholder="0.00">
+                        <p class="form__error" th:if="${#fields.hasErrors('price')}" th:errors="*{price}"></p>
                         <p class="form__help">Giá tham khảo (giá thực tế sẽ được nhập ở phần biến thể bên dưới)</p>
                     </div>
 
@@ -143,18 +125,6 @@
                             <p class="variants-list__empty">Chưa có biến thể nào. Nhấn "Thêm biến thể" để bắt đầu.</p>
                         </div>
                     </div>
-                </div>
-
-                <div class="form__group">
-                    <label for="metaTitle">Meta Title (SEO)</label>
-                    <input id="metaTitle" type="text" placeholder="Tiêu đề SEO" th:field="*{metaTitle}">
-                    <p class="form__help">Để trống sẽ sử dụng tên sản phẩm</p>
-                </div>
-
-                <div class="form__group">
-                    <label for="metaDescription">Meta Description (SEO)</label>
-                    <textarea id="metaDescription" rows="2" placeholder="Mô tả SEO" th:field="*{metaDescription}"></textarea>
-                    <p class="form__help">Mô tả ngắn gọn cho SEO (khoảng 150-160 ký tự)</p>
                 </div>
 
                 <div class="form__group form__group--inline">
@@ -212,11 +182,6 @@
                 </div>
 
                 <div class="form__group">
-                    <label for="category-description">Mô tả</label>
-                    <textarea id="category-description" rows="3" placeholder="Mô tả ngắn gọn" th:field="*{description}"></textarea>
-                </div>
-
-                <div class="form__group">
                     <label for="parentId">Danh mục cha (tùy chọn)</label>
                     <select id="parentId" th:field="*{parentId}">
                         <option value="">-- Không chọn --</option>
@@ -224,13 +189,6 @@
                                 th:value="${category.id}"
                                 th:text="${category.name}"></option>
                     </select>
-                </div>
-
-                <div class="form__group form__group--inline">
-                    <label class="switch">
-                        <input type="checkbox" th:field="*{active}">
-                        <span>Kích hoạt danh mục</span>
-                    </label>
                 </div>
 
                 <div class="form__actions">
@@ -244,10 +202,10 @@
                     <li class="category-list__item" th:each="category : ${categories}">
                         <div>
                             <p class="category-list__name" th:text="${category.name}"></p>
-                            <p class="category-list__meta" th:text="${category.description} ?: 'Chưa có mô tả'"></p>
+                            <p class="category-list__meta" th:text="${category.parent != null ? 'Thuộc: ' + category.parent.name : 'Danh mục gốc'}"></p>
                         </div>
                         <div class="category-list__actions">
-                            <span class="badge" th:text="${category.active} ? 'Đang hiển thị' : 'Đã ẩn'"></span>
+                            <span class="badge badge--secondary" th:text="'Sản phẩm: ' + #lists.size(category.products)"></span>
                             <form class="category-list__delete-form" th:action="@{/admin/products/categories/{id}/delete(id=${category.id})}" method="post" onsubmit="return confirm('Bạn có chắc chắn muốn xóa danh mục này?');">
                                 <button class="button-icon button-icon--danger" type="submit" title="Xóa danh mục">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -301,15 +259,15 @@
                         <p class="table__secondary" th:text="${product.slug ?: 'Chưa có slug'}"></p>
                     </td>
                     <td th:text="${product.category != null ? product.category.name : 'Không phân loại'}"></td>
-                    <td th:text="${product.brand ?: '-'}"></td>
-                    <td th:text="${#numbers.formatDecimal(product.basePrice, 1, 'POINT', 0, 'COMMA')} + ' ₫'"></td>
+                    <td>-</td>
+                    <td th:text="${#numbers.formatDecimal(product.price, 1, 'POINT', 0, 'COMMA')} + ' ₫'"></td>
                     <td>
                         <span class="badge" th:if="${product.hasVariants}" th:text="'Có variants'"></span>
                         <span class="badge badge--secondary" th:if="${!product.hasVariants}" th:text="'Đơn giản'"></span>
                     </td>
                     <td>
-                        <span class="status" th:classappend="${product.active} ? ' status--active' : ' status--inactive'"
-                              th:text="${product.active} ? 'Đang hiển thị' : 'Đã ẩn'"></span>
+                        <span class="status" th:classappend="${product.isActive} ? ' status--active' : ' status--inactive'"
+                              th:text="${product.isActive} ? 'Đang hiển thị' : 'Đã ẩn'"></span>
                     </td>
                     <td th:text="${product.updatedAt != null ? #temporals.format(product.updatedAt, 'dd/MM/yyyy HH:mm') : '-'}"></td>
                     <td class="table__actions">
@@ -422,9 +380,6 @@
         const hasVariantsSelect = document.getElementById('hasVariants');
         const simpleProductGroup = document.getElementById('simpleProductGroup');
         const variantsProductGroup = document.getElementById('variantsProductGroup');
-        const basePriceLabel = document.getElementById('basePriceLabel');
-        const basePriceHelp = document.getElementById('basePriceHelp');
-        const basePriceInput = document.getElementById('basePrice');
 
         function toggleProductType() {
             if (!hasVariantsSelect) return;
@@ -472,28 +427,8 @@
                     </div>
                     <div class="form__grid">
                         <div class="form__group">
-                            <label>Size</label>
-                            <input type="text" name="variants[${variantCount}].size" placeholder="S, M, L, XL">
-                        </div>
-                        <div class="form__group">
-                            <label>Màu sắc</label>
-                            <input type="text" name="variants[${variantCount}].color" placeholder="Đỏ, Xanh, Đen">
-                        </div>
-                        <div class="form__group">
-                            <label>Mã màu (HEX)</label>
-                            <input type="text" name="variants[${variantCount}].colorCode" placeholder="#FF0000">
-                        </div>
-                        <div class="form__group">
-                            <label>Kích thước màn hình</label>
-                            <input type="text" name="variants[${variantCount}].screenSize" placeholder="43\", 55\", 65\"">
-                        </div>
-                        <div class="form__group">
-                            <label>Bộ nhớ</label>
-                            <input type="text" name="variants[${variantCount}].storage" placeholder="64GB, 128GB">
-                        </div>
-                        <div class="form__group">
-                            <label>Chất liệu</label>
-                            <input type="text" name="variants[${variantCount}].material" placeholder="Cotton, Polyester">
+                            <label>Tên biến thể <span class="required">*</span></label>
+                            <input type="text" name="variants[${variantCount}].variantName" placeholder="Ví dụ: Size M - Đỏ" required>
                         </div>
                     </div>
                     <div class="form__grid">
@@ -502,12 +437,8 @@
                             <input type="number" step="0.01" min="0" name="variants[${variantCount}].price" placeholder="0.00" required>
                         </div>
                         <div class="form__group">
-                            <label>Giá so sánh (VNĐ)</label>
-                            <input type="number" step="0.01" min="0" name="variants[${variantCount}].compareAtPrice" placeholder="0.00">
-                        </div>
-                        <div class="form__group">
                             <label>Số lượng tồn kho <span class="required">*</span></label>
-                            <input type="number" min="0" name="variants[${variantCount}].stockQuantity" placeholder="0" required>
+                            <input type="number" min="0" name="variants[${variantCount}].stock" placeholder="0" required>
                         </div>
                         <div class="form__group">
                             <label>Mã SKU</label>

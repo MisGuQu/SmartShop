@@ -6,6 +6,37 @@
     <title>SmartShop | Quản lý đơn hàng</title>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
     <link rel="stylesheet" th:href="@{/css/admin.css}">
+    <style>
+        .admin-filters {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            align-items: flex-end;
+        }
+        .admin-filters__group {
+            flex: 1;
+            min-width: 220px;
+        }
+        .admin-filters__label {
+            display: block;
+            margin-bottom: 0.4rem;
+            font-weight: 500;
+            color: #0f172a;
+        }
+        .admin-filters__control {
+            width: 100%;
+            padding: 0.55rem 0.75rem;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            background: #ffffff;
+        }
+        .admin-table__empty {
+            text-align: center;
+            padding: 2rem;
+            color: #64748b;
+        }
+    </style>
 </head>
 <body>
 <header class="admin-header">
@@ -45,19 +76,18 @@
                 <p class="admin-card__subtitle">Tìm kiếm đơn hàng theo tên hoặc SĐT khách hàng, lọc theo trạng thái.</p>
             </div>
         </div>
-        <form method="get" action="/admin/orders" style="display: flex; gap: 1rem; align-items: flex-end; flex-wrap: wrap;">
-            <div style="flex: 1; min-width: 200px;">
-                <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: #0f172a;">Tìm kiếm</label>
-                <input type="text" 
-                       name="keyword" 
+        <form method="get" action="/admin/orders" class="admin-filters">
+            <div class="admin-filters__group">
+                <label class="admin-filters__label">Tìm kiếm</label>
+                <input type="text"
+                       name="keyword"
                        th:value="${currentKeyword}"
                        placeholder="Tên hoặc SĐT khách hàng"
-                       style="width: 100%; padding: 0.5rem 0.75rem; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 0.875rem;">
+                       class="admin-filters__control">
             </div>
-            <div style="flex: 1; min-width: 200px;">
-                <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: #0f172a;">Lọc theo trạng thái</label>
-                <select name="status" 
-                        style="width: 100%; padding: 0.5rem 0.75rem; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 0.875rem; background: #ffffff; cursor: pointer;">
+            <div class="admin-filters__group">
+                <label class="admin-filters__label">Lọc theo trạng thái</label>
+                <select name="status" class="admin-filters__control">
                     <option value="">Tất cả trạng thái</option>
                     <option th:each="status : ${orderStatuses}" 
                             th:value="${status.name()}" 
@@ -66,8 +96,8 @@
                 </select>
             </div>
             <div style="display: flex; gap: 0.5rem;">
-                <button type="submit" class="button button--primary" style="padding: 0.5rem 1.5rem;">Tìm kiếm</button>
-                <a href="/admin/orders" class="button button--ghost" style="padding: 0.5rem 1.5rem;">Xóa bộ lọc</a>
+                <button type="submit" class="button button--primary">Tìm kiếm</button>
+                <a href="/admin/orders" class="button button--ghost">Xóa bộ lọc</a>
             </div>
         </form>
     </section>
@@ -87,7 +117,7 @@
                 <tr>
                     <th>Mã đơn hàng</th>
                     <th>Khách hàng</th>
-                    <th>SĐT</th>
+                    <th>Liên hệ</th>
                     <th>Ngày đặt</th>
                     <th>Tổng tiền</th>
                     <th>Trạng thái</th>
@@ -101,9 +131,12 @@
                             <span th:text="${order.orderNumber}"></span>
                         </div>
                     </td>
-                    <td th:text="${order.customerName}"></td>
-                    <td th:text="${order.customerPhone}"></td>
-                    <td th:text="${order.orderDate != null ? #temporals.format(order.orderDate, 'dd/MM/yyyy HH:mm') : '-'}"></td>
+                    <td>
+                        <div class="table__primary" th:text="${order.user != null ? order.user.fullName : 'Khách lẻ'}"></div>
+                        <p class="table__secondary" th:text="${order.user != null ? order.user.email : '-'}"></p>
+                    </td>
+                    <td th:text="${order.user != null && order.user.phone != null ? order.user.phone : '-'}"></td>
+                    <td th:text="${order.createdAt != null ? #temporals.format(order.createdAt, 'dd/MM/yyyy HH:mm') : '-'}"></td>
                     <td>
                         <span style="font-weight: 600; color: #10b981;">
                             <span th:text="${#numbers.formatDecimal(order.totalAmount, 1, 'POINT', 0, 'COMMA')}"></span> ₫
@@ -123,7 +156,7 @@
                     </td>
                 </tr>
                 <tr th:if="${#lists.isEmpty(orders)}">
-                    <td colspan="7" class="table__empty">Không có đơn hàng nào.</td>
+                    <td colspan="7" class="admin-table__empty">Không có đơn hàng nào.</td>
                 </tr>
                 </tbody>
             </table>

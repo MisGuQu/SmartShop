@@ -53,6 +53,7 @@ public class CartService {
     public CartSummaryView getCartSummary(Long userId) {
         ShoppingCart cart = getCartByUserId(userId);
         List<CartItemView> items = cart.getItems().stream()
+                .filter(item -> !item.isWishlist())
                 .sorted(Comparator.comparing(CartItem::getId))
                 .map(this::toCartItemView)
                 .collect(Collectors.toList());
@@ -108,7 +109,7 @@ public class CartService {
         }
         ShoppingCart cart = getCartByUserId(userId);
         CartItem item = cart.getItems().stream()
-                .filter(ci -> ci.getId().equals(cartItemId))
+                .filter(ci -> !ci.isWishlist() && ci.getId().equals(cartItemId))
                 .findFirst()
                 .orElseThrow(() -> new EntityNotFoundException("Sản phẩm trong giỏ không tồn tại"));
 
@@ -123,7 +124,7 @@ public class CartService {
     public ShoppingCart removeItem(Long userId, Long cartItemId) {
         ShoppingCart cart = getCartByUserId(userId);
         CartItem item = cart.getItems().stream()
-                .filter(ci -> ci.getId().equals(cartItemId))
+                .filter(ci -> !ci.isWishlist() && ci.getId().equals(cartItemId))
                 .findFirst()
                 .orElseThrow(() -> new EntityNotFoundException("Sản phẩm trong giỏ không tồn tại"));
 
@@ -135,7 +136,9 @@ public class CartService {
 
     public void clearCart(Long userId) {
         ShoppingCart cart = getCartByUserId(userId);
-        List<CartItem> existingItems = List.copyOf(cart.getItems());
+        List<CartItem> existingItems = cart.getItems().stream()
+                .filter(item -> !item.isWishlist())
+                .collect(Collectors.toList());
         existingItems.forEach(cartItemRepository::delete);
         cart.getItems().clear();
         shoppingCartRepository.save(cart);
@@ -146,7 +149,7 @@ public class CartService {
         ProductVariant variant = item.getVariant();
         double unitPrice = variant != null && variant.getPrice() != null
                 ? variant.getPrice()
-                : product.getBasePrice();
+                : product.getPrice();
         double subtotal = unitPrice * item.getQuantity();
         Optional<ProductImage> primaryImage = productService.getPrimaryImage(product.getId());
         String imageUrl = primaryImage
@@ -164,14 +167,14 @@ public class CartService {
                 .unitPrice(round(unitPrice))
                 .quantity(item.getQuantity())
                 .subtotal(round(subtotal))
-                .maxQuantity(variant != null ? variant.getStockQuantity() : 99)
+                .maxQuantity(variant != null ? variant.getStock() : 99)
                 .imageUrl(imageUrl)
                 .build();
     }
 
     private void validateInventory(Product product, ProductVariant variant, int desiredQuantity) {
         if (variant != null) {
-            if (variant.getStockQuantity() < desiredQuantity) {
+            if (variant.getStock() < desiredQuantity) {
                 throw new IllegalStateException("Sản phẩm không đủ tồn kho");
             }
         }
@@ -181,23 +184,7 @@ public class CartService {
         if (variant == null) {
             return null;
         }
-        StringBuilder builder = new StringBuilder();
-        if (StringUtils.hasText(variant.getColor())) {
-            builder.append(variant.getColor());
-        }
-        if (StringUtils.hasText(variant.getSize())) {
-            if (builder.length() > 0) {
-                builder.append(" | ");
-            }
-            builder.append(variant.getSize());
-        }
-        if (StringUtils.hasText(variant.getStorage())) {
-            if (builder.length() > 0) {
-                builder.append(" | ");
-            }
-            builder.append(variant.getStorage());
-        }
-        return builder.length() == 0 ? null : builder.toString();
+        return StringUtils.hasText(variant.getVariantName()) ? variant.getVariantName() : null;
     }
 
     private User resolveUser(Long userId) {

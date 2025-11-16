@@ -1,6 +1,5 @@
 package com.smartshop.security.oauth;
 
-import com.smartshop.entity.enums.AuthProvider;
 import com.smartshop.entity.user.Role;
 import com.smartshop.entity.user.User;
 import com.smartshop.repository.RoleRepository;
@@ -52,11 +51,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         }
 
         Optional<User> existingUserOpt = userRepository.findByEmail(email);
-        User user = existingUserOpt.orElseGet(() -> registerOAuthUser(attributes, email));
-        
-        // Cập nhật last login
-        user.setLastLoginAt(java.time.LocalDateTime.now());
-        userRepository.save(user);
+        existingUserOpt.orElseGet(() -> registerOAuthUser(attributes, email));
 
         return new DefaultOAuth2User(
                 List.of(new SimpleGrantedAuthority(DEFAULT_ROLE)),
@@ -76,12 +71,10 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
                 .email(email)
                 .username(email)
                 .fullName(fullName)
-                .avatarPublicId(picture)
+                .avatar(picture)
                 .password(passwordEncoder.encode(UUID.randomUUID().toString()))
                 .roles(List.of(userRole))
                 .isActive(true)
-                .emailVerified(true)
-                .authProvider(AuthProvider.GOOGLE)
                 .build());
     }
 }

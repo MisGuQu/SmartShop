@@ -13,7 +13,6 @@ import com.smartshop.entity.user.User;
 import com.smartshop.repository.UserRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,9 +29,6 @@ public class CheckoutService {
     private final OrderService orderService;
     private final ProductService productService;
     private final UserRepository userRepository;
-
-    @Value("${CLOUD_NAME:Root}")
-    private String cloudName;
 
     public Order placeOrder(Long userId, CheckoutRequest request) {
         Objects.requireNonNull(userId, "userId must not be null");
@@ -54,19 +50,13 @@ public class CheckoutService {
             ProductVariant variant = cartItem.getVariant();
             double unitPrice = variant != null && variant.getPrice() != null
                     ? variant.getPrice()
-                    : product.getBasePrice();
+                    : product.getPrice();
 
             OrderItem orderItem = OrderItem.builder()
                     .product(product)
                     .variant(variant)
-                    .productName(product.getName())
-                    .variantDetails(buildVariantLabel(variant))
-                    .productImagePublicId(productService.getPrimaryImage(product.getId())
-                            .map(img -> buildCloudinaryUrl(img.getPublicId()))
-                            .orElse(null))
                     .quantity(cartItem.getQuantity())
-                    .pricePerUnit(unitPrice)
-                    .subtotal(unitPrice * cartItem.getQuantity())
+                    .price(unitPrice)
                     .build();
             orderItems.add(orderItem);
 
@@ -82,38 +72,5 @@ public class CheckoutService {
         return order;
     }
 
-    private String buildVariantLabel(ProductVariant variant) {
-        if (variant == null) {
-            return null;
-        }
-        StringBuilder builder = new StringBuilder();
-        if (variant.getColor() != null && !variant.getColor().isBlank()) {
-            builder.append(variant.getColor());
-        }
-        if (variant.getSize() != null && !variant.getSize().isBlank()) {
-            if (builder.length() > 0) {
-                builder.append(" | ");
-            }
-            builder.append(variant.getSize());
-        }
-        if (variant.getStorage() != null && !variant.getStorage().isBlank()) {
-            if (builder.length() > 0) {
-                builder.append(" | ");
-            }
-            builder.append(variant.getStorage());
-        }
-        return builder.length() > 0 ? builder.toString() : null;
-    }
-
-    private String buildCloudinaryUrl(String publicId) {
-        if (publicId == null || publicId.isBlank()) {
-            return null;
-        }
-        if (publicId.startsWith("http")) {
-            return publicId;
-        }
-        String name = (cloudName != null && !cloudName.isBlank()) ? cloudName : "Root";
-        return "https://res.cloudinary.com/" + name + "/image/upload/" + publicId;
-    }
 }
 

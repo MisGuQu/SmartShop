@@ -33,86 +33,205 @@ public class ProductController {
     @Value("${CLOUD_NAME:Root}")
     private String cloudName;
 
+    // ============================================================
+    // GET - Danh sách sản phẩm với tìm kiếm và lọc
+    // ============================================================
+
     @GetMapping
-    public String listProducts(@RequestParam(value = "page", defaultValue = "0") int page,
-                               @RequestParam(value = "size", defaultValue = "12") int size,
-                               @RequestParam(value = "sort", defaultValue = "createdAt") String sortBy,
-                               @RequestParam(value = "direction", defaultValue = "desc") String direction,
-                               @RequestParam(value = "keyword", required = false) String keyword,
-                               @RequestParam(value = "category", required = false) Long categoryId,
-                               @RequestParam(value = "minPrice", required = false) Double minPrice,
-                               @RequestParam(value = "maxPrice", required = false) Double maxPrice,
-                               Model model) {
+    public String listProducts(
+            @RequestParam(value = "page", defaultValue = "0") int page,
+            @RequestParam(value = "size", defaultValue = "12") int size,
+            @RequestParam(value = "sort", defaultValue = "createdAt") String sortBy,
+            @RequestParam(value = "direction", defaultValue = "desc") String direction,
+            @RequestParam(value = "keyword", required = false) String keyword,
+            @RequestParam(value = "category", required = false) Long categoryId,
+            @RequestParam(value = "minPrice", required = false) Double minPrice,
+            @RequestParam(value = "maxPrice", required = false) Double maxPrice,
+            Model model) {
 
-        Sort sort = Sort.by("asc".equalsIgnoreCase(direction) ? Sort.Direction.ASC : Sort.Direction.DESC, sortBy);
-        Pageable pageable = PageRequest.of(Math.max(page, 0), Math.max(size, 1), sort);
+        // Tạo Pageable với sắp xếp
+        Pageable pageable = createPageable(page, size, sortBy, direction);
 
-        Page<Product> productPage = productService.searchProducts(keyword, categoryId, minPrice, maxPrice, pageable);
+        // Tìm kiếm sản phẩm
+        Page<Product> productPage = productService.searchProducts(
+                keyword, categoryId, minPrice, maxPrice, pageable);
 
-        List<ProductSummaryView> summaries = productPage.getContent().stream()
-                .map(product -> ProductSummaryView.builder()
-                        .id(product.getId())
-                        .name(product.getName())
-                        .slug(product.getSlug())
-                        .description(product.getDescription())
-                        .price(product.getBasePrice())
-                        .hasVariants(product.isHasVariants())
-                        .imageUrl(productService.getPrimaryImage(product.getId())
-                                .map(ProductImage::getPublicId)
-                                .map(this::buildCloudinaryUrl)
-                                .orElse(null))
-                        .build())
-                .collect(Collectors.toList());
+        // Chuyển đổi Product thành ProductSummaryView
+        List<ProductSummaryView> productSummaries = convertToProductSummaries(productPage.getContent());
 
-        model.addAttribute("page", productPage);
-        model.addAttribute("products", summaries);
-        model.addAttribute("keyword", keyword);
-        model.addAttribute("categoryId", categoryId);
-        model.addAttribute("minPrice", minPrice);
-        model.addAttribute("maxPrice", maxPrice);
-        model.addAttribute("sort", sortBy);
-        model.addAttribute("direction", direction);
-        model.addAttribute("categories", categoryService.getAllCategories());
+        // Thêm dữ liệu vào model
+        addProductListAttributes(model, productPage, productSummaries, keyword, 
+                categoryId, minPrice, maxPrice, sortBy, direction);
 
         return "product/list";
     }
 
+    // ============================================================
+    // GET - Chi tiết sản phẩm
+    // ============================================================
+
     @GetMapping("/{identifier}")
     public String viewProduct(@PathVariable String identifier, Model model) {
-        Product product;
-        try {
-            Long id = Long.parseLong(identifier);
-            product = productService.getProductDetail(id);
-        } catch (NumberFormatException ex) {
-            product = productService.getProductDetail(identifier);
-        }
+        // Lấy sản phẩm theo ID hoặc slug
+        Product product = getProductByIdentifier(identifier);
 
+        // Lấy danh sách variants
         List<ProductVariant> variants = productService.getActiveVariants(product.getId());
-        List<String> gallery = product.getImages().stream()
-                .map(ProductImage::getPublicId)
-                .map(this::buildCloudinaryUrl)
-                .filter(url -> url != null && !url.isBlank())
-                .collect(Collectors.toList());
 
-        model.addAttribute("product", product);
-        model.addAttribute("variants", variants);
-        model.addAttribute("primaryImage", productService.getPrimaryImage(product.getId())
-                .map(ProductImage::getPublicId)
-                .map(this::buildCloudinaryUrl)
-                .orElse(null));
-        model.addAttribute("gallery", gallery);
+        // Lấy gallery ảnh
+        List<String> gallery = buildProductGallery(product);
+
+        // Lấy ảnh chính
+        String primaryImageUrl = getPrimaryImageUrl(product.getId());
+
+        // Thêm dữ liệu vào model
+        addProductDetailAttributes(model, product, variants, gallery, primaryImageUrl);
 
         return "product/detail";
     }
 
+    // ============================================================
+    // PRIVATE HELPER METHODS - Tạo Pageable
+    // ============================================================
+
+    /**
+     * Tạo Pageable object với sắp xếp
+     */
+    private Pageable createPageable(int page, int size, String sortBy, String direction) {
+        Sort.Direction sortDirection = "asc".equalsIgnoreCase(direction) 
+                ? Sort.Direction.ASC 
+                : Sort.Direction.DESC;
+        Sort sort = Sort.by(sortDirection, sortBy);
+        
+        // Đảm bảo page và size hợp lệ
+        int validPage = Math.max(page, 0);
+        int validSize = Math.max(size, 1);
+        
+        return PageRequest.of(validPage, validSize, sort);
+    }
+
+    // ============================================================
+    // PRIVATE HELPER METHODS - Chuyển đổi dữ liệu
+    // ============================================================
+
+    /**
+     * Chuyển đổi danh sách Product thành ProductSummaryView
+     */
+    private List<ProductSummaryView> convertToProductSummaries(List<Product> products) {
+        return products.stream()
+                .map(this::convertToProductSummary)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Chuyển đổi một Product thành ProductSummaryView
+     */
+    private ProductSummaryView convertToProductSummary(Product product) {
+        String imageUrl = getPrimaryImageUrl(product.getId());
+        
+        return ProductSummaryView.builder()
+                .id(product.getId())
+                .name(product.getName())
+                .slug(product.getSlug())
+                .description(product.getDescription())
+                .price(product.getPrice())
+                .hasVariants(product.isHasVariants())
+                .imageUrl(imageUrl)
+                .build();
+    }
+
+    // ============================================================
+    // PRIVATE HELPER METHODS - Lấy sản phẩm
+    // ============================================================
+
+    /**
+     * Lấy sản phẩm theo ID (số) hoặc slug (chuỗi)
+     */
+    private Product getProductByIdentifier(String identifier) {
+        try {
+            // Thử parse thành Long (ID)
+            Long id = Long.parseLong(identifier);
+            return productService.getProductDetail(id);
+        } catch (NumberFormatException ex) {
+            // Nếu không phải số, coi như slug
+            return productService.getProductDetail(identifier);
+        }
+    }
+
+    // ============================================================
+    // PRIVATE HELPER METHODS - Xử lý ảnh
+    // ============================================================
+
+    /**
+     * Lấy URL ảnh chính của sản phẩm
+     */
+    private String getPrimaryImageUrl(Long productId) {
+        return productService.getPrimaryImage(productId)
+                .map(ProductImage::getPublicId)
+                .map(this::buildCloudinaryUrl)
+                .orElse(null);
+    }
+
+    /**
+     * Tạo danh sách gallery ảnh từ sản phẩm
+     */
+    private List<String> buildProductGallery(Product product) {
+        return product.getImages().stream()
+                .map(ProductImage::getPublicId)
+                .map(this::buildCloudinaryUrl)
+                .filter(url -> url != null && !url.isBlank())
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Xây dựng URL ảnh Cloudinary từ publicId
+     */
     private String buildCloudinaryUrl(String publicId) {
         if (publicId == null || publicId.isBlank()) {
             return null;
         }
+        
+        // Nếu đã là URL đầy đủ, trả về luôn
         if (publicId.startsWith("http")) {
             return publicId;
         }
-        String name = (cloudName != null && !cloudName.isBlank()) ? cloudName : "Root";
-        return "https://res.cloudinary.com/" + name + "/image/upload/" + publicId;
+        
+        // Xây dựng URL Cloudinary
+        String cloudNameValue = (cloudName != null && !cloudName.isBlank()) ? cloudName : "Root";
+        return "https://res.cloudinary.com/" + cloudNameValue + "/image/upload/" + publicId;
+    }
+
+    // ============================================================
+    // PRIVATE HELPER METHODS - Thêm attributes vào Model
+    // ============================================================
+
+    /**
+     * Thêm các attributes cho trang danh sách sản phẩm
+     */
+    private void addProductListAttributes(Model model, Page<Product> productPage,
+                                         List<ProductSummaryView> products, String keyword,
+                                         Long categoryId, Double minPrice, Double maxPrice,
+                                         String sort, String direction) {
+        model.addAttribute("page", productPage);
+        model.addAttribute("products", products);
+        model.addAttribute("keyword", keyword);
+        model.addAttribute("categoryId", categoryId);
+        model.addAttribute("minPrice", minPrice);
+        model.addAttribute("maxPrice", maxPrice);
+        model.addAttribute("sort", sort);
+        model.addAttribute("direction", direction);
+        model.addAttribute("categories", categoryService.getAllCategories());
+    }
+
+    /**
+     * Thêm các attributes cho trang chi tiết sản phẩm
+     */
+    private void addProductDetailAttributes(Model model, Product product,
+                                           List<ProductVariant> variants,
+                                           List<String> gallery, String primaryImageUrl) {
+        model.addAttribute("product", product);
+        model.addAttribute("variants", variants);
+        model.addAttribute("primaryImage", primaryImageUrl);
+        model.addAttribute("gallery", gallery);
     }
 }

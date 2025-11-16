@@ -7,5 +7,5 @@ import com.smartshop.entity.order.OrderStatusHistory;
 import java.util.List;
 
 public interface OrderStatusHistoryRepository extends JpaRepository<OrderStatusHistory, Long> {
-    List<OrderStatusHistory> findByOrderIdOrderByChangedAtDesc(Long orderId);
+    List<OrderStatusHistory> findByOrderIdOrderByCreatedAtDesc(Long orderId);
 }

@@ -1,16 +1,14 @@
 package com.smartshop.service;
 
+import com.smartshop.entity.order.Order;
+import com.smartshop.entity.order.OrderItem;
+import com.smartshop.entity.user.User;
+import com.smartshop.repository.OrderRepository;
+import com.smartshop.repository.UserRepository;
 import com.smartshop.dto.order.CheckoutRequest;
 import com.smartshop.entity.enums.OrderStatus;
 import com.smartshop.entity.enums.PaymentMethod;
 import com.smartshop.entity.enums.PaymentStatus;
-import com.smartshop.entity.order.Order;
-import com.smartshop.entity.order.OrderItem;
-import com.smartshop.entity.user.User;
-import com.smartshop.entity.voucher.Voucher;
-import com.smartshop.repository.OrderRepository;
-import com.smartshop.repository.UserRepository;
-import com.smartshop.repository.VoucherRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -27,11 +25,10 @@ public class OrderService {
 
     private final OrderRepository orderRepository;
     private final UserRepository userRepository;
-    private final VoucherRepository voucherRepository;
 
     public List<Order> getOrdersByUser(Long userId) {
         Objects.requireNonNull(userId, "userId must not be null");
-        return orderRepository.findByUserIdOrderByOrderDateDesc(userId);
+        return orderRepository.findByUserIdOrderByCreatedAtDesc(userId);
     }
 
     public Order getOrderById(Long orderId) {
@@ -47,33 +44,21 @@ public class OrderService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new EntityNotFoundException("User not found"));
 
-        Long voucherId = payload.getVoucher() != null ? payload.getVoucher().getId() : null;
-        Voucher voucher = null;
-        if (voucherId != null) {
-            voucher = voucherRepository.findById(voucherId)
-                    .orElseThrow(() -> new EntityNotFoundException("Voucher not found"));
-        }
-
         Order order = new Order();
         order.setUser(user);
         order.setOrderNumber(generateOrderNumber());
-        order.setOrderDate(LocalDateTime.now());
-        order.setStatus(OrderStatus.PENDING);
-        order.setSubtotal(defaultDouble(payload.getSubtotal()));
-        order.setShippingFee(defaultDouble(payload.getShippingFee()));
-        order.setDiscountAmount(defaultDouble(payload.getDiscountAmount()));
-        order.setTotalAmount(payload.getTotalAmount() != null ? payload.getTotalAmount() : 0.0);
-        order.setVoucher(voucher);
-        order.setCustomerName(payload.getCustomerName());
-        order.setCustomerEmail(payload.getCustomerEmail());
-        order.setCustomerPhone(payload.getCustomerPhone());
         order.setShippingAddress(payload.getShippingAddress());
-        order.setShippingCity(payload.getShippingCity());
-        order.setShippingDistrict(payload.getShippingDistrict());
-        order.setShippingWard(payload.getShippingWard());
+        order.setTotalAmount(payload.getTotalAmount() != null ? payload.getTotalAmount() : 0.0);
         order.setPaymentMethod(payload.getPaymentMethod() != null ? payload.getPaymentMethod() : PaymentMethod.COD);
-        order.setPaymentStatus(PaymentStatus.PENDING);
-        order.setCustomerNote(payload.getCustomerNote());
+        order.setPaymentStatus(payload.getPaymentStatus() != null ? payload.getPaymentStatus() : PaymentStatus.PENDING);
+        order.setStatus(payload.getStatus() != null ? payload.getStatus() : OrderStatus.PENDING);
+
+        if (payload.getItems() != null) {
+            for (OrderItem item : payload.getItems()) {
+                item.setOrder(order);
+            }
+            order.setItems(payload.getItems());
+        }
 
         return orderRepository.save(order);
     }
@@ -89,24 +74,11 @@ public class OrderService {
         Order order = new Order();
         order.setUser(user);
         order.setOrderNumber(generateOrderNumber());
-        order.setOrderDate(LocalDateTime.now());
         order.setStatus(OrderStatus.PENDING);
-        order.setSubtotal(subtotal);
-        order.setShippingFee(shippingFee);
-        order.setDiscountAmount(0.0);
         order.setTotalAmount(subtotal + shippingFee);
-        order.setVoucher(null);
-        order.setCustomerName(request.getCustomerName());
-        order.setCustomerEmail(request.getCustomerEmail());
-        order.setCustomerPhone(request.getCustomerPhone());
         order.setShippingAddress(request.getShippingAddress());
-        order.setShippingCity(request.getShippingCity());
-        order.setShippingDistrict(request.getShippingDistrict());
-        order.setShippingWard(request.getShippingWard());
         order.setPaymentMethod(request.getPaymentMethod() != null ? request.getPaymentMethod() : PaymentMethod.COD);
         order.setPaymentStatus(PaymentStatus.PENDING);
-        order.setCustomerNote(request.getCustomerNote());
-        order.setShippingCarrier(request.getShippingMethod() != null ? request.getShippingMethod().name() : null);
 
         for (OrderItem item : orderItems) {
             item.setOrder(order);
@@ -122,10 +94,6 @@ public class OrderService {
                 .orElseThrow(() -> new EntityNotFoundException("Order not found"));
 
         order.setStatus(OrderStatus.CANCELLED);
-        order.setCancelledAt(LocalDateTime.now());
-        order.setCancelledReason(reason);
-        order.setUpdatedAt(LocalDateTime.now());
-
         return orderRepository.save(order);
     }
 
@@ -152,7 +120,6 @@ public class OrderService {
         validateStatusTransition(order.getStatus(), newStatus);
 
         order.setStatus(newStatus);
-        order.setUpdatedAt(LocalDateTime.now());
         return orderRepository.save(order);
     }
 
@@ -208,7 +175,7 @@ public class OrderService {
      * Lấy tất cả đơn hàng
      */
     public List<Order> getAllOrders() {
-        return orderRepository.findAllOrderByOrderDateDesc();
+        return orderRepository.findAllOrderByCreatedAtDesc();
     }
 
     /**
@@ -223,9 +190,5 @@ public class OrderService {
     private String generateOrderNumber() {
         String timestamp = String.valueOf(System.currentTimeMillis()).substring(7);
         return "ORD-" + LocalDateTime.now().getYear() + timestamp;
-    }
-
-    private double defaultDouble(Double value) {
-        return value != null ? value : 0.0;
     }
 }

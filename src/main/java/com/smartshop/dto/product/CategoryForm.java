@@ -11,10 +11,6 @@ public class CategoryForm {
     @NotBlank(message = "Tên danh mục không được để trống")
     private String name;
 
-    private String description;
-
     private Long parentId;
-
-    private boolean active = true;
 }
 
