@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chi tiết sản phẩm | SmartShop</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/home.css">
+    <link rel="stylesheet" href="/css/product.css">
+</head>
+<body>
+<header class="header">
+    <div class="container header__content">
+        <div class="logo"><a href="/">SmartShop</a></div>
+        <nav class="nav">
+            <a href="/" class="nav__link">Trang chủ</a>
+            <a href="/product.html" class="nav__link nav__link--active">Sản phẩm</a>
+            <a href="/vouchers" class="nav__link">Ưu đãi</a>
+            <a href="/contact" class="nav__link">Liên hệ</a>
+        </nav>
+        <div class="header__actions header__actions--quick">
+            <a href="#" id="wishlistLink" class="header__icon" aria-label="Danh sách yêu thích">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M17.657 5.343a4 4 0 0 0-5.657 0L11 6.343l-.999-1a4 4 0 1 0-5.657 5.657L11 17.657l6.657-6.657a4 4 0 0 0 0-5.657z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path>
+                </svg>
+                <span class="visually-hidden">Yêu thích</span>
+            </a>
+            <a href="#" id="cartLink" class="header__icon" aria-label="Giỏ hàng">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M3.5 5h2.2l1.4 9.2a1 1 0 0 0 .99.85h9.26a1 1 0 0 0 .98-.8l1.12-5.6H7.16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path>
+                    <circle cx="10" cy="19" r="1.4" fill="none" stroke="currentColor" stroke-width="1.6"></circle>
+                    <circle cx="16.5" cy="19" r="1.4" fill="none" stroke="currentColor" stroke-width="1.6"></circle>
+                </svg>
+                <span class="visually-hidden">Giỏ hàng</span>
+            </a>
+            <div class="header__account" id="headerAccountAnonymous">
+                <a href="/auth/login.html" class="button button--ghost">Đăng nhập</a>
+                <a href="/auth/register.html" class="button">Đăng ký</a>
+            </div>
+            <div class="header__account header__account--auth d-none" id="headerAccountAuth">
+                <a class="header__user" href="#" id="userProfileLink">
+                    <span class="header__user-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M12 12a4.5 4.5 0 1 0-4.5-4.5A4.5 4.5 0 0 0 12 12Zm0 2.25c-3.03 0-9 1.52-9 4.5v.75A1.5 1.5 0 0 0 4.5 21h15a1.5 1.5 0 0 0 1.5-1.5v-.75c0-2.98-5.97-4.5-9-4.5Z"
+                                  fill="currentColor"/>
+                        </svg>
+                    </span>
+                    <span class="header__user-name" id="userName"></span>
+                    <span class="header__user-chip d-none" id="adminChip">Quản trị</span>
+                </a>
+                <button type="button" class="button button--ghost button--logout" id="logoutButton">Đăng xuất</button>
+            </div>
+        </div>
+    </div>
+</header>
+
+<main class="product-body">
+    <div class="container">
+        <div id="productDetail">
+            <div class="product-detail">
+                <div class="text-center" style="grid-column: 1 / -1; padding: 64px 0;">
+                    <div class="spinner-border" role="status" style="width: 3rem; height: 3rem; color: var(--color-primary);">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Reviews Section -->
+        <section class="section" id="reviewsSection">
+            <h2 class="section__title" style="text-align: left; margin-bottom: 32px;">Đánh giá sản phẩm</h2>
+            <div id="reviewsContent">
+                <div class="text-center" style="padding: 32px 0;">
+                    <div class="spinner-border" role="status" style="width: 2rem; height: 2rem; color: var(--color-primary);">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+</main>
+
+<footer class="footer">
+    <div class="container footer__content">
+        <div class="footer__column">
+            <div class="logo logo--footer">SmartShop</div>
+            <p>Giải pháp mua sắm thông minh cho mọi nhu cầu của bạn.</p>
+        </div>
+        <div class="footer__column">
+            <h4>Hỗ trợ</h4>
+            <ul>
+                <li><a href="/support">Trung tâm trợ giúp</a></li>
+                <li><a href="/policies/shipping">Chính sách vận chuyển</a></li>
+                <li><a href="/policies/returns">Đổi trả &amp; bảo hành</a></li>
+            </ul>
+        </div>
+        <div class="footer__column">
+            <h4>Kết nối</h4>
+            <ul>
+                <li><a href="mailto:support@smartshop.vn">support@smartshop.vn</a></li>
+                <li><a href="tel:+84281234567">028 1234 567</a></li>
+                <li><a href="https://facebook.com" target="_blank" rel="noreferrer">Facebook</a></li>
+            </ul>
+        </div>
+    </div>
+    <p class="footer__copyright">© 2025 SmartShop. All rights reserved.</p>
+</footer>
+
+<script src="/js/api.js"></script>
+<script src="/js/home.js"></script>
+<script src="/js/product-detail.js"></script>
+</body>
+</html>

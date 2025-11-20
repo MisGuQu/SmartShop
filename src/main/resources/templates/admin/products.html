@@ -1,479 +1,201 @@
 <!DOCTYPE html>
-<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<html lang="vi">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SmartShop | Quản lý sản phẩm</title>
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
-    <link rel="stylesheet" th:href="@{/css/admin.css}">
+    <title>Quản lý Sản phẩm - SmartShop Admin</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="/css/admin.css">
 </head>
 <body>
-<header class="admin-header">
-    <div class="admin-header__title">
-        <a class="admin-header__logo" href="/">SmartShop</a>
-        <span class="admin-header__subtitle">Bảng điều khiển quản trị</span>
-    </div>
-    <nav class="admin-header__nav">
-        <a class="admin-header__link" href="/admin/dashboard">Dashboard</a>
-        <a class="admin-header__link admin-header__link--active" href="/admin/products">Sản phẩm</a>
-        <a class="admin-header__link" href="/admin/users">Người dùng</a>
-        <a class="admin-header__link" href="/admin/orders">Đơn hàng</a>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/">SmartShop Admin</a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="/">Về trang chủ</a>
+                <a class="nav-link" href="#" onclick="handleLogout()">Đăng xuất</a>
+            </div>
+        </div>
     </nav>
-</header>
 
-<main class="admin-main">
-    <section class="admin-card admin-card--stack">
-        <div class="admin-card__header">
-            <div>
-                <h1 class="admin-card__title">Quản lý sản phẩm</h1>
-                <p class="admin-card__subtitle">Thêm mới, chỉnh sửa hoặc xóa sản phẩm và danh mục.</p>
-            </div>
-            <div class="admin-card__actions">
-                <a class="admin-chip" href="/admin/dashboard">Dashboard</a>
-                <a class="admin-chip" href="/admin/users">Quản lý người dùng</a>
-                <a class="admin-chip" href="/admin">Về trang quản trị</a>
-            </div>
-        </div>
-
-        <div th:if="${successMessage}" class="alert alert--success" th:text="${successMessage}"></div>
-        <div th:if="${errorMessage}" class="alert alert--error" th:text="${errorMessage}"></div>
-    </section>
-
-    <section class="admin-grid">
-        <article class="admin-card">
-            <div class="admin-card__header">
-                <div>
-                    <h2 class="admin-card__title" th:text="${editingProductId} != null ? 'Chỉnh sửa sản phẩm' : 'Thêm sản phẩm mới'"></h2>
-                    <p class="admin-card__subtitle">Nhập thông tin cơ bản cho sản phẩm.</p>
-                </div>
-                <a th:if="${editingProductId}" class="admin-link" href="/admin/products">Hủy chỉnh sửa</a>
-            </div>
-
-            <form class="form" th:object="${productForm}"
-                  th:action="${productForm.id} != null ? @{/admin/products/{id}(id=${productForm.id})} : @{/admin/products}"
-                  method="post" enctype="multipart/form-data">
-                <div th:if="${#fields.hasGlobalErrors()}" class="alert alert--error" th:each="err : ${#fields.globalErrors()}" th:text="${err}"></div>
-
-                <div class="form__group">
-                    <label for="name">Tên sản phẩm</label>
-                    <input id="name" type="text" placeholder="Ví dụ: Đồng hồ thông minh" th:field="*{name}">
-                    <p class="form__error" th:if="${#fields.hasErrors('name')}" th:errors="*{name}"></p>
-                </div>
-
-                <div class="form__group">
-                    <label for="description">Mô tả</label>
-                    <textarea id="description" rows="3" placeholder="Tóm tắt ngắn gọn về sản phẩm" th:field="*{description}"></textarea>
-                </div>
-
-                <div class="form__grid">
-                    <div class="form__group">
-                        <label for="categoryId">Danh mục sản phẩm</label>
-                        <select id="categoryId" th:field="*{categoryId}">
-                            <option value="">-- Chọn danh mục --</option>
-                            <option th:each="category : ${categories}"
-                                    th:value="${category.id}"
-                                    th:text="${category.name}"></option>
-                        </select>
-                    </div>
-                    <div class="form__group">
-                        <label for="slug">Đường dẫn URL (Slug)</label>
-                        <input id="slug" type="text" placeholder="vi-du-san-pham" th:field="*{slug}">
-                        <p class="form__help">Để trống sẽ tự động tạo từ tên sản phẩm</p>
-                    </div>
-                </div>
-
-                <div class="form__group">
-                    <label for="hasVariants">Loại sản phẩm</label>
-                    <select id="hasVariants" th:field="*{hasVariants}">
-                        <option value="false">Sản phẩm đơn giản (mua ngay, không có size/màu)</option>
-                        <option value="true">Sản phẩm có biến thể (có size/màu/inch...)</option>
-                    </select>
-                    <p class="form__help">Chọn loại sản phẩm để hiển thị các trường phù hợp</p>
-                </div>
-
-                <!-- Form cho sản phẩm đơn giản -->
-                <div id="simpleProductGroup" style="display: none;">
-                    <div class="form__group">
-                        <label for="simplePrice">Giá bán (VNĐ)</label>
-                        <input id="simplePrice" type="number" step="0.01" min="0" th:field="*{price}" placeholder="0.00">
-                        <p class="form__error" th:if="${#fields.hasErrors('price')}" th:errors="*{price}"></p>
-                        <p class="form__help">Giá bán cho sản phẩm đơn giản</p>
-                    </div>
-                </div>
-
-                <!-- Form cho sản phẩm có variants -->
-                <div id="variantsProductGroup" style="display: none;">
-                    <div class="form__group">
-                        <label for="variantPrice">Giá tham khảo (VNĐ)</label>
-                        <input id="variantPrice" type="number" step="0.01" min="0" th:field="*{price}" placeholder="0.00">
-                        <p class="form__error" th:if="${#fields.hasErrors('price')}" th:errors="*{price}"></p>
-                        <p class="form__help">Giá tham khảo (giá thực tế sẽ được nhập ở phần biến thể bên dưới)</p>
-                    </div>
-
-                    <div class="variants-section">
-                        <div class="variants-section__header">
-                            <h3 class="variants-section__title">Quản lý biến thể sản phẩm</h3>
-                            <button type="button" class="button button--secondary" id="addVariantBtn">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <line x1="12" y1="5" x2="12" y2="19"></line>
-                                    <line x1="5" y1="12" x2="19" y2="12"></line>
-                                </svg>
-                                Thêm biến thể
-                            </button>
-                        </div>
-                        <div class="variants-list" id="variantsList">
-                            <p class="variants-list__empty">Chưa có biến thể nào. Nhấn "Thêm biến thể" để bắt đầu.</p>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="form__group form__group--inline">
-                    <label class="switch">
-                        <input type="checkbox" th:field="*{active}">
-                        <span>Hiển thị sản phẩm trong cửa hàng</span>
-                    </label>
-                </div>
-
-                <div class="form__group">
-                    <label>Hình ảnh sản phẩm</label>
-                    <div class="image-upload">
-                        <div class="image-upload__input-wrapper">
-                            <input type="file" id="productImages" name="images" accept="image/*" multiple class="image-upload__input">
-                            <label for="productImages" class="image-upload__label">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                                    <polyline points="17 8 12 3 7 8"></polyline>
-                                    <line x1="12" y1="3" x2="12" y2="15"></line>
-                                </svg>
-                                <span>Chọn hình ảnh</span>
-                            </label>
-                            <p class="form__help">Có thể chọn nhiều ảnh. Ảnh đầu tiên sẽ là ảnh chính.</p>
-                        </div>
-                        <div class="image-upload__preview" id="imagePreview">
-                            <div class="image-upload__empty" id="emptyMessage" style="display: none;">Chưa có hình ảnh nào được chọn</div>
-                            <div class="image-upload__grid" id="imageGrid"></div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="form__actions">
-                    <button class="button button--primary" type="submit"
-                            th:text="${productForm.id} != null ? 'Cập nhật sản phẩm' : 'Thêm sản phẩm'"></button>
-                    <a class="button button--ghost" href="/products" target="_blank">Xem cửa hàng</a>
-                </div>
-            </form>
-        </article>
-
-        <article class="admin-card">
-            <div class="admin-card__header">
-                <div>
-                    <h2 class="admin-card__title">Thêm danh mục</h2>
-                    <p class="admin-card__subtitle">Tạo danh mục mới để nhóm các sản phẩm liên quan.</p>
+    <div class="container-fluid mt-4">
+        <div class="row">
+            <!-- Sidebar -->
+            <div class="col-md-3">
+                <div class="list-group">
+                    <a href="/admin/dashboard.html" class="list-group-item list-group-item-action">
+                        <i class="bi bi-speedometer2"></i> Dashboard
+                    </a>
+                    <a href="/admin/products.html" class="list-group-item list-group-item-action active">
+                        <i class="bi bi-box-seam"></i> Quản lý Sản phẩm
+                    </a>
+                    <a href="/admin/categories.html" class="list-group-item list-group-item-action">
+                        <i class="bi bi-tags"></i> Quản lý Danh mục
+                    </a>
+                    <a href="/admin/orders.html" class="list-group-item list-group-item-action">
+                        <i class="bi bi-receipt"></i> Quản lý Đơn hàng
+                    </a>
+                    <a href="/admin/users.html" class="list-group-item list-group-item-action">
+                        <i class="bi bi-people"></i> Quản lý Người dùng
+                    </a>
+                    <a href="/admin/vouchers.html" class="list-group-item list-group-item-action">
+                        <i class="bi bi-ticket-perforated"></i> Quản lý Voucher
+                    </a>
                 </div>
             </div>
 
-            <form class="form" th:object="${categoryForm}" th:action="@{/admin/products/categories}" method="post">
-                <div th:if="${#fields.hasGlobalErrors()}" class="alert alert--error" th:each="err : ${#fields.globalErrors()}" th:text="${err}"></div>
-
-                <div class="form__group">
-                    <label for="category-name">Tên danh mục</label>
-                    <input id="category-name" type="text" placeholder="Ví dụ: Thiết bị đeo" th:field="*{name}">
-                    <p class="form__error" th:if="${#fields.hasErrors('name')}" th:errors="*{name}"></p>
-                </div>
-
-                <div class="form__group">
-                    <label for="parentId">Danh mục cha (tùy chọn)</label>
-                    <select id="parentId" th:field="*{parentId}">
-                        <option value="">-- Không chọn --</option>
-                        <option th:each="category : ${categories}"
-                                th:value="${category.id}"
-                                th:text="${category.name}"></option>
-                    </select>
-                </div>
-
-                <div class="form__actions">
-                    <button class="button button--secondary" type="submit">Thêm danh mục</button>
-                </div>
-            </form>
-
-            <div class="category-list">
-                <h3 class="category-list__title">Danh sách danh mục</h3>
-                <ul class="category-list__items">
-                    <li class="category-list__item" th:each="category : ${categories}">
-                        <div>
-                            <p class="category-list__name" th:text="${category.name}"></p>
-                            <p class="category-list__meta" th:text="${category.parent != null ? 'Thuộc: ' + category.parent.name : 'Danh mục gốc'}"></p>
-                        </div>
-                        <div class="category-list__actions">
-                            <span class="badge badge--secondary" th:text="'Sản phẩm: ' + #lists.size(category.products)"></span>
-                            <form class="category-list__delete-form" th:action="@{/admin/products/categories/{id}/delete(id=${category.id})}" method="post" onsubmit="return confirm('Bạn có chắc chắn muốn xóa danh mục này?');">
-                                <button class="button-icon button-icon--danger" type="submit" title="Xóa danh mục">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <polyline points="3 6 5 6 21 6"></polyline>
-                                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                                        <line x1="10" y1="11" x2="10" y2="17"></line>
-                                        <line x1="14" y1="11" x2="14" y2="17"></line>
-                                    </svg>
-                                </button>
-                            </form>
-                        </div>
-                    </li>
-                    <li class="category-list__empty" th:if="${#lists.isEmpty(categories)}">Chưa có danh mục nào.</li>
-                </ul>
-            </div>
-        </article>
-    </section>
-
-    <section class="admin-card">
-        <div class="admin-card__header">
-            <div>
-                <h2 class="admin-card__title">Danh sách sản phẩm</h2>
-                <p class="admin-card__subtitle">Quản lý các sản phẩm hiện có trong hệ thống.</p>
-            </div>
-            <div class="admin-card__actions">
-                <a class="admin-link" href="/admin/users">Xem người dùng →</a>
-            </div>
-        </div>
-
-        <div class="table-wrapper">
-            <table class="table">
-                <thead>
-                <tr>
-                    <th>Tên sản phẩm</th>
-                    <th>Danh mục</th>
-                    <th>Thương hiệu</th>
-                    <th>Giá cơ bản</th>
-                    <th>Loại</th>
-                    <th>Trạng thái</th>
-                    <th>Cập nhật</th>
-                    <th class="table__actions-col">Hành động</th>
-                </tr>
-                </thead>
-                <tbody>
-                <tr th:each="product : ${products}">
-                    <td>
-                        <div class="table__primary">
-                            <span th:text="${product.name}"></span>
-                            <span class="badge badge--accent" th:if="${editingProductId} == ${product.id}">Đang chỉnh sửa</span>
-                        </div>
-                        <p class="table__secondary" th:text="${product.slug ?: 'Chưa có slug'}"></p>
-                    </td>
-                    <td th:text="${product.category != null ? product.category.name : 'Không phân loại'}"></td>
-                    <td>-</td>
-                    <td th:text="${#numbers.formatDecimal(product.price, 1, 'POINT', 0, 'COMMA')} + ' ₫'"></td>
-                    <td>
-                        <span class="badge" th:if="${product.hasVariants}" th:text="'Có variants'"></span>
-                        <span class="badge badge--secondary" th:if="${!product.hasVariants}" th:text="'Đơn giản'"></span>
-                    </td>
-                    <td>
-                        <span class="status" th:classappend="${product.isActive} ? ' status--active' : ' status--inactive'"
-                              th:text="${product.isActive} ? 'Đang hiển thị' : 'Đã ẩn'"></span>
-                    </td>
-                    <td th:text="${product.updatedAt != null ? #temporals.format(product.updatedAt, 'dd/MM/yyyy HH:mm') : '-'}"></td>
-                    <td class="table__actions">
-                        <a class="button button--ghost" th:href="@{/admin/products(editId=${product.id})}">Sửa</a>
-                        <form class="table__delete-form" th:action="@{/admin/products/{id}/delete(id=${product.id})}" method="post" onsubmit="return confirm('Bạn có chắc chắn muốn xóa sản phẩm này?');">
-                            <button class="button-icon button-icon--danger" type="submit" title="Xóa sản phẩm">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <polyline points="3 6 5 6 21 6"></polyline>
-                                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                                    <line x1="10" y1="11" x2="10" y2="17"></line>
-                                    <line x1="14" y1="11" x2="14" y2="17"></line>
-                                </svg>
-                            </button>
-                        </form>
-                    </td>
-                </tr>
-                <tr th:if="${#lists.isEmpty(products)}">
-                    <td colspan="8" class="table__empty">Chưa có sản phẩm nào được tạo.</td>
-                </tr>
-                </tbody>
-            </table>
-        </div>
-    </section>
-</main>
-
-<script>
-    (function() {
-        const imageInput = document.getElementById('productImages');
-        const imageGrid = document.getElementById('imageGrid');
-        const emptyMessage = document.getElementById('emptyMessage');
-        let selectedImages = [];
-
-        function renderImages() {
-            if (selectedImages.length === 0) {
-                emptyMessage.style.display = 'block';
-                imageGrid.innerHTML = '';
-                return;
-            }
-
-            emptyMessage.style.display = 'none';
-            imageGrid.innerHTML = selectedImages.map((img, index) => {
-                const isPrimary = index === 0;
-                return `
-                    <div class="image-upload__item" data-id="${img.id}">
-                        <img src="${img.preview}" alt="Preview" class="image-upload__preview-img">
-                        <div class="image-upload__overlay">
-                            ${isPrimary ? '<span class="image-upload__badge">Ảnh chính</span>' : ''}
-                            <button type="button" class="image-upload__remove" onclick="window.removeImage('${img.id}')" title="Xóa ảnh">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <line x1="18" y1="6" x2="6" y2="18"></line>
-                                    <line x1="6" y1="6" x2="18" y2="18"></line>
-                                </svg>
-                            </button>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-        }
-
-        window.removeImage = function(id) {
-            selectedImages = selectedImages.filter(img => img.id !== id);
-            renderImages();
-            updateFileInput();
-        };
-
-        function updateFileInput() {
-            if (!imageInput) return;
-            const dt = new DataTransfer();
-            selectedImages.forEach(img => {
-                dt.items.add(img.file);
-            });
-            imageInput.files = dt.files;
-        }
-
-        if (imageInput) {
-            imageInput.addEventListener('change', function(e) {
-                const files = Array.from(e.target.files);
-                
-                files.forEach(file => {
-                    if (file.type.startsWith('image/')) {
-                        // Check if file already exists
-                        const exists = selectedImages.some(img => img.file.name === file.name && img.file.size === file.size);
-                        if (exists) return;
-
-                        const reader = new FileReader();
-                        reader.onload = function(e) {
-                            const imageData = {
-                                file: file,
-                                preview: e.target.result,
-                                id: Date.now() + Math.random()
-                            };
-                            selectedImages.push(imageData);
-                            renderImages();
-                            updateFileInput();
-                        };
-                        reader.readAsDataURL(file);
-                    }
-                });
-            });
-        }
-
-        // Initialize empty message if no images
-        if (imageGrid && imageGrid.children.length === 0 && selectedImages.length === 0) {
-            emptyMessage.style.display = 'block';
-        }
-    })();
-
-    // Toggle form sections based on hasVariants
-    (function() {
-        const hasVariantsSelect = document.getElementById('hasVariants');
-        const simpleProductGroup = document.getElementById('simpleProductGroup');
-        const variantsProductGroup = document.getElementById('variantsProductGroup');
-
-        function toggleProductType() {
-            if (!hasVariantsSelect) return;
-            
-            const hasVariants = hasVariantsSelect.value === 'true';
-            
-            if (hasVariants) {
-                // Hiển thị form variants, ẩn form đơn giản
-                if (simpleProductGroup) simpleProductGroup.style.display = 'none';
-                if (variantsProductGroup) variantsProductGroup.style.display = 'block';
-            } else {
-                // Hiển thị form đơn giản, ẩn form variants
-                if (simpleProductGroup) simpleProductGroup.style.display = 'block';
-                if (variantsProductGroup) variantsProductGroup.style.display = 'none';
-            }
-        }
-
-        if (hasVariantsSelect) {
-            hasVariantsSelect.addEventListener('change', toggleProductType);
-            // Initialize on page load
-            toggleProductType();
-        }
-    })();
-
-    // Variants management
-    (function() {
-        const addVariantBtn = document.getElementById('addVariantBtn');
-        const variantsList = document.getElementById('variantsList');
-        let variantCount = 0;
-
-        function createVariantForm() {
-            variantCount++;
-            const variantId = 'variant_' + variantCount;
-            
-            const variantHtml = `
-                <div class="variant-item" data-variant-id="${variantId}">
-                    <div class="variant-item__header">
-                        <h4 class="variant-item__title">Biến thể #${variantCount}</h4>
-                        <button type="button" class="button-icon button-icon--danger" onclick="removeVariant(this)" title="Xóa biến thể">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <line x1="18" y1="6" x2="6" y2="18"></line>
-                                <line x1="6" y1="6" x2="18" y2="18"></line>
-                            </svg>
+            <!-- Main Content -->
+            <div class="col-md-9">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h2>Quản lý Sản phẩm</h2>
+                    <div class="btn-group">
+                        <button type="button" class="btn btn-success dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-file-earmark-arrow-down"></i> Xuất báo cáo
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="#" onclick="exportToExcel()"><i class="bi bi-file-earmark-excel"></i> Xuất Excel</a></li>
+                            <li><a class="dropdown-item" href="#" onclick="exportToPDF()"><i class="bi bi-file-earmark-pdf"></i> Xuất PDF</a></li>
+                        </ul>
+                        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#productModal" onclick="openProductModal()">
+                            <i class="bi bi-plus-circle"></i> Thêm sản phẩm
                         </button>
                     </div>
-                    <div class="form__grid">
-                        <div class="form__group">
-                            <label>Tên biến thể <span class="required">*</span></label>
-                            <input type="text" name="variants[${variantCount}].variantName" placeholder="Ví dụ: Size M - Đỏ" required>
-                        </div>
-                    </div>
-                    <div class="form__grid">
-                        <div class="form__group">
-                            <label>Giá bán (VNĐ) <span class="required">*</span></label>
-                            <input type="number" step="0.01" min="0" name="variants[${variantCount}].price" placeholder="0.00" required>
-                        </div>
-                        <div class="form__group">
-                            <label>Số lượng tồn kho <span class="required">*</span></label>
-                            <input type="number" min="0" name="variants[${variantCount}].stock" placeholder="0" required>
-                        </div>
-                        <div class="form__group">
-                            <label>Mã SKU</label>
-                            <input type="text" name="variants[${variantCount}].sku" placeholder="SHIRT-RED-M">
+                </div>
+
+                <div id="alertContainer"></div>
+
+                <!-- Products Table -->
+                <div class="card">
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Ảnh</th>
+                                        <th>Tên sản phẩm</th>
+                                        <th>Giá</th>
+                                        <th>Tồn kho</th>
+                                        <th>Danh mục</th>
+                                        <th>Trạng thái</th>
+                                        <th>Thao tác</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="productsTableBody">
+                                    <tr>
+                                        <td colspan="8" class="text-center">
+                                            <div class="spinner-border" role="status">
+                                                <span class="visually-hidden">Loading...</span>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
                         </div>
                     </div>
                 </div>
-            `;
+            </div>
+        </div>
+    </div>
 
-            if (variantsList) {
-                const emptyMsg = variantsList.querySelector('.variants-list__empty');
-                if (emptyMsg) emptyMsg.remove();
-                
-                const variantDiv = document.createElement('div');
-                variantDiv.innerHTML = variantHtml;
-                variantsList.appendChild(variantDiv.firstElementChild);
-            }
-        }
+    <!-- Product Modal -->
+    <div class="modal fade" id="productModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="productModalTitle">Thêm sản phẩm</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="productForm">
+                        <input type="hidden" id="productId">
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Tên sản phẩm *</label>
+                            <input type="text" class="form-control" id="productName" required>
+                        </div>
 
-        window.removeVariant = function(btn) {
-            const variantItem = btn.closest('.variant-item');
-            if (variantItem) {
-                variantItem.remove();
-                if (variantsList && variantsList.children.length === 0) {
-                    variantsList.innerHTML = '<p class="variants-list__empty">Chưa có biến thể nào. Nhấn "Thêm biến thể" để bắt đầu.</p>';
+                        <div class="mb-3">
+                            <label class="form-label">Mô tả</label>
+                            <textarea class="form-control" id="productDescription" rows="3"></textarea>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Giá (VNĐ) *</label>
+                                <input type="number" class="form-control" id="productPrice" step="1" min="0" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Số lượng tồn kho *</label>
+                                <input type="number" class="form-control" id="productStock" required>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Danh mục *</label>
+                            <select class="form-select" id="productCategory" required>
+                                <option value="">Chọn danh mục</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Ảnh sản phẩm</label>
+                            <input type="file" class="form-control" id="productImage" accept="image/*" onchange="previewImage(this)">
+                            <small class="text-muted">Chọn file ảnh để upload</small>
+                            <!-- Image Preview -->
+                            <div id="imagePreviewContainer" class="mt-3" style="display: none;">
+                                <img id="imagePreview" src="" alt="Preview" class="img-thumbnail" style="max-width: 300px; max-height: 300px; object-fit: contain;">
+                                <div class="mt-2">
+                                    <button type="button" class="btn btn-sm btn-danger" onclick="clearImagePreview()">
+                                        <i class="bi bi-x-circle"></i> Xóa ảnh
+                                    </button>
+                                </div>
+                            </div>
+                            <!-- Current Image (when editing) -->
+                            <div id="currentImageContainer" class="mt-3" style="display: none;">
+                                <label class="form-label">Ảnh hiện tại:</label>
+                                <img id="currentImage" src="" alt="Current" class="img-thumbnail" style="max-width: 300px; max-height: 300px; object-fit: contain;">
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Ngày tạo</label>
+                            <input type="datetime-local" class="form-control" id="productCreatedAt">
+                            <small class="text-muted">Để trống để sử dụng ngày hiện tại</small>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button type="button" class="btn btn-primary" onclick="saveProduct()">Lưu</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Include libraries for Excel and PDF export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/js/api.js"></script>
+    <script src="/js/admin-products.js"></script>
+    <script>
+        // Handle logout
+        async function handleLogout() {
+            if (confirm('Bạn có chắc chắn muốn đăng xuất?')) {
+                try {
+                    await api.logout();
+                    window.location.href = '/';
+                } catch (error) {
+                    console.error('Logout error:', error);
+                    window.location.href = '/';
                 }
             }
-        };
-
-        if (addVariantBtn) {
-            addVariantBtn.addEventListener('click', createVariantForm);
         }
-    })();
-</script>
-
+    </script>
 </body>
 </html>
-

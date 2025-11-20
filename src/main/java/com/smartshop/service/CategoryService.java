@@ -1,94 +1,87 @@
 package com.smartshop.service;
 
+import com.smartshop.dto.category.CategoryRequest;
+import com.smartshop.dto.category.CategoryResponse;
 import com.smartshop.entity.product.Category;
 import com.smartshop.repository.CategoryRepository;
-import jakarta.persistence.EntityNotFoundException;
-import lombok.RequiredArgsConstructor;
-import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.data.domain.Sort;
+import com.smartshop.repository.ProductRepository;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
-@Transactional
-@RequiredArgsConstructor
 public class CategoryService {
 
     private final CategoryRepository categoryRepository;
+    private final ProductRepository productRepository;
 
-    public List<Category> getAllCategories() {
-        return categoryRepository.findAll(Sort.by(Sort.Direction.ASC, "name"));
+    public CategoryService(CategoryRepository categoryRepository,
+                          ProductRepository productRepository) {
+        this.categoryRepository = categoryRepository;
+        this.productRepository = productRepository;
     }
 
-    public Category getCategory(Long id) {
-        Objects.requireNonNull(id, "id must not be null");
-        return categoryRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Danh mục không tồn tại"));
+    public List<CategoryResponse> getAll() {
+        return categoryRepository.findAll()
+                .stream()
+                .map(category -> {
+                    // Count products for this category
+                    int productCount = productRepository.countByCategoryId(category.getId());
+                    return CategoryResponse.fromEntity(category, productCount);
+                })
+                .collect(Collectors.toList());
     }
 
-    public Category createCategory(String name, Long parentId) {
-        Objects.requireNonNull(name, "name must not be null");
-        validateUniqueName(name, null);
-
-        Category category = new Category();
-        category.setName(name.trim());
-
-        if (parentId != null) {
-            Category parent = categoryRepository.findById(parentId)
-                    .orElseThrow(() -> new EntityNotFoundException("Danh mục cha không tồn tại"));
-            category.setParent(parent);
-        }
-
-        return categoryRepository.save(category);
-    }
-
-    public Category updateCategory(Long id, String name, Long parentId) {
-        Objects.requireNonNull(id, "id must not be null");
-        Objects.requireNonNull(name, "name must not be null");
-
-        Category existing = categoryRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Danh mục không tồn tại"));
-
-        validateUniqueName(name, id);
-
-        existing.setName(name.trim());
-
-        if (parentId != null) {
-            if (parentId.equals(id)) {
-                throw new IllegalArgumentException("Danh mục cha không được trùng với chính nó");
-            }
-            Category parent = categoryRepository.findById(parentId)
-                    .orElseThrow(() -> new EntityNotFoundException("Danh mục cha không tồn tại"));
-            existing.setParent(parent);
-        } else {
-            existing.setParent(null);
-        }
-
-        return categoryRepository.save(existing);
-    }
-
-    public void deleteCategory(Long id) {
-        Objects.requireNonNull(id, "id must not be null");
-
+    public CategoryResponse getById(Long id) {
         Category category = categoryRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Danh mục không tồn tại"));
-
-        if (!category.getProducts().isEmpty()) {
-            throw new DataIntegrityViolationException("Không thể xóa danh mục đang chứa sản phẩm");
-        }
-
-        categoryRepository.delete(category);
+                .orElseThrow(() -> new RuntimeException("Category not found"));
+        // Count products for this category
+        int productCount = productRepository.countByCategoryId(id);
+        return CategoryResponse.fromEntity(category, productCount);
     }
 
-    private void validateUniqueName(String name, Long excludeId) {
-        Optional<Category> existing = categoryRepository.findByName(name.trim());
-        if (existing.isPresent() && (excludeId == null || !existing.get().getId().equals(excludeId))) {
-            throw new DataIntegrityViolationException("Tên danh mục đã tồn tại");
+    public CategoryResponse create(CategoryRequest req) {
+        Category parent = null;
+        if (req.getParentId() != null) {
+            parent = categoryRepository.findById(req.getParentId())
+                    .orElseThrow(() -> new RuntimeException("Parent category not found"));
         }
+
+        Category category = Category.builder()
+                .name(req.getName())
+                .parent(parent)
+                .build();
+
+        Category savedCategory = categoryRepository.save(category);
+        // Count products for the new category (will be 0 for new category)
+        int productCount = productRepository.countByCategoryId(savedCategory.getId());
+        return CategoryResponse.fromEntity(savedCategory, productCount);
+    }
+
+    public CategoryResponse update(Long id, CategoryRequest req) {
+        Category category = categoryRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Category not found"));
+
+        category.setName(req.getName());
+
+        if (req.getParentId() != null) {
+            Category parent = categoryRepository.findById(req.getParentId())
+                    .orElseThrow(() -> new RuntimeException("Parent category not found"));
+            category.setParent(parent);
+        } else {
+            category.setParent(null);
+        }
+
+        Category savedCategory = categoryRepository.save(category);
+        // Count products for the updated category
+        int productCount = productRepository.countByCategoryId(savedCategory.getId());
+        return CategoryResponse.fromEntity(savedCategory, productCount);
+    }
+
+    public void delete(Long id) {
+        categoryRepository.deleteById(id);
     }
 }
+
 

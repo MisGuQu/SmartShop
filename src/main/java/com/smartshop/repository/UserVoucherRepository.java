@@ -1,15 +1,15 @@
 package com.smartshop.repository;
 
-import java.util.List;
-import java.util.Optional;
-
+import com.smartshop.entity.user.User;
+import com.smartshop.entity.voucher.UserVoucher;
+import com.smartshop.entity.voucher.Voucher;
 import org.springframework.data.jpa.repository.JpaRepository;
 
-import com.smartshop.entity.voucher.UserVoucher;
+import java.util.Optional;
 
 public interface UserVoucherRepository extends JpaRepository<UserVoucher, Long> {
-    List<UserVoucher> findByUserId(Long userId);
-    List<UserVoucher> findByUserIdAndIsUsedFalse(Long userId);
-    Optional<UserVoucher> findByUserIdAndVoucherId(Long userId, Long voucherId);
-    int countByVoucherIdAndIsUsedTrue(Long voucherId);
+
+    Optional<UserVoucher> findByUserAndVoucher(User user, Voucher voucher);
 }
+
+

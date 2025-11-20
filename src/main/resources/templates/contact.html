@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Liên hệ | SmartShop</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/home.css">
+</head>
+<body>
+<header class="header">
+    <div class="container header__content">
+        <div class="logo"><a href="/">SmartShop</a></div>
+        <nav class="nav">
+            <a href="/" class="nav__link">Trang chủ</a>
+            <a href="/product.html" class="nav__link">Sản phẩm</a>
+            <a href="/vouchers" class="nav__link">Ưu đãi</a>
+        </nav>
+        <div class="header__search">
+            <form class="search-form" id="searchForm" onsubmit="handleSearch(event)">
+                <input type="text" 
+                       id="searchInput" 
+                       class="search-input" 
+                       placeholder="Tìm kiếm sản phẩm..." 
+                       autocomplete="off"
+                       aria-label="Tìm kiếm sản phẩm">
+                <button type="submit" class="search-button" aria-label="Tìm kiếm">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M21 21l-6-6m2-5a7 7 0 1 1-14 0 7 7 0 0 1 14 0z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+                    </svg>
+                </button>
+            </form>
+        </div>
+        <div class="header__actions header__actions--quick">
+            <a href="#" id="wishlistLink" class="header__icon" aria-label="Danh sách yêu thích">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M17.657 5.343a4 4 0 0 0-5.657 0L11 6.343l-.999-1a4 4 0 1 0-5.657 5.657L11 17.657l6.657-6.657a4 4 0 0 0 0-5.657z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path>
+                </svg>
+                <span class="visually-hidden">Yêu thích</span>
+            </a>
+            <a href="#" id="cartLink" class="header__icon" aria-label="Giỏ hàng">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M3.5 5h2.2l1.4 9.2a1 1 0 0 0 .99.85h9.26a1 1 0 0 0 .98-.8l1.12-5.6H7.16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path>
+                    <circle cx="10" cy="19" r="1.4" fill="none" stroke="currentColor" stroke-width="1.6"></circle>
+                    <circle cx="16.5" cy="19" r="1.4" fill="none" stroke="currentColor" stroke-width="1.6"></circle>
+                </svg>
+                <span class="visually-hidden">Giỏ hàng</span>
+            </a>
+            <div class="header__account" id="headerAccountAnonymous">
+                <a href="/auth/login.html" class="button button--ghost">Đăng nhập</a>
+                <a href="/auth/register.html" class="button">Đăng ký</a>
+            </div>
+            <div class="header__account header__account--auth d-none" id="headerAccountAuth">
+                <a class="header__user" href="#" id="userProfileLink">
+                    <span class="header__user-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M12 12a4.5 4.5 0 1 0-4.5-4.5A4.5 4.5 0 0 0 12 12Zm0 2.25c-3.03 0-9 1.52-9 4.5v.75A1.5 1.5 0 0 0 4.5 21h15a1.5 1.5 0 0 0 1.5-1.5v-.75c0-2.98-5.97-4.5-9-4.5Z"
+                                  fill="currentColor"/>
+                        </svg>
+                    </span>
+                    <span class="header__user-name" id="userName"></span>
+                    <span class="header__user-chip d-none" id="adminChip">Quản trị</span>
+                </a>
+                <button type="button" class="button button--ghost button--logout" id="logoutButton">Đăng xuất</button>
+            </div>
+        </div>
+    </div>
+</header>
+
+<main>
+    <section class="hero" style="padding: 120px 0 64px;">
+        <div class="container">
+            <h1 class="hero__title" style="max-width: 100%; margin-bottom: 16px;">Liên hệ với chúng tôi</h1>
+            <p class="hero__subtitle" style="max-width: 100%;">Chúng tôi luôn sẵn sàng hỗ trợ bạn. Hãy liên hệ với chúng tôi qua các kênh dưới đây.</p>
+        </div>
+    </section>
+
+    <section class="section">
+        <div class="container">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: start;" class="contact-grid">
+                <div>
+                    <h2 style="margin: 0 0 24px; font-size: 1.8rem;">Thông tin liên hệ</h2>
+                    <div style="display: grid; gap: 24px;">
+                        <div style="display: flex; align-items: flex-start; gap: 16px;">
+                            <div style="width: 48px; height: 48px; border-radius: 12px; background: rgba(37, 99, 235, 0.1); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                                <svg viewBox="0 0 24 24" style="width: 24px; height: 24px; color: var(--color-primary);" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                                </svg>
+                            </div>
+                            <div>
+                                <h3 style="margin: 0 0 8px; font-size: 1.1rem; font-weight: 600;">Email</h3>
+                                <p style="margin: 0; color: var(--color-muted);"><a href="mailto:support@smartshop.vn" style="color: var(--color-primary); text-decoration: none;">support@smartshop.vn</a></p>
+                            </div>
+                        </div>
+                        <div style="display: flex; align-items: flex-start; gap: 16px;">
+                            <div style="width: 48px; height: 48px; border-radius: 12px; background: rgba(37, 99, 235, 0.1); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                                <svg viewBox="0 0 24 24" style="width: 24px; height: 24px; color: var(--color-primary);" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
+                                </svg>
+                            </div>
+                            <div>
+                                <h3 style="margin: 0 0 8px; font-size: 1.1rem; font-weight: 600;">Điện thoại</h3>
+                                <p style="margin: 0; color: var(--color-muted);"><a href="tel:+84281234567" style="color: var(--color-primary); text-decoration: none;">028 1234 567</a></p>
+                            </div>
+                        </div>
+                        <div style="display: flex; align-items: flex-start; gap: 16px;">
+                            <div style="width: 48px; height: 48px; border-radius: 12px; background: rgba(37, 99, 235, 0.1); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                                <svg viewBox="0 0 24 24" style="width: 24px; height: 24px; color: var(--color-primary);" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+                                    <path d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                </svg>
+                            </div>
+                            <div>
+                                <h3 style="margin: 0 0 8px; font-size: 1.1rem; font-weight: 600;">Địa chỉ</h3>
+                                <p style="margin: 0; color: var(--color-muted);">123 Đường ABC, Quận 1, TP. Hồ Chí Minh</p>
+                            </div>
+                        </div>
+                        <div style="display: flex; align-items: flex-start; gap: 16px;">
+                            <div style="width: 48px; height: 48px; border-radius: 12px; background: rgba(37, 99, 235, 0.1); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                                <svg viewBox="0 0 24 24" style="width: 24px; height: 24px; color: var(--color-primary);" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="12" cy="12" r="10"/>
+                                    <path d="M12 6v6l4 2"/>
+                                </svg>
+                            </div>
+                            <div>
+                                <h3 style="margin: 0 0 8px; font-size: 1.1rem; font-weight: 600;">Giờ làm việc</h3>
+                                <p style="margin: 0; color: var(--color-muted);">Thứ 2 - Thứ 6: 8:00 - 17:00<br>Thứ 7 - Chủ nhật: 9:00 - 16:00</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div style="background: var(--color-surface); padding: 32px; border-radius: var(--radius-lg); box-shadow: var(--shadow-sm);">
+                    <h2 style="margin: 0 0 24px; font-size: 1.8rem;">Gửi tin nhắn</h2>
+                    <form id="contactForm" style="display: grid; gap: 20px;">
+                        <div style="display: flex; flex-direction: column; gap: 8px;">
+                            <label style="font-weight: 600; font-size: 0.95rem;">Họ và tên</label>
+                            <input type="text" name="fullName" required style="padding: 12px 16px; border-radius: 12px; border: 1px solid var(--color-border); font-size: 0.95rem; outline: none; transition: border-color 0.2s ease, box-shadow 0.2s ease;">
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 8px;">
+                            <label style="font-weight: 600; font-size: 0.95rem;">Email</label>
+                            <input type="email" name="email" required style="padding: 12px 16px; border-radius: 12px; border: 1px solid var(--color-border); font-size: 0.95rem; outline: none; transition: border-color 0.2s ease, box-shadow 0.2s ease;">
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 8px;">
+                            <label style="font-weight: 600; font-size: 0.95rem;">Tiêu đề</label>
+                            <input type="text" name="subject" required style="padding: 12px 16px; border-radius: 12px; border: 1px solid var(--color-border); font-size: 0.95rem; outline: none; transition: border-color 0.2s ease, box-shadow 0.2s ease;">
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 8px;">
+                            <label style="font-weight: 600; font-size: 0.95rem;">Nội dung</label>
+                            <textarea name="message" rows="6" required style="padding: 12px 16px; border-radius: 12px; border: 1px solid var(--color-border); font-size: 0.95rem; resize: vertical; font-family: inherit; outline: none; transition: border-color 0.2s ease, box-shadow 0.2s ease;"></textarea>
+                        </div>
+                        <button type="submit" class="button button--primary" style="width: 100%;">Gửi tin nhắn</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </section>
+</main>
+
+<footer class="footer">
+    <div class="container footer__content">
+        <div class="footer__column footer__column--brand">
+            <div class="footer__brand">SmartShop</div>
+            <div class="footer__contact">
+                <svg viewBox="0 0 24 24" class="footer__icon" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                </svg>
+                <a href="mailto:support@smartshop.vn">support@smartshop.vn</a>
+            </div>
+        </div>
+        <div class="footer__column">
+            <h4 class="footer__title">THÔNG TIN</h4>
+            <ul class="footer__list">
+                <li><a href="/product.html">Sản phẩm mới</a></li>
+                <li><a href="/product.html">Sản phẩm bán chạy</a></li>
+                <li><a href="/contact.html">Cửa hàng của chúng tôi</a></li>
+                <li><a href="/contact.html">Khách hàng</a></li>
+            </ul>
+        </div>
+        <div class="footer__column">
+            <h4 class="footer__title">LIÊN KẾT NHANH</h4>
+            <ul class="footer__list">
+                <li><a href="/contact.html">Liên hệ chúng tôi</a></li>
+                <li><a href="/support">Trung tâm trợ giúp</a></li>
+                <li><a href="/policies/returns">Chính sách hoàn tiền</a></li>
+                <li><a href="/policies/shipping">Báo cáo spam</a></li>
+            </ul>
+        </div>
+        <div class="footer__column">
+            <h4 class="footer__title">ĐĂNG KÝ BẢN TIN</h4>
+            <form class="footer__newsletter" id="footerNewsletterForm">
+                <input type="email" 
+                       class="footer__input" 
+                       placeholder="email@example.com" 
+                       required
+                       aria-label="Email đăng ký bản tin">
+                <button type="submit" class="footer__subscribe">Đăng ký</button>
+            </form>
+        </div>
+    </div>
+    <div class="footer__divider"></div>
+    <p class="footer__copyright">© 2025 SmartShop. All rights reserved.</p>
+</footer>
+
+<script src="/js/api.js"></script>
+<script src="/js/home.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize auth UI
+        if (typeof updateAuthUI === 'function') {
+            updateAuthUI();
+        }
+
+        // Setup search form
+        if (typeof setupSearchForm === 'function') {
+            setupSearchForm();
+        }
+
+        // Setup footer newsletter form
+        if (typeof setupFooterNewsletterForm === 'function') {
+            setupFooterNewsletterForm();
+        }
+
+        // Setup contact form
+        const contactForm = document.getElementById('contactForm');
+        if (contactForm) {
+            contactForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                alert('Cảm ơn bạn đã liên hệ! Chúng tôi sẽ phản hồi sớm nhất có thể.');
+                this.reset();
+            });
+        }
+    });
+</script>
+</body>
+</html>

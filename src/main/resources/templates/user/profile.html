@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hồ sơ của tôi - SmartShop</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+    <link rel="stylesheet" href="/css/home.css">
+    <style>
+        .profile-container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+        
+        .profile-header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        
+        .profile-header h1 {
+            font-size: 2rem;
+            margin-bottom: 8px;
+            color: var(--color-text);
+        }
+        
+        .avatar-section {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        
+        .avatar-wrapper {
+            position: relative;
+            display: inline-block;
+            margin-bottom: 20px;
+        }
+        
+        .avatar-preview {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 4px solid var(--color-primary);
+            background: rgba(37, 99, 235, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+            color: var(--color-primary);
+        }
+        
+        .avatar-preview img {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+        
+        .avatar-upload-btn {
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: var(--color-primary);
+            color: white;
+            border: 3px solid white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: transform 0.2s ease, background 0.2s ease;
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+        }
+        
+        .avatar-upload-btn:hover {
+            transform: scale(1.1);
+            background: var(--color-primary-dark);
+        }
+        
+        .avatar-upload-btn svg {
+            width: 20px;
+            height: 20px;
+        }
+        
+        .avatar-input {
+            display: none;
+        }
+        
+        .profile-form {
+            background: var(--color-surface);
+            border-radius: var(--radius-md);
+            padding: 32px;
+            box-shadow: var(--shadow-sm);
+        }
+        
+        .form-group {
+            margin-bottom: 24px;
+        }
+        
+        .form-label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: var(--color-text);
+            font-size: 0.95rem;
+        }
+        
+        .form-input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid rgba(15, 23, 42, 0.12);
+            border-radius: 8px;
+            font-size: 0.95rem;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+            font-family: inherit;
+        }
+        
+        .form-input:focus {
+            outline: none;
+            border-color: var(--color-primary);
+            box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
+        }
+        
+        .form-actions {
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+            margin-top: 32px;
+            padding-top: 24px;
+            border-top: 1px solid rgba(15, 23, 42, 0.08);
+        }
+        
+        .btn-cancel {
+            padding: 12px 24px;
+            border-radius: 8px;
+            border: 1px solid rgba(15, 23, 42, 0.12);
+            background: transparent;
+            color: var(--color-text);
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s ease;
+        }
+        
+        .btn-cancel:hover {
+            background: rgba(15, 23, 42, 0.05);
+        }
+        
+        .alert {
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 0.9rem;
+        }
+        
+        .alert-success {
+            background: rgba(34, 197, 94, 0.1);
+            color: #16a34a;
+            border: 1px solid rgba(34, 197, 94, 0.2);
+        }
+        
+        .alert-error {
+            background: rgba(239, 68, 68, 0.1);
+            color: #dc2626;
+            border: 1px solid rgba(239, 68, 68, 0.2);
+        }
+        
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.9);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        }
+        
+        .loading-overlay.active {
+            display: flex;
+        }
+    </style>
+</head>
+<body>
+<header class="header">
+    <div class="container header__content">
+        <div class="logo"><a href="/">SmartShop</a></div>
+        <nav class="nav">
+            <a href="/" class="nav__link">Trang chủ</a>
+            <a href="/product.html" class="nav__link">Sản phẩm</a>
+            <a href="/vouchers" class="nav__link">Ưu đãi</a>
+        </nav>
+        <div class="header__actions header__actions--quick">
+            <a href="/cart.html" class="header__icon" aria-label="Giỏ hàng">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M3.5 5h2.2l1.4 9.2a1 1 0 0 0 .99.85h9.26a1 1 0 0 0 .98-.8l1.12-5.6H7.16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path>
+                    <circle cx="10" cy="19" r="1.4" fill="none" stroke="currentColor" stroke-width="1.6"></circle>
+                    <circle cx="16.5" cy="19" r="1.4" fill="none" stroke="currentColor" stroke-width="1.6"></circle>
+                </svg>
+            </a>
+        </div>
+    </div>
+</header>
+
+<main>
+    <div class="profile-container">
+        <div class="profile-header">
+            <h1>Hồ sơ của tôi</h1>
+            <p style="color: var(--color-muted);">Quản lý thông tin tài khoản và cài đặt cá nhân</p>
+        </div>
+        
+        <div id="alertContainer"></div>
+        
+        <div class="avatar-section">
+            <div class="avatar-wrapper">
+                <div class="avatar-preview" id="avatarPreview">
+                    <svg viewBox="0 0 24 24" width="60" height="60" fill="currentColor">
+                        <path d="M12 12a4.5 4.5 0 1 0-4.5-4.5A4.5 4.5 0 0 0 12 12Zm0 2.25c-3.03 0-9 1.52-9 4.5v.75A1.5 1.5 0 0 0 4.5 21h15a1.5 1.5 0 0 0 1.5-1.5v-.75c0-2.98-5.97-4.5-9-4.5Z"/>
+                    </svg>
+                </div>
+                <label for="avatarInput" class="avatar-upload-btn" title="Thay đổi ảnh đại diện">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                        <polyline points="17 8 12 3 7 8"/>
+                        <line x1="12" y1="3" x2="12" y2="15"/>
+                    </svg>
+                </label>
+                <input type="file" id="avatarInput" class="avatar-input" accept="image/*">
+            </div>
+        </div>
+        
+        <div class="profile-form">
+            <form id="profileForm">
+                <div class="form-group">
+                    <label class="form-label" for="fullName">Họ và tên</label>
+                    <input type="text" id="fullName" name="fullName" class="form-input" placeholder="Nhập họ và tên">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="email">Email</label>
+                    <input type="email" id="email" name="email" class="form-input" placeholder="Nhập email" required>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="phone">Số điện thoại</label>
+                    <input type="tel" id="phone" name="phone" class="form-input" placeholder="Nhập số điện thoại">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="username">Tên đăng nhập</label>
+                    <input type="text" id="username" name="username" class="form-input" placeholder="Tên đăng nhập" disabled style="background: rgba(15, 23, 42, 0.05); cursor: not-allowed;">
+                    <small style="color: var(--color-muted); font-size: 0.85rem;">Tên đăng nhập không thể thay đổi</small>
+                </div>
+                
+                <div class="form-actions">
+                    <button type="button" class="btn-cancel" onclick="resetForm()">Hủy</button>
+                    <button type="submit" class="button">Lưu thay đổi</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</main>
+
+<footer class="footer">
+    <div class="container footer__content">
+        <div class="footer__column footer__column--brand">
+            <div class="footer__brand">SmartShop</div>
+            <div class="footer__contact">
+                <svg viewBox="0 0 24 24" class="footer__icon" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                </svg>
+                <a href="mailto:support@smartshop.vn">support@smartshop.vn</a>
+            </div>
+        </div>
+        <div class="footer__column">
+            <h4 class="footer__title">THÔNG TIN</h4>
+            <ul class="footer__list">
+                <li><a href="/product.html">Sản phẩm mới</a></li>
+                <li><a href="/product.html">Sản phẩm bán chạy</a></li>
+                <li><a href="/contact.html">Cửa hàng của chúng tôi</a></li>
+                <li><a href="/contact.html">Khách hàng</a></li>
+            </ul>
+        </div>
+        <div class="footer__column">
+            <h4 class="footer__title">LIÊN KẾT NHANH</h4>
+            <ul class="footer__list">
+                <li><a href="/contact.html">Liên hệ chúng tôi</a></li>
+                <li><a href="/support">Trung tâm trợ giúp</a></li>
+                <li><a href="/policies/returns">Chính sách hoàn tiền</a></li>
+                <li><a href="/policies/shipping">Báo cáo spam</a></li>
+            </ul>
+        </div>
+        <div class="footer__column">
+            <h4 class="footer__title">ĐĂNG KÝ BẢN TIN</h4>
+            <form class="footer__newsletter" id="footerNewsletterForm">
+                <input type="email" 
+                       class="footer__input" 
+                       placeholder="email@example.com" 
+                       required
+                       aria-label="Email đăng ký bản tin">
+                <button type="submit" class="footer__subscribe">Đăng ký</button>
+            </form>
+        </div>
+    </div>
+    <div class="footer__divider"></div>
+    <p class="footer__copyright">© 2025 SmartShop. All rights reserved.</p>
+</footer>
+
+<div class="loading-overlay" id="loadingOverlay">
+    <div class="spinner-border" role="status" style="width: 3rem; height: 3rem; color: var(--color-primary);">
+        <span class="visually-hidden">Loading...</span>
+    </div>
+</div>
+
+<script src="/js/api.js"></script>
+<script>
+    let currentUser = null;
+    let originalData = {};
+    
+    // Load user data
+    document.addEventListener('DOMContentLoaded', async () => {
+        try {
+            currentUser = await api.getCurrentUser();
+            if (!currentUser) {
+                window.location.href = '/auth/login.html';
+                return;
+            }
+            
+            loadUserData(currentUser);
+        } catch (error) {
+            console.error('Error loading user:', error);
+            showAlert('Không thể tải thông tin người dùng. Vui lòng đăng nhập lại.', 'error');
+            setTimeout(() => {
+                window.location.href = '/auth/login.html';
+            }, 2000);
+        }
+        
+        // Setup avatar upload
+        setupAvatarUpload();
+        
+        // Setup form submit
+        setupFormSubmit();
+        
+        // Setup newsletter form
+        setupNewsletterForm();
+    });
+    
+    function loadUserData(user) {
+        document.getElementById('fullName').value = user.fullName || '';
+        document.getElementById('email').value = user.email || '';
+        document.getElementById('phone').value = user.phone || '';
+        document.getElementById('username').value = user.username || '';
+        
+        // Store original data
+        originalData = {
+            fullName: user.fullName || '',
+            email: user.email || '',
+            phone: user.phone || '',
+            avatar: user.avatar || ''
+        };
+        
+        // Load avatar
+        if (user.avatar) {
+            const avatarPreview = document.getElementById('avatarPreview');
+            avatarPreview.innerHTML = `<img src="${user.avatar}" alt="Avatar">`;
+        }
+    }
+    
+    function setupAvatarUpload() {
+        const avatarInput = document.getElementById('avatarInput');
+        const avatarPreview = document.getElementById('avatarPreview');
+        
+        avatarInput.addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            // Validate file type
+            if (!file.type.startsWith('image/')) {
+                showAlert('Vui lòng chọn file ảnh hợp lệ.', 'error');
+                return;
+            }
+            
+            // Validate file size (max 5MB)
+            if (file.size > 5 * 1024 * 1024) {
+                showAlert('Kích thước ảnh không được vượt quá 5MB.', 'error');
+                return;
+            }
+            
+            // Show preview
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                avatarPreview.innerHTML = `<img src="${e.target.result}" alt="Avatar preview">`;
+            };
+            reader.readAsDataURL(file);
+            
+            // Upload avatar
+            try {
+                showLoading(true);
+                const formData = new FormData();
+                formData.append('file', file);
+                
+                const result = await api.uploadAvatar(formData);
+                if (result && result.avatar) {
+                    showAlert('Cập nhật ảnh đại diện thành công!', 'success');
+                    originalData.avatar = result.avatar;
+                }
+            } catch (error) {
+                console.error('Error uploading avatar:', error);
+                showAlert('Không thể tải ảnh lên. Vui lòng thử lại sau.', 'error');
+                // Revert preview
+                if (originalData.avatar) {
+                    avatarPreview.innerHTML = `<img src="${originalData.avatar}" alt="Avatar">`;
+                } else {
+                    avatarPreview.innerHTML = `
+                        <svg viewBox="0 0 24 24" width="60" height="60" fill="currentColor">
+                            <path d="M12 12a4.5 4.5 0 1 0-4.5-4.5A4.5 4.5 0 0 0 12 12Zm0 2.25c-3.03 0-9 1.52-9 4.5v.75A1.5 1.5 0 0 0 4.5 21h15a1.5 1.5 0 0 0 1.5-1.5v-.75c0-2.98-5.97-4.5-9-4.5Z"/>
+                        </svg>
+                    `;
+                }
+            } finally {
+                showLoading(false);
+                avatarInput.value = '';
+            }
+        });
+    }
+    
+    function setupFormSubmit() {
+        const form = document.getElementById('profileForm');
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const formData = {
+                fullName: document.getElementById('fullName').value.trim(),
+                email: document.getElementById('email').value.trim(),
+                phone: document.getElementById('phone').value.trim()
+            };
+            
+            // Validate
+            if (!formData.email) {
+                showAlert('Email là bắt buộc.', 'error');
+                return;
+            }
+            
+            try {
+                showLoading(true);
+                const result = await api.updateProfile(formData);
+                
+                if (result) {
+                    showAlert('Cập nhật thông tin thành công!', 'success');
+                    originalData = { ...originalData, ...formData };
+                    
+                    // Reload user data
+                    currentUser = await api.getCurrentUser();
+                    if (currentUser) {
+                        loadUserData(currentUser);
+                    }
+                }
+            } catch (error) {
+                console.error('Error updating profile:', error);
+                showAlert(error.message || 'Không thể cập nhật thông tin. Vui lòng thử lại sau.', 'error');
+            } finally {
+                showLoading(false);
+            }
+        });
+    }
+    
+    function resetForm() {
+        if (currentUser) {
+            loadUserData(currentUser);
+            showAlert('Đã hủy thay đổi.', 'success');
+        }
+    }
+    
+    function showAlert(message, type = 'info') {
+        const container = document.getElementById('alertContainer');
+        const alert = document.createElement('div');
+        alert.className = `alert alert-${type === 'error' ? 'error' : 'success'}`;
+        alert.textContent = message;
+        
+        container.innerHTML = '';
+        container.appendChild(alert);
+        
+        setTimeout(() => {
+            alert.remove();
+        }, 5000);
+    }
+    
+    function showLoading(show) {
+        const overlay = document.getElementById('loadingOverlay');
+        if (show) {
+            overlay.classList.add('active');
+        } else {
+            overlay.classList.remove('active');
+        }
+    }
+    
+    function setupNewsletterForm() {
+        const form = document.getElementById('footerNewsletterForm');
+        if (form) {
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const emailInput = form.querySelector('input[type="email"]');
+                const email = emailInput.value.trim();
+                
+                if (email) {
+                    alert('Cảm ơn bạn đã đăng ký nhận bản tin! Chúng tôi sẽ gửi email về ' + email);
+                    emailInput.value = '';
+                }
+            });
+        }
+    }
+</script>
+</body>
+</html>

@@ -78,6 +78,19 @@ body.auth-body {
     align-items: center;
     gap: 12px;
     border: 1px solid transparent;
+    transition: opacity 0.3s ease;
+    animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 .alert--success {
@@ -185,8 +198,13 @@ body.auth-body {
     box-shadow: var(--shadow-md);
 }
 
-.button--primary:hover {
+.button--primary:hover:not(:disabled) {
     transform: translateY(-1px);
+}
+
+.button--primary:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
 }
 
 .button--google {
@@ -255,6 +273,18 @@ body.auth-body {
     margin-top: auto;
     font-size: 0.85rem;
     color: var(--color-muted);
+    text-align: center;
+    line-height: 1.5;
+}
+
+.auth-footer a {
+    color: var(--color-primary);
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.auth-footer a:hover {
+    text-decoration: underline;
 }
 
 #register-page .auth-title {
@@ -267,6 +297,7 @@ body.auth-body {
 
 .form-columns {
     display: grid;
+    grid-template-columns: 1fr 1fr;
     gap: 18px;
 }
 
@@ -293,6 +324,10 @@ body.auth-body {
         flex-direction: column;
         align-items: flex-start;
         gap: 12px;
+    }
+
+    .form-columns {
+        grid-template-columns: 1fr;
     }
 
     .button {

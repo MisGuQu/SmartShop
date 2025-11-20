@@ -1,7 +1,9 @@
 package com.smartshop.entity.voucher;
 
+import com.smartshop.entity.product.Category;
 import jakarta.persistence.*;
 import lombok.*;
+
 import java.time.LocalDateTime;
 
 @Entity
@@ -16,18 +18,24 @@ public class Voucher {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, unique = true)
+    @Column(nullable = false, unique = true, length = 50)
     private String code;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "type")
-    private DiscountType type;
+    // PERCENTAGE hoặc FIXED_AMOUNT
+    @Column(name = "type", length = 20)
+    private String type;
 
     @Column(name = "value")
     private Double value;
 
+    // Đơn tối thiểu để áp dụng
     @Column(name = "min_order")
     private Double minOrder;
+
+    // Áp dụng theo danh mục (null = áp dụng cho tất cả)
+    @ManyToOne
+    @JoinColumn(name = "category_id")
+    private Category category;
 
     @Column(name = "start_date")
     private LocalDateTime startDate;
@@ -37,6 +45,6 @@ public class Voucher {
 
     @Builder.Default
     @Column(name = "is_active")
-    private boolean isActive = true;
+    private Boolean isActive = true;
 }
 

@@ -6,8 +6,6 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
 
 @Entity
 @Table(name = "products")
@@ -24,17 +22,17 @@ public class Product {
     @Column(nullable = false)
     private String name;
 
-    @Column(unique = true)
-    private String slug;
-
     private String description;
 
     @Column(nullable = false)
     private Double price;
 
     @Builder.Default
-    @Column(name = "has_variants", nullable = false)
-    private boolean hasVariants = false;
+    @Column(name = "stock_quantity", nullable = false)
+    private Integer stockQuantity = 0;
+
+    @Column(name = "image_url")
+    private String imageUrl;
 
     @Builder.Default
     @Column(name = "is_active", nullable = false)
@@ -45,18 +43,10 @@ public class Product {
     private Category category;
 
     @CreationTimestamp
-    @Column(name = "created_at")
+    @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
     @UpdateTimestamp
-    @Column(name = "updated_at")
+    @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
-
-    @Builder.Default
-    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<ProductImage> images = new ArrayList<>();
-
-    @Builder.Default
-    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<ProductVariant> variants = new ArrayList<>();
 }

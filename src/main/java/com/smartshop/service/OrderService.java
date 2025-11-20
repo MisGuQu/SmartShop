@@ -1,194 +1,181 @@
 package com.smartshop.service;
 
+import com.smartshop.dto.order.*;
 import com.smartshop.entity.order.Order;
-import com.smartshop.entity.order.OrderItem;
+import com.smartshop.entity.order.OrderStatusHistory;
 import com.smartshop.entity.user.User;
 import com.smartshop.repository.OrderRepository;
-import com.smartshop.repository.UserRepository;
-import com.smartshop.dto.order.CheckoutRequest;
-import com.smartshop.entity.enums.OrderStatus;
-import com.smartshop.entity.enums.PaymentMethod;
-import com.smartshop.entity.enums.PaymentStatus;
-import jakarta.persistence.EntityNotFoundException;
-import lombok.RequiredArgsConstructor;
+import com.smartshop.repository.OrderStatusHistoryRepository;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Objects;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional
-@RequiredArgsConstructor
 public class OrderService {
 
     private final OrderRepository orderRepository;
-    private final UserRepository userRepository;
+    private final OrderStatusHistoryRepository statusHistoryRepository;
 
-    public List<Order> getOrdersByUser(Long userId) {
-        Objects.requireNonNull(userId, "userId must not be null");
-        return orderRepository.findByUserIdOrderByCreatedAtDesc(userId);
+    public OrderService(OrderRepository orderRepository,
+                        OrderStatusHistoryRepository statusHistoryRepository) {
+        this.orderRepository = orderRepository;
+        this.statusHistoryRepository = statusHistoryRepository;
     }
 
-    public Order getOrderById(Long orderId) {
-        Objects.requireNonNull(orderId, "orderId must not be null");
-        return orderRepository.findById(orderId)
-                .orElseThrow(() -> new EntityNotFoundException("Order not found"));
+    private User getCurrentUser() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        return (User) auth.getPrincipal();
     }
 
-    public Order createOrder(Long userId, Order payload) {
-        Objects.requireNonNull(userId, "userId must not be null");
-        Objects.requireNonNull(payload, "payload must not be null");
-
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new EntityNotFoundException("User not found"));
-
-        Order order = new Order();
-        order.setUser(user);
-        order.setOrderNumber(generateOrderNumber());
-        order.setShippingAddress(payload.getShippingAddress());
-        order.setTotalAmount(payload.getTotalAmount() != null ? payload.getTotalAmount() : 0.0);
-        order.setPaymentMethod(payload.getPaymentMethod() != null ? payload.getPaymentMethod() : PaymentMethod.COD);
-        order.setPaymentStatus(payload.getPaymentStatus() != null ? payload.getPaymentStatus() : PaymentStatus.PENDING);
-        order.setStatus(payload.getStatus() != null ? payload.getStatus() : OrderStatus.PENDING);
-
-        if (payload.getItems() != null) {
-            for (OrderItem item : payload.getItems()) {
-                item.setOrder(order);
-            }
-            order.setItems(payload.getItems());
-        }
-
-        return orderRepository.save(order);
+    // 2️⃣7️⃣ Lịch sử mua hàng (của user hiện tại)
+    public List<OrderSummaryResponse> getMyOrders() {
+        User user = getCurrentUser();
+        return orderRepository.findByUser(user).stream()
+                .sorted((o1, o2) -> o2.getCreatedAt().compareTo(o1.getCreatedAt()))
+                .map(OrderSummaryResponse::fromEntity)
+                .collect(Collectors.toList());
     }
 
-    public Order createOrderFromCart(User user,
-                                     CheckoutRequest request,
-                                     double subtotal,
-                                     double shippingFee,
-                                     List<OrderItem> orderItems) {
-        Objects.requireNonNull(user, "user must not be null");
-        Objects.requireNonNull(request, "request must not be null");
-
-        Order order = new Order();
-        order.setUser(user);
-        order.setOrderNumber(generateOrderNumber());
-        order.setStatus(OrderStatus.PENDING);
-        order.setTotalAmount(subtotal + shippingFee);
-        order.setShippingAddress(request.getShippingAddress());
-        order.setPaymentMethod(request.getPaymentMethod() != null ? request.getPaymentMethod() : PaymentMethod.COD);
-        order.setPaymentStatus(PaymentStatus.PENDING);
-
-        for (OrderItem item : orderItems) {
-            item.setOrder(order);
-        }
-        order.setItems(orderItems);
-
-        return orderRepository.save(order);
-    }
-
-    public Order cancelOrder(Long orderId, String reason) {
-        Objects.requireNonNull(orderId, "orderId must not be null");
+    // 2️⃣8️⃣ + 2️⃣9️⃣ Chi tiết đơn hàng + lịch sử trạng thái
+    public OrderDetailResponse getOrderDetail(Long orderId) {
+        User user = getCurrentUser();
         Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new EntityNotFoundException("Order not found"));
+                .orElseThrow(() -> new RuntimeException("Order not found"));
 
-        order.setStatus(OrderStatus.CANCELLED);
-        return orderRepository.save(order);
-    }
-
-    public Order updateOrderStatus(Long orderId, String status) {
-        Objects.requireNonNull(orderId, "orderId must not be null");
-        Objects.requireNonNull(status, "status must not be null");
-
-        Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new EntityNotFoundException("Order not found"));
-
-        OrderStatus newStatus;
-        try {
-            // Convert SHIPPED to SHIPPING if needed
-            String statusStr = status.toUpperCase();
-            if ("SHIPPED".equals(statusStr)) {
-                statusStr = "SHIPPING";
-            }
-            newStatus = OrderStatus.valueOf(statusStr);
-        } catch (IllegalArgumentException ex) {
-            throw new IllegalArgumentException("Invalid order status: " + status);
+        // Chỉ cho phép xem đơn của mình hoặc ADMIN
+        if (order.getUser() != null && !order.getUser().getId().equals(user.getId())
+                && user.getRoles().stream().noneMatch(r -> "ROLE_ADMIN".equals(r.getName()))) {
+            throw new RuntimeException("Bạn không có quyền xem đơn hàng này");
         }
 
-        // Validate status transition
-        validateStatusTransition(order.getStatus(), newStatus);
+        List<OrderStatusHistory> historyEntities = statusHistoryRepository.findByOrderOrderByCreatedAtAsc(order);
+        List<OrderStatusHistoryResponse> history = historyEntities.stream()
+                .map(OrderStatusHistoryResponse::fromEntity)
+                .collect(Collectors.toList());
+
+        return OrderDetailResponse.fromEntity(order, history);
+    }
+
+    // Cập nhật trạng thái (Admin) + ghi lịch sử
+    public OrderDetailResponse updateStatus(Long orderId, UpdateOrderStatusRequest req) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new RuntimeException("Order not found"));
+
+        String oldStatus = order.getStatus();
+        String newStatus = req.getNewStatus();
+
+        if (newStatus == null || newStatus.isBlank()) {
+            throw new RuntimeException("Trạng thái mới không hợp lệ");
+        }
 
         order.setStatus(newStatus);
-        return orderRepository.save(order);
+        orderRepository.save(order);
+
+        OrderStatusHistory history = OrderStatusHistory.builder()
+                .order(order)
+                .oldStatus(oldStatus)
+                .newStatus(newStatus)
+                .build();
+        statusHistoryRepository.save(history);
+
+        List<OrderStatusHistoryResponse> historyResponses =
+                statusHistoryRepository.findByOrderOrderByCreatedAtAsc(order).stream()
+                        .map(OrderStatusHistoryResponse::fromEntity)
+                        .collect(Collectors.toList());
+
+        return OrderDetailResponse.fromEntity(order, historyResponses);
     }
 
-    /**
-     * Validate status transition
-     * Valid flows: PENDING -> PROCESSING -> SHIPPING -> DELIVERED
-     * Can cancel from PENDING or PROCESSING
-     */
-    private void validateStatusTransition(OrderStatus currentStatus, OrderStatus newStatus) {
-        if (currentStatus == newStatus) {
-            return; // No change
-        }
+    // Hủy đơn hàng (User) - chỉ cho phép hủy đơn của chính mình
+    public OrderDetailResponse cancelOrder(Long orderId, String reason) {
+        User user = getCurrentUser();
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new RuntimeException("Order not found"));
 
-        if (newStatus == OrderStatus.CANCELLED) {
-            if (currentStatus != OrderStatus.PENDING && currentStatus != OrderStatus.PROCESSING) {
-                throw new IllegalArgumentException("Chỉ có thể hủy đơn hàng ở trạng thái PENDING hoặc PROCESSING");
+        // Kiểm tra quyền: chỉ cho phép hủy đơn của chính mình hoặc ADMIN
+        if (order.getUser() == null || !order.getUser().getId().equals(user.getId())) {
+            boolean isAdmin = user.getRoles().stream()
+                    .anyMatch(r -> "ROLE_ADMIN".equals(r.getName()));
+            if (!isAdmin) {
+                throw new RuntimeException("Bạn không có quyền hủy đơn hàng này");
             }
-            return;
         }
 
-        // Normal flow validation
-        switch (currentStatus) {
-            case PENDING:
-                if (newStatus != OrderStatus.PROCESSING && newStatus != OrderStatus.CANCELLED) {
-                    throw new IllegalArgumentException("Đơn hàng PENDING chỉ có thể chuyển sang PROCESSING hoặc CANCELLED");
-                }
-                break;
-            case PROCESSING:
-                if (newStatus != OrderStatus.SHIPPING && newStatus != OrderStatus.CANCELLED) {
-                    throw new IllegalArgumentException("Đơn hàng PROCESSING chỉ có thể chuyển sang SHIPPING hoặc CANCELLED");
-                }
-                break;
-            case SHIPPING:
-                if (newStatus != OrderStatus.DELIVERED) {
-                    throw new IllegalArgumentException("Đơn hàng SHIPPING chỉ có thể chuyển sang DELIVERED");
-                }
-                break;
-            case DELIVERED:
-                throw new IllegalArgumentException("Đơn hàng DELIVERED không thể thay đổi trạng thái");
-            case CANCELLED:
-                throw new IllegalArgumentException("Đơn hàng CANCELLED không thể thay đổi trạng thái");
-            case REFUNDED:
-                throw new IllegalArgumentException("Đơn hàng REFUNDED không thể thay đổi trạng thái");
-            case CONFIRMED:
-                if (newStatus != OrderStatus.PROCESSING) {
-                    throw new IllegalArgumentException("Đơn hàng CONFIRMED chỉ có thể chuyển sang PROCESSING");
-                }
-                break;
+        // Kiểm tra trạng thái: chỉ cho phép hủy khi đơn ở trạng thái PENDING hoặc PROCESSING
+        String currentStatus = order.getStatus();
+        if (!"PENDING".equals(currentStatus) && !"PROCESSING".equals(currentStatus)) {
+            throw new RuntimeException("Chỉ có thể hủy đơn hàng khi đơn ở trạng thái 'Chờ xử lý' hoặc 'Đang xử lý'");
         }
+
+        // Cập nhật trạng thái thành CANCELLED
+        String oldStatus = order.getStatus();
+        order.setStatus("CANCELLED");
+        orderRepository.save(order);
+
+        // Ghi lịch sử
+        OrderStatusHistory history = OrderStatusHistory.builder()
+                .order(order)
+                .oldStatus(oldStatus)
+                .newStatus("CANCELLED")
+                .build();
+        statusHistoryRepository.save(history);
+
+        // Lấy lại lịch sử đầy đủ
+        List<OrderStatusHistoryResponse> historyResponses =
+                statusHistoryRepository.findByOrderOrderByCreatedAtAsc(order).stream()
+                        .map(OrderStatusHistoryResponse::fromEntity)
+                        .collect(Collectors.toList());
+
+        return OrderDetailResponse.fromEntity(order, historyResponses);
     }
 
-    /**
-     * Lấy tất cả đơn hàng
-     */
-    public List<Order> getAllOrders() {
-        return orderRepository.findAllOrderByCreatedAtDesc();
-    }
+    // Xác nhận nhận hàng (User) - chỉ cho phép xác nhận đơn của chính mình
+    public OrderDetailResponse confirmReceived(Long orderId) {
+        User user = getCurrentUser();
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new RuntimeException("Order not found"));
 
-    /**
-     * Tìm kiếm và lọc đơn hàng
-     */
-    public List<Order> searchAndFilterOrders(OrderStatus status, String keyword) {
-        // Normalize keyword - convert empty string to null
-        String normalizedKeyword = (keyword != null && !keyword.trim().isEmpty()) ? keyword.trim() : null;
-        return orderRepository.findOrdersWithFilters(status, normalizedKeyword);
-    }
+        // Kiểm tra quyền: chỉ cho phép xác nhận đơn của chính mình hoặc ADMIN
+        if (order.getUser() == null || !order.getUser().getId().equals(user.getId())) {
+            boolean isAdmin = user.getRoles().stream()
+                    .anyMatch(r -> "ROLE_ADMIN".equals(r.getName()));
+            if (!isAdmin) {
+                throw new RuntimeException("Bạn không có quyền xác nhận đơn hàng này");
+            }
+        }
 
-    private String generateOrderNumber() {
-        String timestamp = String.valueOf(System.currentTimeMillis()).substring(7);
-        return "ORD-" + LocalDateTime.now().getYear() + timestamp;
+        // Kiểm tra trạng thái: chỉ cho phép xác nhận khi đơn ở trạng thái DELIVERED
+        String currentStatus = order.getStatus();
+        if (!"DELIVERED".equals(currentStatus)) {
+            throw new RuntimeException("Chỉ có thể xác nhận nhận hàng khi đơn ở trạng thái 'Đã giao hàng'");
+        }
+
+        // Cập nhật trạng thái thành COMPLETED
+        String oldStatus = order.getStatus();
+        order.setStatus("COMPLETED");
+        orderRepository.save(order);
+
+        // Ghi lịch sử
+        OrderStatusHistory history = OrderStatusHistory.builder()
+                .order(order)
+                .oldStatus(oldStatus)
+                .newStatus("COMPLETED")
+                .build();
+        statusHistoryRepository.save(history);
+
+        // Lấy lại lịch sử đầy đủ
+        List<OrderStatusHistoryResponse> historyResponses =
+                statusHistoryRepository.findByOrderOrderByCreatedAtAsc(order).stream()
+                        .map(OrderStatusHistoryResponse::fromEntity)
+                        .collect(Collectors.toList());
+
+        return OrderDetailResponse.fromEntity(order, historyResponses);
     }
 }
+
+

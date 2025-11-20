@@ -1,90 +1,210 @@
 package com.smartshop.controller;
 
-import com.smartshop.dto.auth.LoginRequest;
-import com.smartshop.dto.auth.RegisterRequest;
-import com.smartshop.exception.AuthException;
-import com.smartshop.security.JwtCookieService;
+import com.smartshop.dto.auth.*;
+import com.smartshop.entity.user.User;
+import com.smartshop.repository.UserRepository;
 import com.smartshop.service.AuthService;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
-import org.springframework.http.ResponseCookie;
-import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
-import org.springframework.validation.BindingResult;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
-@Controller
-@RequestMapping("/auth")
-@RequiredArgsConstructor
+@RestController
+@RequestMapping("/api/auth")
+@CrossOrigin(origins = {"http://localhost:8080", "http://localhost:3000"}, maxAge = 3600, allowCredentials = "true")
 public class AuthController {
 
     private final AuthService authService;
-    private final JwtCookieService jwtCookieService;
+    private final UserRepository userRepository;
 
-    @GetMapping("/login")
-    public String loginPage(Model model,
-                            @RequestParam(value = "error", required = false) String error) {
-        if (!model.containsAttribute("loginRequest")) {
-            model.addAttribute("loginRequest", new LoginRequest());
-        }
-        model.addAttribute("errorMessage", error);
-        return "auth/login";
+    @Value("${app.security.jwt.cookie-name:SMARTSHOP_TOKEN}")
+    private String cookieName;
+
+    @Value("${app.security.jwt.expiration:3600000}")
+    private Long jwtExpiration;
+
+    @Value("${app.security.jwt.cookie-domain:localhost}")
+    private String cookieDomain;
+
+    @Value("${app.security.jwt.cookie-secure:false}")
+    private boolean cookieSecure;
+
+    @Value("${app.security.jwt.cookie-samesite:Strict}")
+    private String cookieSameSite;
+
+    public AuthController(AuthService authService, UserRepository userRepository) {
+        this.authService = authService;
+        this.userRepository = userRepository;
     }
 
+    // Helper method to set cookie
+    private void setCookie(HttpServletResponse response, String token) {
+        int maxAge = (int) (jwtExpiration / 1000); // Convert milliseconds to seconds
+        String sameSiteValue = cookieSameSite != null ? cookieSameSite : "Strict";
+        
+        // Build Set-Cookie header with all attributes
+        StringBuilder cookieHeader = new StringBuilder();
+        cookieHeader.append(cookieName).append("=").append(token);
+        cookieHeader.append("; Path=/");
+        cookieHeader.append("; Max-Age=").append(maxAge);
+        cookieHeader.append("; HttpOnly");
+        cookieHeader.append("; SameSite=").append(sameSiteValue);
+        
+        if (cookieSecure) {
+            cookieHeader.append("; Secure");
+        }
+        
+        // Set domain if specified and not localhost
+        if (cookieDomain != null && !cookieDomain.isEmpty() && !cookieDomain.equals("localhost")) {
+            cookieHeader.append("; Domain=").append(cookieDomain);
+        }
+        
+        response.setHeader("Set-Cookie", cookieHeader.toString());
+    }
+
+    // Helper method to delete cookie
+    private void deleteCookie(HttpServletResponse response) {
+        String sameSiteValue = cookieSameSite != null ? cookieSameSite : "Strict";
+        
+        // Build Set-Cookie header to delete cookie
+        StringBuilder cookieHeader = new StringBuilder();
+        cookieHeader.append(cookieName).append("=");
+        cookieHeader.append("; Path=/");
+        cookieHeader.append("; Max-Age=0");
+        cookieHeader.append("; HttpOnly");
+        cookieHeader.append("; SameSite=").append(sameSiteValue);
+        
+        if (cookieSecure) {
+            cookieHeader.append("; Secure");
+        }
+        
+        // Set domain if specified and not localhost
+        if (cookieDomain != null && !cookieDomain.isEmpty() && !cookieDomain.equals("localhost")) {
+            cookieHeader.append("; Domain=").append(cookieDomain);
+        }
+        
+        response.setHeader("Set-Cookie", cookieHeader.toString());
+    }
+
+    // 5️⃣ Đăng nhập – trả JWT token và set cookie
     @PostMapping("/login")
-    public String handleLogin(@Valid @ModelAttribute("loginRequest") LoginRequest loginRequest,
-                              BindingResult bindingResult,
-                              HttpServletResponse response,
-                              RedirectAttributes redirectAttributes) {
-        if (bindingResult.hasErrors()) {
-            redirectAttributes.addFlashAttribute("loginRequest", loginRequest);
-            redirectAttributes.addFlashAttribute("org.springframework.validation.BindingResult.loginRequest", bindingResult);
-            return "redirect:/auth/login";
-        }
-
-        try {
-            var authResult = authService.login(loginRequest);
-            ResponseCookie cookie = jwtCookieService.buildAccessTokenCookie(authResult.getToken());
-            response.addHeader("Set-Cookie", cookie.toString());
-            return "redirect:/";
-        } catch (AuthException ex) {
-            redirectAttributes.addFlashAttribute("errorMessage", ex.getMessage());
-            return "redirect:/auth/login";
-        }
+    public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest loginRequest, 
+                                             HttpServletResponse response) {
+        AuthResponse authResponse = authService.login(loginRequest);
+        // Set cookie
+        setCookie(response, authResponse.getToken());
+        return ResponseEntity.ok(authResponse);
     }
 
-    @GetMapping("/register")
-    public String registerPage(Model model) {
-        if (!model.containsAttribute("registerRequest")) {
-            model.addAttribute("registerRequest", new RegisterRequest());
-        }
-        return "auth/register";
-    }
-
+    // 4️⃣ Đăng ký – BCrypt và set cookie
     @PostMapping("/register")
-    public String handleRegister(@Valid @ModelAttribute("registerRequest") RegisterRequest request,
-                                 BindingResult bindingResult,
-                                 RedirectAttributes redirectAttributes) {
-        if (bindingResult.hasErrors()) {
-            redirectAttributes.addFlashAttribute("registerRequest", request);
-            redirectAttributes.addFlashAttribute("org.springframework.validation.BindingResult.registerRequest", bindingResult);
-            return "redirect:/auth/register";
+    public ResponseEntity<AuthResponse> register(@Valid @RequestBody RegisterRequest registerRequest,
+                                                 HttpServletResponse response) {
+        AuthResponse authResponse = authService.register(registerRequest);
+        // Set cookie
+        setCookie(response, authResponse.getToken());
+        return ResponseEntity.ok(authResponse);
+    }
+
+    // 6️⃣ Quên mật khẩu – gửi email reset
+    @PostMapping("/forgot-password")
+    public ResponseEntity<Void> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
+        authService.forgotPassword(request);
+        return ResponseEntity.ok().build();
+    }
+
+    // 6️⃣ Reset mật khẩu
+    @PostMapping("/reset-password")
+    public ResponseEntity<Void> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
+        authService.resetPassword(request);
+        return ResponseEntity.ok().build();
+    }
+
+    // 7️⃣ Login Google – nhận idToken từ frontend
+    @PostMapping("/google")
+    public ResponseEntity<AuthResponse> loginWithGoogle(@Valid @RequestBody GoogleLoginRequest request,
+                                                        HttpServletResponse response) {
+        AuthResponse authResponse = authService.loginWithGoogle(request);
+        // Set cookie
+        setCookie(response, authResponse.getToken());
+        return ResponseEntity.ok(authResponse);
+    }
+
+    // 8️⃣ Get current user info
+    @GetMapping("/me")
+    public ResponseEntity<AuthResponse> getCurrentUser(HttpServletRequest request) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        
+        if (authentication == null || !authentication.isAuthenticated() || 
+            authentication.getPrincipal().equals("anonymousUser")) {
+            return ResponseEntity.status(401).build();
         }
 
-        try {
-            authService.register(request);
-            redirectAttributes.addFlashAttribute("successMessage", "Đăng ký tài khoản thành công. Vui lòng đăng nhập.");
-            return "redirect:/auth/login";
-        } catch (AuthException ex) {
-            redirectAttributes.addFlashAttribute("errorMessage", ex.getMessage());
-            redirectAttributes.addFlashAttribute("registerRequest", request);
-            return "redirect:/auth/register";
+        UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+        User user = userRepository.findByUsername(userDetails.getUsername())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        AuthResponse response = AuthResponse.builder()
+                .id(user.getId())
+                .username(user.getUsername())
+                .email(user.getEmail())
+                .fullName(user.getFullName())
+                .phone(user.getPhone())
+                .avatar(user.getAvatar())
+                .roles(user.getRoles().stream()
+                        .map(role -> role.getName())
+                        .collect(java.util.stream.Collectors.toList()))
+                .build();
+
+        return ResponseEntity.ok(response);
+    }
+    
+    // Update user profile
+    @PutMapping("/profile")
+    public ResponseEntity<AuthResponse> updateProfile(@Valid @RequestBody UpdateProfileRequest request) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        
+        if (authentication == null || !authentication.isAuthenticated() || 
+            authentication.getPrincipal().equals("anonymousUser")) {
+            return ResponseEntity.status(401).build();
         }
+        
+        UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+        AuthResponse response = authService.updateProfile(userDetails.getUsername(), request);
+        return ResponseEntity.ok(response);
+    }
+    
+    // Upload avatar
+    @PostMapping("/avatar")
+    public ResponseEntity<AuthResponse> uploadAvatar(@RequestParam("file") MultipartFile file) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        
+        if (authentication == null || !authentication.isAuthenticated() || 
+            authentication.getPrincipal().equals("anonymousUser")) {
+            return ResponseEntity.status(401).build();
+        }
+        
+        try {
+            UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+            AuthResponse response = authService.uploadAvatar(userDetails.getUsername(), file);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+    // 9️⃣ Logout – xóa cookie
+    @PostMapping("/logout")
+    public ResponseEntity<Void> logout(HttpServletResponse response) {
+        deleteCookie(response);
+        SecurityContextHolder.clearContext();
+        return ResponseEntity.ok().build();
     }
 }
+

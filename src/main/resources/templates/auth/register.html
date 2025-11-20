@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<html lang="vi">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -10,52 +10,46 @@
     <link rel="stylesheet" href="/css/auth.css">
 </head>
 <body class="auth-body">
+
 <main class="auth-container" id="register-page">
     <section class="auth-panel">
         <div class="auth-brand">SmartShop</div>
+
         <h1 class="auth-title">Tạo tài khoản</h1>
+
         <p class="auth-subtitle">Đã có tài khoản?
-            <a th:href="@{/auth/login}">Đăng nhập ngay</a>
+            <a href="/auth/login.html">Đăng nhập ngay</a>
         </p>
 
-        <div th:if="${errorMessage}" class="alert alert--error" th:text="${errorMessage}"></div>
-        <div th:if="${successMessage}" class="alert alert--success" th:text="${successMessage}"></div>
+        <div id="alertContainer"></div>
 
-        <form class="auth-form" th:action="@{/auth/register}" method="post" th:object="${registerRequest}">
-            <div class="form-field" th:classappend="${#fields.hasErrors('fullName')} ? ' form-field--error'">
+        <form class="auth-form" id="registerForm">
+            <div class="form-field" id="fullNameField">
                 <label for="fullName">Họ tên</label>
-                <input id="fullName" type="text" th:field="*{fullName}" placeholder="Nguyễn Văn A" required>
-                <p class="field-error" th:if="${#fields.hasErrors('fullName')}" th:errors="*{fullName}"></p>
+                <input id="fullName" type="text" name="fullName" placeholder="Nguyễn Văn A" required>
+                <p class="field-error" id="fullNameError" style="display: none;"></p>
             </div>
 
-            <div class="form-field" th:classappend="${#fields.hasErrors('email')} ? ' form-field--error'">
+            <div class="form-field" id="emailField">
                 <label for="email">Email</label>
-                <input id="email" type="email" th:field="*{email}" placeholder="name@email.com" required>
-                <p class="field-error" th:if="${#fields.hasErrors('email')}" th:errors="*{email}"></p>
+                <input id="email" type="email" name="email" placeholder="name@email.com" required>
+                <p class="field-error" id="emailError" style="display: none;"></p>
             </div>
 
-            <div class="form-columns">
-                <div class="form-field" th:classappend="${#fields.hasErrors('password')} ? ' form-field--error'">
-                    <label for="password">Mật khẩu</label>
-                    <input id="password" type="password" th:field="*{password}" placeholder="Ít nhất 8 ký tự" required minlength="8">
-                    <p class="field-error" th:if="${#fields.hasErrors('password')}" th:errors="*{password}"></p>
-                </div>
-
-                <div class="form-field" th:classappend="${#fields.hasErrors('confirmPassword')} ? ' form-field--error'">
-                    <label for="confirmPassword">Xác nhận mật khẩu</label>
-                    <input id="confirmPassword" type="password" th:field="*{confirmPassword}" placeholder="Nhập lại mật khẩu" required>
-                    <p class="field-error" th:if="${#fields.hasErrors('confirmPassword')}" th:errors="*{confirmPassword}"></p>
-                </div>
+            <div class="form-field" id="passwordField">
+                <label for="password">Mật khẩu</label>
+                <input id="password" type="password" name="password" placeholder="Ít nhất 6 ký tự" required minlength="6">
+                <p class="field-error" id="passwordError" style="display: none;"></p>
             </div>
 
-            <button type="submit" class="button button--primary">Đăng ký</button>
+            <button type="submit" class="button button--primary" id="submitButton">Đăng ký</button>
         </form>
 
         <div class="auth-divider">
             <span>Hoặc</span>
         </div>
 
-        <a class="button button--google" href="/oauth2/authorization/google">
+        <button type="button" class="button button--google" id="googleRegisterBtn">
             <svg viewBox="0 0 533.5 544.3" aria-hidden="true">
                 <path fill="#4285f4" d="M533.5 278.4c0-17.4-1.6-34.1-4.7-50.4H272v95.3h146.9c-6.3 34-25.1 62.9-53.7 82.3v68.2h86.9c51.1-47 81.4-116.2 81.4-195.4z"/>
                 <path fill="#34a853" d="M272 544.3c72 0 132.5-23.8 176.6-64.7l-86.9-68.2c-24.2 16.2-55.3 25.7-89.7 25.7-68.9 0-127.2-46.5-148-109.2h-89.9v68.8c43.3 86 132.8 147.6 237.9 147.6z"/>
@@ -63,10 +57,11 @@
                 <path fill="#ea4335" d="M272 107.7c37.9-.6 74.1 13.6 101.7 39.6l76-76C396.9 24.9 335.2-0.6 272 0 166.9 0 77.4 61.6 34.1 165.8l89.9 68.8C144.8 154.9 203.1 108.4 272 107.7z"/>
             </svg>
             Đăng ký với Google
-        </a>
+        </button>
 
         <p class="auth-footer">Khi đăng ký, bạn đồng ý với <a href="#">Điều khoản dịch vụ</a> và <a href="#">Chính sách bảo mật</a> của SmartShop.</p>
     </section>
+
     <aside class="auth-illustration">
         <div class="illustration-overlay">
             <h2>Gia nhập cộng đồng SmartShop</h2>
@@ -74,6 +69,98 @@
         </div>
     </aside>
 </main>
+
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<script src="/js/api.js"></script>
+<script src="/js/auth.js"></script>
+<script>
+    // Initialize Google Sign-In
+    function initGoogleSignIn() {
+        if (typeof google !== 'undefined' && google.accounts) {
+            google.accounts.id.initialize({
+                client_id: '740735252992-4lvlddgsh2bkla8vb46rfc0iam5ph3po.apps.googleusercontent.com',
+                callback: handleGoogleSignIn
+            });
+            
+            const googleBtn = document.getElementById('googleRegisterBtn');
+            if (googleBtn) {
+                googleBtn.addEventListener('click', () => {
+                    google.accounts.id.prompt();
+                });
+            }
+        } else {
+            // Retry after a short delay if Google SDK not loaded yet
+            setTimeout(initGoogleSignIn, 100);
+        }
+    }
+    
+    window.onload = function() {
+        initGoogleSignIn();
+    };
+    
+    async function handleGoogleSignIn(response) {
+        try {
+            const result = await api.loginWithGoogle(response.credential);
+            
+            if (result) {
+                // Token is set via cookie, reset auth status to force fresh check
+                if (typeof resetAuthStatus === 'function') {
+                    resetAuthStatus();
+                }
+                // Check if this is a new user by checking if avatar was just set from Google
+                // For simplicity, we'll show a generic success message
+                showAlert('Đăng ký/Đăng nhập thành công! Đang chuyển hướng...', 'success');
+                
+                // Redirect after short delay to allow cookie to be set
+                setTimeout(() => {
+                    window.location.href = '/?login=success';
+                }, 1000);
+            }
+        } catch (error) {
+            console.error('Google register error:', error);
+            const errorMessage = error.message || 'Đăng ký với Google thất bại. Vui lòng thử lại.';
+            
+            // Check if user already exists
+            if (errorMessage.includes('đã tồn tại') || errorMessage.includes('already exists')) {
+                showAlert('Tài khoản Google này đã được sử dụng. Vui lòng đăng nhập thay vì đăng ký.', 'danger');
+            } else {
+                showAlert(errorMessage, 'danger');
+            }
+        }
+    }
+    
+    function showAlert(message, type) {
+        const container = document.getElementById('alertContainer');
+        if (!container) return;
+        
+        const alertClassMap = {
+            'success': 'alert--success',
+            'danger': 'alert--error',
+            'error': 'alert--error',
+            'warning': 'alert--warning',
+            'info': 'alert--warning'
+        };
+        
+        const alertClass = alertClassMap[type] || 'alert--error';
+        const alertDiv = document.createElement('div');
+        alertDiv.className = `alert ${alertClass}`;
+        alertDiv.textContent = message;
+        
+        container.innerHTML = '';
+        container.appendChild(alertDiv);
+        
+        setTimeout(() => {
+            if (alertDiv.parentNode) {
+                alertDiv.style.opacity = '0';
+                alertDiv.style.transition = 'opacity 0.3s ease';
+                setTimeout(() => {
+                    if (alertDiv.parentNode) {
+                        alertDiv.remove();
+                    }
+                }, 300);
+            }
+        }, 5000);
+    }
+</script>
 </body>
 </html>
-

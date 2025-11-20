@@ -1,8 +1,5 @@
 package com.smartshop.entity.order;
 
-import com.smartshop.entity.enums.OrderStatus;
-import com.smartshop.entity.enums.PaymentMethod;
-import com.smartshop.entity.enums.PaymentStatus;
 import com.smartshop.entity.user.User;
 
 import jakarta.persistence.*;
@@ -25,7 +22,7 @@ public class Order {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "order_number", nullable = false, unique = true)
+    @Column(name = "order_number", unique = true)
     private String orderNumber;
 
     @ManyToOne
@@ -33,27 +30,31 @@ public class Order {
     private User user;
 
     @Builder.Default
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private OrderStatus status = OrderStatus.PENDING;
+    @Column(nullable = false, length = 30)
+    private String status = "PENDING";
 
     @Column(name = "total_amount", nullable = false)
     private Double totalAmount;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "payment_method", nullable = false)
-    private PaymentMethod paymentMethod;
+    // Thông tin voucher áp dụng (nếu có)
+    @Column(name = "voucher_code", length = 50)
+    private String voucherCode;
+
+    @Column(name = "voucher_discount")
+    private Double voucherDiscount;
+
+    @Column(name = "payment_method", length = 20)
+    private String paymentMethod;
 
     @Builder.Default
-    @Enumerated(EnumType.STRING)
-    @Column(name = "payment_status")
-    private PaymentStatus paymentStatus = PaymentStatus.PENDING;
+    @Column(name = "payment_status", length = 20)
+    private String paymentStatus = "PENDING";
 
-    @Column(name = "shipping_address")
+    @Column(name = "shipping_address", columnDefinition = "TEXT")
     private String shippingAddress;
 
     @CreationTimestamp
-    @Column(name = "created_at")
+    @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 
     @Builder.Default

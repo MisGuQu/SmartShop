@@ -1,169 +1,172 @@
 <!DOCTYPE html>
-<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<html lang="vi">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SmartShop | Quản lý đơn hàng</title>
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
-    <link rel="stylesheet" th:href="@{/css/admin.css}">
-    <style>
-        .admin-filters {
-            display: flex;
-            gap: 1rem;
-            flex-wrap: wrap;
-            align-items: flex-end;
-        }
-        .admin-filters__group {
-            flex: 1;
-            min-width: 220px;
-        }
-        .admin-filters__label {
-            display: block;
-            margin-bottom: 0.4rem;
-            font-weight: 500;
-            color: #0f172a;
-        }
-        .admin-filters__control {
-            width: 100%;
-            padding: 0.55rem 0.75rem;
-            border: 1px solid #e2e8f0;
-            border-radius: 8px;
-            font-size: 0.9rem;
-            background: #ffffff;
-        }
-        .admin-table__empty {
-            text-align: center;
-            padding: 2rem;
-            color: #64748b;
-        }
-    </style>
+    <title>Quản lý Đơn hàng - SmartShop Admin</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="/css/admin.css">
 </head>
 <body>
-<header class="admin-header">
-    <div class="admin-header__title">
-        <a class="admin-header__logo" href="/">SmartShop</a>
-        <span class="admin-header__subtitle">Bảng điều khiển quản trị</span>
-    </div>
-    <nav class="admin-header__nav">
-        <a class="admin-header__link" href="/admin/dashboard">Dashboard</a>
-        <a class="admin-header__link" href="/admin/products">Sản phẩm</a>
-        <a class="admin-header__link" href="/admin/users">Người dùng</a>
-        <a class="admin-header__link admin-header__link--active" href="/admin/orders">Đơn hàng</a>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/">SmartShop Admin</a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="/">Về trang chủ</a>
+                <a class="nav-link" href="#" onclick="handleLogout()">Đăng xuất</a>
+            </div>
+        </div>
     </nav>
-</header>
 
-<main class="admin-main">
-    <section class="admin-card admin-card--stack">
-        <div class="admin-card__header">
-            <div>
-                <h1 class="admin-card__title">Quản lý đơn hàng</h1>
-                <p class="admin-card__subtitle">Xem và quản lý tất cả đơn hàng trong hệ thống.</p>
+    <div class="container-fluid mt-4">
+        <div class="row">
+            <!-- Sidebar -->
+            <div class="col-md-3">
+                <div class="list-group">
+                    <a href="/admin/dashboard.html" class="list-group-item list-group-item-action">
+                        <i class="bi bi-speedometer2"></i> Dashboard
+                    </a>
+                    <a href="/admin/products.html" class="list-group-item list-group-item-action">
+                        <i class="bi bi-box-seam"></i> Quản lý Sản phẩm
+                    </a>
+                    <a href="/admin/categories.html" class="list-group-item list-group-item-action">
+                        <i class="bi bi-tags"></i> Quản lý Danh mục
+                    </a>
+                    <a href="/admin/orders.html" class="list-group-item list-group-item-action active">
+                        <i class="bi bi-receipt"></i> Quản lý Đơn hàng
+                    </a>
+                    <a href="/admin/users.html" class="list-group-item list-group-item-action">
+                        <i class="bi bi-people"></i> Quản lý Người dùng
+                    </a>
+                    <a href="/admin/vouchers.html" class="list-group-item list-group-item-action">
+                        <i class="bi bi-ticket-perforated"></i> Quản lý Voucher
+                    </a>
+                </div>
             </div>
-            <div class="admin-card__actions">
-                <a class="admin-chip" href="/admin/dashboard">Dashboard</a>
-            </div>
-        </div>
 
-        <div th:if="${successMessage}" class="alert alert--success" th:text="${successMessage}"></div>
-        <div th:if="${errorMessage}" class="alert alert--error" th:text="${errorMessage}"></div>
-    </section>
+            <!-- Main Content -->
+            <div class="col-md-9">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h2>Quản lý Đơn hàng</h2>
+                    <div class="btn-group">
+                        <button type="button" class="btn btn-success dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-file-earmark-arrow-down"></i> Xuất báo cáo
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="#" onclick="exportToExcel()"><i class="bi bi-file-earmark-excel"></i> Xuất Excel</a></li>
+                            <li><a class="dropdown-item" href="#" onclick="exportToPDF()"><i class="bi bi-file-earmark-pdf"></i> Xuất PDF</a></li>
+                        </ul>
+                    </div>
+                </div>
 
-    <!-- Filter and Search Section -->
-    <section class="admin-card">
-        <div class="admin-card__header">
-            <div>
-                <h2 class="admin-card__title">Tìm kiếm và lọc</h2>
-                <p class="admin-card__subtitle">Tìm kiếm đơn hàng theo tên hoặc SĐT khách hàng, lọc theo trạng thái.</p>
-            </div>
-        </div>
-        <form method="get" action="/admin/orders" class="admin-filters">
-            <div class="admin-filters__group">
-                <label class="admin-filters__label">Tìm kiếm</label>
-                <input type="text"
-                       name="keyword"
-                       th:value="${currentKeyword}"
-                       placeholder="Tên hoặc SĐT khách hàng"
-                       class="admin-filters__control">
-            </div>
-            <div class="admin-filters__group">
-                <label class="admin-filters__label">Lọc theo trạng thái</label>
-                <select name="status" class="admin-filters__control">
-                    <option value="">Tất cả trạng thái</option>
-                    <option th:each="status : ${orderStatuses}" 
-                            th:value="${status.name()}" 
-                            th:text="${status.name()}"
-                            th:selected="${currentStatus == status.name()}"></option>
-                </select>
-            </div>
-            <div style="display: flex; gap: 0.5rem;">
-                <button type="submit" class="button button--primary">Tìm kiếm</button>
-                <a href="/admin/orders" class="button button--ghost">Xóa bộ lọc</a>
-            </div>
-        </form>
-    </section>
+                <div id="alertContainer"></div>
 
-    <!-- Orders Table -->
-    <section class="admin-card">
-        <div class="admin-card__header">
-            <div>
-                <h2 class="admin-card__title">Danh sách đơn hàng</h2>
-                <p class="admin-card__subtitle">Tất cả đơn hàng trong hệ thống.</p>
-            </div>
-        </div>
-
-        <div class="table-wrapper">
-            <table class="table">
-                <thead>
-                <tr>
-                    <th>Mã đơn hàng</th>
-                    <th>Khách hàng</th>
-                    <th>Liên hệ</th>
-                    <th>Ngày đặt</th>
-                    <th>Tổng tiền</th>
-                    <th>Trạng thái</th>
-                    <th class="table__actions-col">Hành động</th>
-                </tr>
-                </thead>
-                <tbody>
-                <tr th:each="order : ${orders}">
-                    <td>
-                        <div class="table__primary">
-                            <span th:text="${order.orderNumber}"></span>
+                <!-- Filter -->
+                <div class="card mb-3">
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-md-3">
+                                <label class="form-label">Tìm kiếm</label>
+                                <input type="text" class="form-control" id="searchInput" placeholder="Mã đơn hàng, tên khách hàng...">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Trạng thái</label>
+                                <select class="form-select" id="statusFilter">
+                                    <option value="">Tất cả</option>
+                                    <option value="PENDING">Chờ xử lý</option>
+                                    <option value="PROCESSING">Đang xử lý</option>
+                                    <option value="SHIPPED">Đã giao hàng</option>
+                                    <option value="DELIVERED">Đã nhận hàng</option>
+                                    <option value="CANCELLED">Đã hủy</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Từ ngày</label>
+                                <input type="date" class="form-control" id="fromDate">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Đến ngày</label>
+                                <input type="date" class="form-control" id="toDate">
+                            </div>
                         </div>
-                    </td>
-                    <td>
-                        <div class="table__primary" th:text="${order.user != null ? order.user.fullName : 'Khách lẻ'}"></div>
-                        <p class="table__secondary" th:text="${order.user != null ? order.user.email : '-'}"></p>
-                    </td>
-                    <td th:text="${order.user != null && order.user.phone != null ? order.user.phone : '-'}"></td>
-                    <td th:text="${order.createdAt != null ? #temporals.format(order.createdAt, 'dd/MM/yyyy HH:mm') : '-'}"></td>
-                    <td>
-                        <span style="font-weight: 600; color: #10b981;">
-                            <span th:text="${#numbers.formatDecimal(order.totalAmount, 1, 'POINT', 0, 'COMMA')}"></span> ₫
-                        </span>
-                    </td>
-                    <td>
-                        <span class="status" 
-                              th:classappend="${order.status.name() == 'PENDING'} ? 'status--warning' : 
-                                             (${order.status.name() == 'PROCESSING'} ? 'status--info' :
-                                             (${order.status.name() == 'SHIPPING'} ? 'status--info' :
-                                             (${order.status.name() == 'DELIVERED'} ? 'status--active' :
-                                             (${order.status.name() == 'CANCELLED'} ? 'status--inactive' : 'status--secondary'))))"
-                              th:text="${order.status.name()}"></span>
-                    </td>
-                    <td class="table__actions">
-                        <a class="button button--ghost" th:href="@{/admin/orders/{id}(id=${order.id})}">Xem chi tiết</a>
-                    </td>
-                </tr>
-                <tr th:if="${#lists.isEmpty(orders)}">
-                    <td colspan="7" class="admin-table__empty">Không có đơn hàng nào.</td>
-                </tr>
-                </tbody>
-            </table>
-        </div>
-    </section>
-</main>
+                    </div>
+                </div>
 
+                <!-- Orders Table -->
+                <div class="card">
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Mã đơn hàng</th>
+                                        <th>Khách hàng</th>
+                                        <th>Tổng tiền</th>
+                                        <th>Trạng thái</th>
+                                        <th>Ngày đặt</th>
+                                        <th>Thao tác</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="ordersTableBody">
+                                    <tr>
+                                        <td colspan="7" class="text-center">
+                                            <div class="spinner-border" role="status">
+                                                <span class="visually-hidden">Loading...</span>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Order Detail Modal -->
+    <div class="modal fade" id="orderDetailModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Chi tiết đơn hàng</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="orderDetailBody">
+                    <!-- Order details will be loaded here -->
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Include libraries for Excel and PDF export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/js/api.js"></script>
+    <script src="/js/admin-orders.js"></script>
+    <script>
+        // Handle logout
+        async function handleLogout() {
+            if (confirm('Bạn có chắc chắn muốn đăng xuất?')) {
+                try {
+                    await api.logout();
+                    window.location.href = '/';
+                } catch (error) {
+                    console.error('Logout error:', error);
+                    window.location.href = '/';
+                }
+            }
+        }
+    </script>
 </body>
 </html>
 

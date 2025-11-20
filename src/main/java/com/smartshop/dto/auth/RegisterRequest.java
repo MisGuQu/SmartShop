@@ -3,24 +3,27 @@ package com.smartshop.dto.auth;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class RegisterRequest {
+    @NotBlank(message = "Username không được để trống")
+    @Size(min = 3, max = 50, message = "Username phải có từ 3 đến 50 ký tự")
+    private String username;
 
-    @NotBlank(message = "Họ tên không được để trống")
-    @Size(max = 120, message = "Họ tên quá dài")
-    private String fullName;
-
-    @NotBlank(message = "Email không được bỏ trống")
+    @NotBlank(message = "Email không được để trống")
     @Email(message = "Email không hợp lệ")
     private String email;
 
-    @NotBlank(message = "Mật khẩu không được bỏ trống")
-    @Size(min = 8, max = 64, message = "Mật khẩu phải từ 8-64 ký tự")
+    @NotBlank(message = "Password không được để trống")
+    @Size(min = 6, message = "Password phải có ít nhất 6 ký tự")
     private String password;
 
-    @NotBlank(message = "Xác nhận mật khẩu không được bỏ trống")
-    private String confirmPassword;
+    private String fullName;
+    private String phone;
 }
 

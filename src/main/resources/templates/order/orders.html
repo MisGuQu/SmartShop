@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đơn hàng của tôi - SmartShop</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+    <link rel="stylesheet" href="/css/home.css">
+    <style>
+        .orders-page {
+            background: #f5f5f5;
+            min-height: calc(100vh - 200px);
+            padding: 20px 0 40px;
+        }
+        
+        .orders-layout {
+            display: flex;
+            gap: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+        
+        /* Sidebar */
+        .orders-sidebar {
+            width: 200px;
+            flex-shrink: 0;
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            height: fit-content;
+            position: sticky;
+            top: 100px;
+        }
+        
+        .sidebar-profile {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid rgba(0,0,0,0.1);
+            margin-bottom: 16px;
+        }
+        
+        .sidebar-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            font-size: 20px;
+        }
+        
+        .sidebar-username {
+            font-weight: 600;
+            color: var(--color-text);
+            font-size: 14px;
+        }
+        
+        .sidebar-edit {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            color: var(--color-primary);
+            text-decoration: none;
+            font-size: 13px;
+            margin-top: 4px;
+        }
+        
+        .sidebar-edit:hover {
+            text-decoration: underline;
+        }
+        
+        .sidebar-menu {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        
+        .sidebar-menu-item {
+            margin-bottom: 4px;
+        }
+        
+        .sidebar-menu-link {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            color: var(--color-text);
+            text-decoration: none;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+        
+        .sidebar-menu-link:hover {
+            background: rgba(37, 99, 235, 0.1);
+            color: var(--color-primary);
+        }
+        
+        .sidebar-menu-link.active {
+            background: rgba(239, 68, 68, 0.1);
+            color: #dc2626;
+            font-weight: 600;
+        }
+        
+        .sidebar-menu-link svg {
+            width: 20px;
+            height: 20px;
+        }
+        
+        /* Main Content */
+        .orders-main {
+            flex: 1;
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+        }
+        
+        .orders-tabs {
+            display: flex;
+            gap: 0;
+            border-bottom: 2px solid #e5e7eb;
+            margin-bottom: 20px;
+            overflow-x: auto;
+        }
+        
+        .orders-tab {
+            padding: 12px 20px;
+            background: none;
+            border: none;
+            border-bottom: 2px solid transparent;
+            color: var(--color-text);
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 0.2s;
+            margin-bottom: -2px;
+        }
+        
+        .orders-tab:hover {
+            color: var(--color-primary);
+        }
+        
+        .orders-tab.active {
+            color: #dc2626;
+            border-bottom-color: #dc2626;
+            font-weight: 600;
+        }
+        
+        .orders-search {
+            margin-bottom: 20px;
+        }
+        
+        .orders-search input {
+            width: 100%;
+            padding: 10px 16px;
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+        
+        .orders-search input:focus {
+            outline: none;
+            border-color: var(--color-primary);
+        }
+        
+        /* Order Card */
+        .order-card {
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 16px;
+        }
+        
+        .order-shop-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 12px;
+            border-bottom: 1px solid #e5e7eb;
+            margin-bottom: 12px;
+        }
+        
+        .order-shop-info {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .order-shop-name {
+            font-weight: 600;
+            color: var(--color-text);
+            font-size: 14px;
+        }
+        
+        .order-shop-actions {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .btn-shop {
+            padding: 6px 16px;
+            border-radius: 4px;
+            border: 1px solid;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+        }
+        
+        .btn-shop--chat {
+            background: #dc2626;
+            color: white;
+            border-color: #dc2626;
+        }
+        
+        .btn-shop--view {
+            background: white;
+            color: var(--color-text);
+            border-color: #e5e7eb;
+        }
+        
+        .order-status-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        
+        .order-status-text {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            color: var(--color-text);
+        }
+        
+        .order-status-badge {
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        
+        .order-status-badge.completed {
+            background: rgba(34, 197, 94, 0.1);
+            color: #16a34a;
+        }
+        
+        .order-status-badge.pending {
+            background: rgba(251, 191, 36, 0.1);
+            color: #d97706;
+        }
+        
+        .order-status-badge.shipping {
+            background: rgba(59, 130, 246, 0.1);
+            color: #2563eb;
+        }
+        
+        .order-status-badge.cancelled {
+            background: rgba(239, 68, 68, 0.1);
+            color: #dc2626;
+        }
+        
+        .order-item {
+            display: flex;
+            gap: 12px;
+            padding: 12px 0;
+            border-bottom: 1px solid #f3f4f6;
+        }
+        
+        .order-item:last-child {
+            border-bottom: none;
+        }
+        
+        .order-item-image {
+            width: 80px;
+            height: 80px;
+            border-radius: 6px;
+            object-fit: cover;
+            background: #f3f4f6;
+            flex-shrink: 0;
+        }
+        
+        .order-item-info {
+            flex: 1;
+            min-width: 0;
+        }
+        
+        .order-item-name {
+            font-size: 14px;
+            color: var(--color-text);
+            margin-bottom: 6px;
+            line-height: 1.4;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        
+        .order-item-variant {
+            font-size: 12px;
+            color: #6b7280;
+            margin-bottom: 6px;
+        }
+        
+        .order-item-price {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+        }
+        
+        .order-item-price-old {
+            text-decoration: line-through;
+            color: #9ca3af;
+        }
+        
+        .order-item-price-new {
+            color: #dc2626;
+            font-weight: 600;
+        }
+        
+        .order-item-quantity {
+            margin-left: auto;
+            font-size: 14px;
+            color: var(--color-text);
+        }
+        
+        .order-total {
+            text-align: right;
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid #e5e7eb;
+        }
+        
+        .order-total-label {
+            font-size: 14px;
+            color: var(--color-text);
+            margin-bottom: 4px;
+        }
+        
+        .order-total-amount {
+            font-size: 18px;
+            font-weight: 700;
+            color: #dc2626;
+        }
+        
+        .order-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid #e5e7eb;
+            flex-wrap: wrap;
+        }
+        
+        .btn-order-action {
+            padding: 8px 16px;
+            border-radius: 4px;
+            border: 1px solid #e5e7eb;
+            background: white;
+            color: var(--color-text);
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            transition: all 0.2s;
+        }
+        
+        .btn-order-action:hover {
+            border-color: var(--color-primary);
+            color: var(--color-primary);
+        }
+        
+        .btn-order-action--primary {
+            background: #f97316;
+            color: white;
+            border-color: #f97316;
+        }
+        
+        .btn-order-action--primary:hover {
+            background: #ea580c;
+            border-color: #ea580c;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--color-muted);
+        }
+        
+        @media (max-width: 768px) {
+            .orders-layout {
+                flex-direction: column;
+            }
+            
+            .orders-sidebar {
+                width: 100%;
+                position: static;
+            }
+            
+            .orders-tabs {
+                overflow-x: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+<header class="header">
+    <div class="container header__content">
+        <div class="logo"><a href="/">SmartShop</a></div>
+        <nav class="nav">
+            <a href="/" class="nav__link">Trang chủ</a>
+            <a href="/product.html" class="nav__link">Sản phẩm</a>
+        </nav>
+        <div class="header__search">
+            <form class="search-form" id="searchForm" onsubmit="handleSearch(event)">
+                <input type="text" 
+                       id="searchInput" 
+                       class="search-input" 
+                       placeholder="Tìm kiếm sản phẩm..." 
+                       autocomplete="off"
+                       aria-label="Tìm kiếm sản phẩm">
+                <button type="submit" class="search-button" aria-label="Tìm kiếm">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M21 21l-6-6m2-5a7 7 0 1 1-14 0 7 7 0 0 1 14 0z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+                    </svg>
+                </button>
+            </form>
+        </div>
+        <div class="header__actions header__actions--quick">
+            <a href="#" id="wishlistLink" class="header__icon" aria-label="Danh sách yêu thích">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M17.657 5.343a4 4 0 0 0-5.657 0L11 6.343l-.999-1a4 4 0 1 0-5.657 5.657L11 17.657l6.657-6.657a4 4 0 0 0 0-5.657z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path>
+                </svg>
+                <span class="visually-hidden">Yêu thích</span>
+            </a>
+            <a href="#" id="cartLink" class="header__icon" aria-label="Giỏ hàng">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M3.5 5h2.2l1.4 9.2a1 1 0 0 0 .99.85h9.26a1 1 0 0 0 .98-.8l1.12-5.6H7.16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path>
+                    <circle cx="10" cy="19" r="1.4" fill="none" stroke="currentColor" stroke-width="1.6"></circle>
+                    <circle cx="16.5" cy="19" r="1.4" fill="none" stroke="currentColor" stroke-width="1.6"></circle>
+                </svg>
+                <span class="visually-hidden">Giỏ hàng</span>
+            </a>
+            <div class="header__account" id="headerAccountAnonymous">
+                <a href="/auth/login.html" class="button button--ghost">Đăng nhập</a>
+                <a href="/auth/register.html" class="button">Đăng ký</a>
+            </div>
+            <div class="header__account header__account--auth d-none" id="headerAccountAuth">
+                <div class="header__user-wrapper">
+                    <a class="header__user" href="#" id="userProfileLink" role="button" aria-expanded="false" aria-haspopup="true">
+                        <span class="header__user-icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24">
+                                <path d="M12 12a4.5 4.5 0 1 0-4.5-4.5A4.5 4.5 0 0 0 12 12Zm0 2.25c-3.03 0-9 1.52-9 4.5v.75A1.5 1.5 0 0 0 4.5 21h15a1.5 1.5 0 0 0 1.5-1.5v-.75c0-2.98-5.97-4.5-9-4.5Z"
+                                      fill="currentColor"/>
+                            </svg>
+                        </span>
+                        <span class="header__user-name" id="userName"></span>
+                        <span class="header__user-chip d-none" id="adminChip">Quản trị</span>
+                        <svg class="header__user-chevron" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+                            <path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </a>
+                    <div class="header__user-menu d-none" id="userMenu">
+                        <div class="user-menu__header">
+                            <span class="user-menu__name" id="userMenuName"></span>
+                            <span class="user-menu__chip d-none" id="userMenuChip">Quản trị</span>
+                        </div>
+                        <div class="user-menu__links">
+                            <a href="/orders.html" class="user-menu__link">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2M9 5a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2M9 5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2"/>
+                                </svg>
+                                <span>Đơn hàng của tôi</span>
+                            </a>
+                            <a href="/profile.html" class="user-menu__link">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                                    <circle cx="12" cy="7" r="4"/>
+                                </svg>
+                                <span>Hồ sơ của tôi</span>
+                            </a>
+                            <a href="/admin/dashboard.html" class="user-menu__link d-none" id="adminMenuLink">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="3" y="3" width="7" height="7"/>
+                                    <rect x="14" y="3" width="7" height="7"/>
+                                    <rect x="14" y="14" width="7" height="7"/>
+                                    <rect x="3" y="14" width="7" height="7"/>
+                                </svg>
+                                <span>Trang quản trị</span>
+                            </a>
+                            <button type="button" class="user-menu__link user-menu__link--logout" id="logoutButton">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                                    <polyline points="16 17 21 12 16 7"/>
+                                    <line x1="21" y1="12" x2="9" y2="12"/>
+                                </svg>
+                                <span>Đăng xuất</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>
+
+<main>
+    <div class="orders-page">
+        <div class="orders-layout">
+            <!-- Sidebar -->
+            <aside class="orders-sidebar">
+                <div class="sidebar-profile">
+                    <div class="sidebar-avatar" id="sidebarAvatar">U</div>
+                    <div>
+                        <div class="sidebar-username" id="sidebarUsername">Người dùng</div>
+                        <a href="/profile.html" class="sidebar-edit">
+                            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                            </svg>
+                            Sửa Hồ Sơ
+                        </a>
+                    </div>
+                </div>
+                <ul class="sidebar-menu">
+                    <li class="sidebar-menu-item">
+                        <a href="#" class="sidebar-menu-link">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                                <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+                            </svg>
+                            Thông Báo
+                        </a>
+                    </li>
+                    <li class="sidebar-menu-item">
+                        <a href="/profile.html" class="sidebar-menu-link">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                                <circle cx="12" cy="7" r="4"/>
+                            </svg>
+                            Tài Khoản Của Tôi
+                        </a>
+                    </li>
+                    <li class="sidebar-menu-item">
+                        <a href="/orders.html" class="sidebar-menu-link active">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2M9 5a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2M9 5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2"/>
+                            </svg>
+                            Đơn Mua
+                        </a>
+                    </li>
+                    <li class="sidebar-menu-item">
+                        <a href="#" class="sidebar-menu-link">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/>
+                                <path d="M12 8v4l3 3"/>
+                            </svg>
+                            Kho Voucher
+                        </a>
+                    </li>
+                    <li class="sidebar-menu-item">
+                        <a href="#" class="sidebar-menu-link">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"/>
+                                <path d="M12 6v6l4 2"/>
+                            </svg>
+                            SmartShop Xu
+                        </a>
+                    </li>
+                </ul>
+            </aside>
+            
+            <!-- Main Content -->
+            <div class="orders-main">
+                <div class="orders-tabs">
+                    <button class="orders-tab active" data-status="all">Tất cả</button>
+                    <button class="orders-tab" data-status="PENDING">Chờ xác nhận</button>
+                    <button class="orders-tab" data-status="PROCESSING">Vận chuyển</button>
+                    <button class="orders-tab" data-status="SHIPPING">Chờ giao hàng</button>
+                    <button class="orders-tab" data-status="DELIVERED">Hoàn thành</button>
+                    <button class="orders-tab" data-status="CANCELLED">Đã hủy</button>
+                    <button class="orders-tab" data-status="REFUNDED">Trả hàng/Hoàn tiền</button>
+                </div>
+                
+                <div class="orders-search">
+                    <input type="text" 
+                           id="orderSearchInput" 
+                           placeholder="Bạn có thể tìm kiếm theo tên Shop, ID đơn hàng hoặc Tên Sản phẩm"
+                           autocomplete="off">
+                </div>
+                
+                <div id="ordersContent">
+                    <div class="text-center">
+                        <div class="spinner-border" role="status" style="width: 3rem; height: 3rem; color: var(--color-primary);">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<footer class="footer">
+    <div class="container footer__content">
+        <div class="footer__column footer__column--brand">
+            <div class="footer__brand">SmartShop</div>
+            <div class="footer__contact">
+                <svg viewBox="0 0 24 24" class="footer__icon" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                </svg>
+                <a href="mailto:support@smartshop.vn">support@smartshop.vn</a>
+            </div>
+        </div>
+        <div class="footer__column">
+            <h4 class="footer__title">THÔNG TIN</h4>
+            <ul class="footer__list">
+                <li><a href="/product.html">Sản phẩm mới</a></li>
+                <li><a href="/product.html">Sản phẩm bán chạy</a></li>
+                <li><a href="/contact.html">Cửa hàng của chúng tôi</a></li>
+                <li><a href="/contact.html">Khách hàng</a></li>
+            </ul>
+        </div>
+        <div class="footer__column">
+            <h4 class="footer__title">LIÊN KẾT NHANH</h4>
+            <ul class="footer__list">
+                <li><a href="/contact.html">Liên hệ chúng tôi</a></li>
+                <li><a href="/support">Trung tâm trợ giúp</a></li>
+                <li><a href="/policies/returns">Chính sách hoàn tiền</a></li>
+                <li><a href="/policies/shipping">Báo cáo spam</a></li>
+            </ul>
+        </div>
+        <div class="footer__column">
+            <h4 class="footer__title">ĐĂNG KÝ BẢN TIN</h4>
+            <form class="footer__newsletter" id="footerNewsletterForm">
+                <input type="email" 
+                       class="footer__input" 
+                       placeholder="email@example.com" 
+                       required
+                       aria-label="Email đăng ký bản tin">
+                <button type="submit" class="footer__subscribe">Đăng ký</button>
+            </form>
+        </div>
+    </div>
+    <div class="footer__divider"></div>
+    <p class="footer__copyright">© 2025 SmartShop. All rights reserved.</p>
+</footer>
+
+<script src="/js/api.js"></script>
+<script src="/js/home.js" defer></script>
+<script src="/js/orders.js"></script>
+<script>
+    function handleSearch(event) {
+        event.preventDefault();
+        const searchInput = document.getElementById('searchInput');
+        const keyword = searchInput ? searchInput.value.trim() : '';
+        
+        if (keyword) {
+            window.location.href = `/product.html?q=${encodeURIComponent(keyword)}`;
+        } else {
+            window.location.href = '/product.html';
+        }
+    }
+    
+    function setupNewsletterForm() {
+        const form = document.getElementById('footerNewsletterForm');
+        if (form) {
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const emailInput = form.querySelector('input[type="email"]');
+                const email = emailInput.value.trim();
+                
+                if (email) {
+                    alert('Cảm ơn bạn đã đăng ký nhận bản tin! Chúng tôi sẽ gửi email về ' + email);
+                    emailInput.value = '';
+                }
+            });
+        }
+    }
+    
+    document.addEventListener('DOMContentLoaded', () => {
+        setupNewsletterForm();
+    });
+</script>
+</body>
+</html>

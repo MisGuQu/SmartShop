@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="vi" xmlns:th="http://www.thymeleaf.org" xmlns:sec="https://www.thymeleaf.org/extras/spring-security">
+<html lang="vi">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -10,23 +10,34 @@
 <body>
 <header class="header">
     <div class="container header__content">
-        <div class="logo"><a th:href="@{/}">SmartShop</a></div>
+        <div class="logo"><a href="/">SmartShop</a></div>
         <nav class="nav">
-            <a th:href="@{/}" class="nav__link nav__link--active">Trang chủ</a>
-            <a th:href="@{/products}" class="nav__link">Sản phẩm</a>
-            <a th:href="@{/vouchers}" class="nav__link">Ưu đãi</a>
-            <a th:href="@{/contact}" class="nav__link">Liên hệ</a>
+            <a href="/" class="nav__link nav__link--active">Trang chủ</a>
+            <a href="/product.html" class="nav__link">Sản phẩm</a>
         </nav>
+        <div class="header__search">
+            <form class="search-form" id="searchForm" onsubmit="handleSearch(event)">
+                <input type="text" 
+                       id="searchInput" 
+                       class="search-input" 
+                       placeholder="Tìm kiếm sản phẩm..." 
+                       autocomplete="off"
+                       aria-label="Tìm kiếm sản phẩm">
+                <button type="submit" class="search-button" aria-label="Tìm kiếm">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M21 21l-6-6m2-5a7 7 0 1 1-14 0 7 7 0 0 1 14 0z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+                    </svg>
+                </button>
+            </form>
+        </div>
         <div class="header__actions header__actions--quick">
-            <a th:href="${#authorization.expression('isAuthenticated()')} ? '/wishlist' : '/auth/login?redirect=/wishlist'"
-               class="header__icon" aria-label="Danh sách yêu thích">
+            <a href="#" id="wishlistLink" class="header__icon" aria-label="Danh sách yêu thích">
                 <svg viewBox="0 0 24 24" aria-hidden="true">
                     <path d="M17.657 5.343a4 4 0 0 0-5.657 0L11 6.343l-.999-1a4 4 0 1 0-5.657 5.657L11 17.657l6.657-6.657a4 4 0 0 0 0-5.657z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path>
                 </svg>
                 <span class="visually-hidden">Yêu thích</span>
             </a>
-            <a th:href="${#authorization.expression('isAuthenticated()')} ? '/cart' : '/auth/login?redirect=/cart'"
-               class="header__icon" aria-label="Giỏ hàng">
+            <a href="#" id="cartLink" class="header__icon" aria-label="Giỏ hàng">
                 <svg viewBox="0 0 24 24" aria-hidden="true">
                     <path d="M3.5 5h2.2l1.4 9.2a1 1 0 0 0 .99.85h9.26a1 1 0 0 0 .98-.8l1.12-5.6H7.16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path>
                     <circle cx="10" cy="19" r="1.4" fill="none" stroke="currentColor" stroke-width="1.6"></circle>
@@ -34,25 +45,64 @@
                 </svg>
                 <span class="visually-hidden">Giỏ hàng</span>
             </a>
-            <div class="header__account" sec:authorize="isAnonymous()">
-                <a th:href="@{/auth/login}" class="button button--ghost">Đăng nhập</a>
-                <a th:href="@{/auth/register}" class="button">Đăng ký</a>
+            <div class="header__account" id="headerAccountAnonymous">
+                <a href="/auth/login.html" class="button button--ghost">Đăng nhập</a>
+                <a href="/auth/register.html" class="button">Đăng ký</a>
             </div>
-            <div class="header__account header__account--auth" sec:authorize="isAuthenticated()">
-                <a class="header__user"
-                   th:href="${#authorization.expression('hasRole(''ADMIN'')')} ? '/admin/products' : '/cart'">
-                    <span class="header__user-icon" aria-hidden="true">
-                        <svg viewBox="0 0 24 24">
-                            <path d="M12 12a4.5 4.5 0 1 0-4.5-4.5A4.5 4.5 0 0 0 12 12Zm0 2.25c-3.03 0-9 1.52-9 4.5v.75A1.5 1.5 0 0 0 4.5 21h15a1.5 1.5 0 0 0 1.5-1.5v-.75c0-2.98-5.97-4.5-9-4.5Z"
-                                  fill="currentColor"/>
+            <div class="header__account header__account--auth d-none" id="headerAccountAuth">
+                <div class="header__user-wrapper">
+                    <a class="header__user" href="#" id="userProfileLink" role="button" aria-expanded="false" aria-haspopup="true">
+                        <span class="header__user-icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24">
+                                <path d="M12 12a4.5 4.5 0 1 0-4.5-4.5A4.5 4.5 0 0 0 12 12Zm0 2.25c-3.03 0-9 1.52-9 4.5v.75A1.5 1.5 0 0 0 4.5 21h15a1.5 1.5 0 0 0 1.5-1.5v-.75c0-2.98-5.97-4.5-9-4.5Z"
+                                      fill="currentColor"/>
+                            </svg>
+                        </span>
+                        <span class="header__user-name" id="userName"></span>
+                        <span class="header__user-chip d-none" id="adminChip">Quản trị</span>
+                        <svg class="header__user-chevron" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+                            <path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                         </svg>
-                    </span>
-                    <span class="header__user-name" sec:authentication="name"></span>
-                    <span class="header__user-chip" sec:authorize="hasRole('ADMIN')">Quản trị</span>
-                </a>
-                <form class="header__logout" th:action="@{/auth/logout}" method="post">
-                    <button type="submit" class="button button--ghost button--logout">Đăng xuất</button>
-                </form>
+                    </a>
+                    <div class="header__user-menu d-none" id="userMenu">
+                        <div class="user-menu__header">
+                            <span class="user-menu__name" id="userMenuName"></span>
+                            <span class="user-menu__chip d-none" id="userMenuChip">Quản trị</span>
+                        </div>
+                        <div class="user-menu__links">
+                            <a href="/orders.html" class="user-menu__link">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2M9 5a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2M9 5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2"/>
+                                </svg>
+                                <span>Đơn hàng của tôi</span>
+                            </a>
+                            <a href="/profile.html" class="user-menu__link">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                                    <circle cx="12" cy="7" r="4"/>
+                                </svg>
+                                <span>Hồ sơ của tôi</span>
+                            </a>
+                            <a href="/admin/dashboard.html" class="user-menu__link d-none" id="adminMenuLink">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="3" y="3" width="7" height="7"/>
+                                    <rect x="14" y="3" width="7" height="7"/>
+                                    <rect x="14" y="14" width="7" height="7"/>
+                                    <rect x="3" y="14" width="7" height="7"/>
+                                </svg>
+                                <span>Trang quản trị</span>
+                            </a>
+                            <button type="button" class="user-menu__link user-menu__link--logout" id="logoutButton">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                                    <polyline points="16 17 21 12 16 7"/>
+                                    <line x1="21" y1="12" x2="9" y2="12"/>
+                                </svg>
+                                <span>Đăng xuất</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -65,7 +115,7 @@
             <h1 class="hero__title">Khám phá thế giới công nghệ và thời trang thông minh</h1>
             <p class="hero__subtitle">Bộ sưu tập mới nhất từ SmartShop với mức giảm lên tới 40% cho khách hàng mới.</p>
             <div class="hero__cta">
-                <a th:href="@{/products}" class="button button--primary">Mua ngay</a>
+                <a href="/product.html" class="button button--primary">Mua ngay</a>
                 <a href="#featured-categories" class="button button--ghost">Khám phá danh mục</a>
             </div>
         </div>
@@ -79,7 +129,7 @@
                         <p class="carousel__label">Sản phẩm mới</p>
                         <h2 class="carousel__title">Tai nghe chống ồn Pro X</h2>
                         <p class="carousel__description">Trải nghiệm âm thanh đỉnh cao cùng công nghệ chống ồn chủ động, giảm ngay 20% trong tuần này.</p>
-                        <a class="button" th:href="@{/products}">Xem chi tiết</a>
+                        <a class="button" href="/product.html">Xem chi tiết</a>
                     </div>
                 </article>
                 <article class="carousel__slide" style="--bg:url('https://images.unsplash.com/photo-1523381210434-271e8be1f52b?auto=format&fit=crop&w=1400&q=80');">
@@ -87,7 +137,7 @@
                         <p class="carousel__label">Thời trang thông minh</p>
                         <h2 class="carousel__title">Bộ sưu tập Xuân 2025</h2>
                         <p class="carousel__description">Thiết kế tối giản, chất liệu bền vững, tích hợp chip NFC để kết nối mọi lúc mọi nơi.</p>
-                        <a class="button" th:href="@{/products}">Khám phá bộ sưu tập</a>
+                        <a class="button" href="/product.html">Khám phá bộ sưu tập</a>
                     </div>
                 </article>
                 <article class="carousel__slide" style="--bg:url('https://images.unsplash.com/photo-1512447608772-994891cd05d0?auto=format&fit=crop&w=1400&q=80');">
@@ -95,7 +145,7 @@
                         <p class="carousel__label">Chương trình tích điểm</p>
                         <h2 class="carousel__title">Thành viên VIP SmartShop</h2>
                         <p class="carousel__description">Đăng ký ngay để nhận ưu đãi độc quyền, giao hàng miễn phí và tích điểm đổi quà mỗi tuần.</p>
-                        <a class="button" th:href="@{/vouchers}">Đăng ký thành viên</a>
+                        <a class="button" href="/vouchers">Đăng ký thành viên</a>
                     </div>
                 </article>
             </div>
@@ -118,7 +168,7 @@
                 <p class="section__subtitle">Lựa chọn các bộ sưu tập được yêu thích nhất tại SmartShop.</p>
             </div>
             <div class="grid grid--categories">
-                <a class="category-icon-card" href="/products?category=audio">
+                <a class="category-icon-card" href="/product.html?category=audio">
                     <div class="category-icon-card__circle category-icon-card__circle--audio">
                         <svg viewBox="0 0 24 24" aria-hidden="true">
                             <path d="M5 14v2a3 3 0 0 0 3 3h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H5m14 0h-4a2 2 0 0 0-2 2v3a2 2 0 0 0 2 2h1a3 3 0 0 0 3-3v-2m0 0a7 7 0 1 0-14 0" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path>
@@ -126,7 +176,7 @@
                     </div>
                     <span class="category-icon-card__label">Âm thanh</span>
                 </a>
-                <a class="category-icon-card" href="/products?category=wearable">
+                <a class="category-icon-card" href="/product.html?category=wearable">
                     <div class="category-icon-card__circle category-icon-card__circle--wearable">
                         <svg viewBox="0 0 24 24" aria-hidden="true">
                             <rect x="7" y="7" width="10" height="10" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.6"></rect>
@@ -135,7 +185,7 @@
                     </div>
                     <span class="category-icon-card__label">Thiết bị đeo</span>
                 </a>
-                <a class="category-icon-card" href="/products?category=fashion">
+                <a class="category-icon-card" href="/product.html?category=fashion">
                     <div class="category-icon-card__circle category-icon-card__circle--fashion">
                         <svg viewBox="0 0 24 24" aria-hidden="true">
                             <path d="M9 5.5 6.5 8 5 21h14l-1.5-13L15 5.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"></path>
@@ -145,7 +195,7 @@
                     </div>
                     <span class="category-icon-card__label">Thời trang</span>
                 </a>
-                <a class="category-icon-card" href="/products?category=smart-home">
+                <a class="category-icon-card" href="/product.html?category=smart-home">
                     <div class="category-icon-card__circle category-icon-card__circle--home">
                         <svg viewBox="0 0 24 24" aria-hidden="true">
                             <path d="M4 11.5 12 5l8 6.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path>
@@ -155,7 +205,7 @@
                     </div>
                     <span class="category-icon-card__label">Nhà thông minh</span>
                 </a>
-                <a class="category-icon-card" href="/products?category=computing">
+                <a class="category-icon-card" href="/product.html?category=computing">
                     <div class="category-icon-card__circle category-icon-card__circle--computing">
                         <svg viewBox="0 0 24 24" aria-hidden="true">
                             <rect x="5" y="6" width="14" height="10" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.6"></rect>
@@ -164,7 +214,7 @@
                     </div>
                     <span class="category-icon-card__label">Laptop &amp; Tablet</span>
                 </a>
-                <a class="category-icon-card" href="/products?category=accessories">
+                <a class="category-icon-card" href="/product.html?category=accessories">
                     <div class="category-icon-card__circle category-icon-card__circle--accessories">
                         <svg viewBox="0 0 24 24" aria-hidden="true">
                             <path d="M7.5 3h9l1.5 4h-12z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"></path>
@@ -184,84 +234,64 @@
                 <h2 class="section__title">Sản phẩm được yêu thích</h2>
                 <p class="section__subtitle">Những mặt hàng nổi bật được khách hàng đánh giá cao trong tuần.</p>
             </div>
-            <div class="grid grid--products">
-                <a class="product-card" href="/products/aurora-3">
-                    <div class="product-card__image" style="background-image: url('https://images.unsplash.com/photo-1512496015851-a90fb38ba796?auto=format&fit=crop&w=640&q=80');"></div>
-                    <div class="product-card__body">
-                        <h3 class="product-card__title">Smartwatch Aurora 3</h3>
-                        <p class="product-card__price">4.990.000₫</p>
-                        <p class="product-card__description">Theo dõi sức khỏe 24/7, màn hình AMOLED, pin 7 ngày.</p>
+            <div class="grid grid--products" id="featuredProductsGrid">
+                <div class="text-center" style="grid-column: 1 / -1;">
+                    <div class="spinner-border" role="status" style="width: 3rem; height: 3rem; color: var(--color-primary);">
+                        <span class="visually-hidden">Loading...</span>
                     </div>
-                </a>
-                <a class="product-card" href="/products/zencore-x">
-                    <div class="product-card__image" style="background-image: url('https://images.unsplash.com/photo-1580894897200-6f3b1f826845?auto=format&fit=crop&w=640&q=80');"></div>
-                    <div class="product-card__body">
-                        <h3 class="product-card__title">Laptop ZenCore X</h3>
-                        <p class="product-card__price">19.990.000₫</p>
-                        <p class="product-card__description">CPU Gen 13, RAM 16GB, SSD 1TB, màn hình 16&quot; 2K.</p>
-                    </div>
-                </a>
-                <a class="product-card" href="/products/homeguard-360">
-                    <div class="product-card__image" style="background-image: url('https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?auto=format&fit=crop&w=640&q=80');"></div>
-                    <div class="product-card__body">
-                        <h3 class="product-card__title">Camera HomeGuard 360</h3>
-                        <p class="product-card__price">2.490.000₫</p>
-                        <p class="product-card__description">Quan sát 360°, phát hiện chuyển động, báo động qua điện thoại.</p>
-                    </div>
-                </a>
-                <a class="product-card" href="/products/sonicpro">
-                    <div class="product-card__image" style="background-image: url('https://images.unsplash.com/photo-1510552776732-03e61cf4b144?auto=format&fit=crop&w=640&q=80');"></div>
-                    <div class="product-card__body">
-                        <h3 class="product-card__title">Tai nghe SonicPro</h3>
-                        <p class="product-card__price">3.290.000₫</p>
-                        <p class="product-card__description">Âm trầm sâu, chống ồn chủ động, thời lượng pin 32 giờ.</p>
-                    </div>
-                </a>
+                </div>
             </div>
         </div>
     </section>
 
-    <section class="section newsletter">
-        <div class="container newsletter__content">
-            <div>
-                <h2 class="section__title">Đăng ký nhận bản tin</h2>
-                <p class="section__subtitle">Nhận thông báo về ưu đãi và sản phẩm mới nhất từ SmartShop.</p>
-            </div>
-            <form class="newsletter__form" action="/newsletter" method="post">
-                <input class="newsletter__input" type="email" name="email" placeholder="Nhập email của bạn" required>
-                <button class="button" type="submit">Đăng ký</button>
-            </form>
-        </div>
-    </section>
 </main>
 
 <footer class="footer">
     <div class="container footer__content">
-        <div class="footer__column">
-            <div class="logo logo--footer">SmartShop</div>
-            <p>Giải pháp mua sắm thông minh cho mọi nhu cầu của bạn.</p>
+        <div class="footer__column footer__column--brand">
+            <div class="footer__brand">SmartShop</div>
+            <div class="footer__contact">
+                <svg viewBox="0 0 24 24" class="footer__icon" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                </svg>
+                <a href="mailto:support@smartshop.vn">support@smartshop.vn</a>
+            </div>
         </div>
         <div class="footer__column">
-            <h4>Hỗ trợ</h4>
-            <ul>
+            <h4 class="footer__title">THÔNG TIN</h4>
+            <ul class="footer__list">
+                <li><a href="/product.html">Sản phẩm mới</a></li>
+                <li><a href="/product.html">Sản phẩm bán chạy</a></li>
+                <li><a href="/contact.html">Cửa hàng của chúng tôi</a></li>
+                <li><a href="/contact.html">Khách hàng</a></li>
+            </ul>
+        </div>
+        <div class="footer__column">
+            <h4 class="footer__title">LIÊN KẾT NHANH</h4>
+            <ul class="footer__list">
+                <li><a href="/contact.html">Liên hệ chúng tôi</a></li>
                 <li><a href="/support">Trung tâm trợ giúp</a></li>
-                <li><a href="/policies/shipping">Chính sách vận chuyển</a></li>
-                <li><a href="/policies/returns">Đổi trả &amp; bảo hành</a></li>
+                <li><a href="/policies/returns">Chính sách hoàn tiền</a></li>
+                <li><a href="/policies/shipping">Báo cáo spam</a></li>
             </ul>
         </div>
         <div class="footer__column">
-            <h4>Kết nối</h4>
-            <ul>
-                <li><a href="mailto:support@smartshop.vn">support@smartshop.vn</a></li>
-                <li><a href="tel:+84281234567">028 1234 567</a></li>
-                <li><a href="https://facebook.com" target="_blank" rel="noreferrer">Facebook</a></li>
-            </ul>
+            <h4 class="footer__title">ĐĂNG KÝ BẢN TIN</h4>
+            <form class="footer__newsletter" id="footerNewsletterForm">
+                <input type="email" 
+                       class="footer__input" 
+                       placeholder="email@example.com" 
+                       required
+                       aria-label="Email đăng ký bản tin">
+                <button type="submit" class="footer__subscribe">Đăng ký</button>
+            </form>
         </div>
     </div>
+    <div class="footer__divider"></div>
     <p class="footer__copyright">© 2025 SmartShop. All rights reserved.</p>
 </footer>
 
+<script src="/js/api.js"></script>
 <script src="/js/home.js" defer></script>
 </body>
 </html>
-

@@ -5,7 +5,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.lang.NonNull;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -18,57 +18,64 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
-import java.util.Arrays;
 
 @Component
-@RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
-    private final JwtTokenService jwtTokenService;
-    private final UserDetailsService userDetailsService;
+    @Autowired
+    private JwtTokenProvider tokenProvider;
+
+    @Autowired
+    private UserDetailsService userDetailsService;
 
     @Value("${app.security.jwt.cookie-name:SMARTSHOP_TOKEN}")
-    private String jwtCookieName;
+    private String cookieName;
 
     @Override
     protected void doFilterInternal(@NonNull HttpServletRequest request,
                                     @NonNull HttpServletResponse response,
                                     @NonNull FilterChain filterChain) throws ServletException, IOException {
-        String token = resolveToken(request);
+        try {
+            String jwt = getJwtFromRequest(request);
 
-        if (token != null && jwtTokenService.validateToken(token)) {
-            String email = jwtTokenService.extractEmail(token);
-            if (email != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-                try {
-                    UserDetails userDetails = userDetailsService.loadUserByUsername(email);
-                    UsernamePasswordAuthenticationToken authentication =
-                            new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
-                    authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                    SecurityContextHolder.getContext().setAuthentication(authentication);
-                } catch (Exception ex) {
-                    // Token hợp lệ nhưng user không còn tồn tại => bỏ qua và tiếp tục chuỗi filter
-                    SecurityContextHolder.clearContext();
-                }
+            if (StringUtils.hasText(jwt) && tokenProvider.validateToken(jwt, 
+                    userDetailsService.loadUserByUsername(tokenProvider.getUsernameFromToken(jwt)))) {
+                String username = tokenProvider.getUsernameFromToken(jwt);
+
+                UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+                UsernamePasswordAuthenticationToken authentication = 
+                    new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
+                authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+
+                SecurityContextHolder.getContext().setAuthentication(authentication);
             }
+        } catch (Exception ex) {
+            logger.error("Could not set user authentication in security context", ex);
         }
 
         filterChain.doFilter(request, response);
     }
 
-    private String resolveToken(HttpServletRequest request) {
-        String bearer = request.getHeader("Authorization");
-        if (StringUtils.hasText(bearer) && bearer.startsWith("Bearer ")) {
-            return bearer.substring(7);
+    private String getJwtFromRequest(HttpServletRequest request) {
+        // First, try to get from Authorization header
+        String bearerToken = request.getHeader("Authorization");
+        if (StringUtils.hasText(bearerToken) && bearerToken.startsWith("Bearer ")) {
+            return bearerToken.substring(7);
         }
-
+        
+        // Then, try to get from cookie
         Cookie[] cookies = request.getCookies();
         if (cookies != null) {
-            return Arrays.stream(cookies)
-                    .filter(cookie -> jwtCookieName.equals(cookie.getName()))
-                    .map(Cookie::getValue)
-                    .findFirst()
-                    .orElse(null);
+            for (Cookie cookie : cookies) {
+                if (cookieName.equals(cookie.getName())) {
+                    String token = cookie.getValue();
+                    if (StringUtils.hasText(token)) {
+                        return token;
+                    }
+                }
+            }
         }
+        
         return null;
     }
 }

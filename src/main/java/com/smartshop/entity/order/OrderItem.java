@@ -1,7 +1,6 @@
 package com.smartshop.entity.order;
 
 import com.smartshop.entity.product.Product;
-import com.smartshop.entity.product.ProductVariant;
 
 import jakarta.persistence.*;
 import lombok.*;
@@ -26,12 +25,8 @@ public class OrderItem {
     @JoinColumn(name = "product_id")
     private Product product;
 
-    @ManyToOne
-    @JoinColumn(name = "variant_id")
-    private ProductVariant variant;
-
     @Column(nullable = false)
-    private int quantity;
+    private Integer quantity;
 
     @Column(nullable = false)
     private Double price;

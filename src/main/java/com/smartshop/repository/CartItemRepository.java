@@ -1,28 +1,18 @@
 package com.smartshop.repository;
 
-import java.util.List;          
+import com.smartshop.entity.cart.CartItem;
+import com.smartshop.entity.cart.ShoppingCart;
+import com.smartshop.entity.product.Product;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+import java.util.List;
 import java.util.Optional;
 
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
-
-import com.smartshop.entity.cart.CartItem;
-
 public interface CartItemRepository extends JpaRepository<CartItem, Long> {
-    List<CartItem> findByCartId(Long cartId);
 
-    @Query("SELECT ci FROM CartItem ci " +
-            "WHERE ci.cart.id = :cartId " +
-            "AND ci.wishlist = false " +
-            "AND ci.product.id = :productId " +
-            "AND ((:variantId IS NULL AND ci.variant IS NULL) OR (ci.variant.id = :variantId))")
-    Optional<CartItem> findByCartProductAndVariant(@Param("cartId") Long cartId,
-                                                   @Param("productId") Long productId,
-                                                   @Param("variantId") Long variantId);
+    Optional<CartItem> findByCartAndProductAndIsWishlist(ShoppingCart cart, Product product, Boolean isWishlist);
 
-    @Query("SELECT ci FROM CartItem ci WHERE ci.product.id = :productId")
-    List<CartItem> findByProductId(@Param("productId") Long productId);
-
-    List<CartItem> findByCartIdAndWishlistTrue(Long cartId);
+    List<CartItem> findByCartAndIsWishlist(ShoppingCart cart, Boolean isWishlist);
 }
+
+

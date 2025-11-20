@@ -1,11 +1,13 @@
 package com.smartshop.repository;
 
-import java.util.Optional;
-
+import com.smartshop.entity.cart.ShoppingCart;
+import com.smartshop.entity.user.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 
-import com.smartshop.entity.cart.ShoppingCart;
+import java.util.Optional;
 
 public interface ShoppingCartRepository extends JpaRepository<ShoppingCart, Long> {
-    Optional<ShoppingCart> findByUserId(Long userId);
+    Optional<ShoppingCart> findByUser(User user);
 }
+
+

@@ -3,8 +3,6 @@ package com.smartshop.entity.payment;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
-import com.smartshop.entity.enums.PaymentMethod;
-import com.smartshop.entity.enums.PaymentTransactionStatus;
 import com.smartshop.entity.order.Order;
 
 import java.time.LocalDateTime;
@@ -25,19 +23,17 @@ public class PaymentTransaction {
     @JoinColumn(name = "order_id", nullable = false)
     private Order order;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "method")
-    private PaymentMethod method;
+    @Column(name = "method", length = 20)
+    private String method;
 
     @Column(name = "amount")
     private Double amount;
 
     @Builder.Default
-    @Enumerated(EnumType.STRING)
-    @Column(name = "status")
-    private PaymentTransactionStatus status = PaymentTransactionStatus.PENDING;
+    @Column(name = "status", length = 20)
+    private String status = "PENDING";
 
-    @Column(name = "transaction_no")
+    @Column(name = "transaction_no", length = 100)
     private String transactionNo;
 
     @Column(name = "gateway_response", columnDefinition = "TEXT")

@@ -1,622 +1,196 @@
 <!DOCTYPE html>
-<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<html lang="vi">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SmartShop | Dashboard Thống kê</title>
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
-    <link rel="stylesheet" th:href="@{/css/admin.css}">
-    <style>
-        .admin-grid--metrics {
-            display: grid;
-            gap: 1.25rem;
-            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-        }
-        .dashboard-metric__value {
-            font-size: 2rem;
-            font-weight: 700;
-            margin-top: 1rem;
-            color: #0f172a;
-        }
-        .dashboard-metric__unit {
-            font-size: 0.9rem;
-            color: #64748b;
-            margin-top: 0.25rem;
-        }
-        .dashboard-chart {
-            position: relative;
-            height: 300px;
-            margin-top: 1rem;
-        }
-        .dashboard-list {
-            margin-top: 1.5rem;
-            display: flex;
-            flex-direction: column;
-            gap: 1rem;
-        }
-        .dashboard-section__grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-            gap: 1.25rem;
-        }
-        .dashboard-actions {
-            display: flex;
-            gap: 0.75rem;
-            flex-wrap: wrap;
-        }
-        .dashboard-empty {
-            text-align: center;
-            padding: 2rem;
-            color: #64748b;
-        }
-    </style>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <title>Admin Dashboard - SmartShop</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="/css/admin.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
-<header class="admin-header">
-    <div class="admin-header__title">
-        <a class="admin-header__logo" href="/">SmartShop</a>
-        <span class="admin-header__subtitle">Bảng điều khiển quản trị</span>
-    </div>
-    <nav class="admin-header__nav">
-        <a class="admin-header__link admin-header__link--active" href="/admin/dashboard">Dashboard</a>
-        <a class="admin-header__link" href="/admin/products">Sản phẩm</a>
-        <a class="admin-header__link" href="/admin/users">Người dùng</a>
-        <a class="admin-header__link" href="/admin/orders">Đơn hàng</a>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/">SmartShop Admin</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/">Về trang chủ</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" onclick="handleLogout()">Đăng xuất</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
     </nav>
-</header>
 
-<main class="admin-main">
-    <section class="admin-card admin-card--stack">
-        <div class="admin-card__header">
-            <div>
-                <h1 class="admin-card__title">Dashboard Thống kê</h1>
-                <p class="admin-card__subtitle">Tổng quan về tình hình kinh doanh</p>
-            </div>
-            <div class="admin-card__actions">
-                <a class="admin-chip" href="/admin/products">Quản lý sản phẩm</a>
-            </div>
-        </div>
-    </section>
-
-    <!-- Statistics Cards -->
-    <section class="admin-grid admin-grid--metrics">
-        <article class="admin-card">
-            <div class="admin-card__header">
-                <div>
-                    <h2 class="admin-card__title">Doanh thu 7 ngày</h2>
-                    <p class="admin-card__subtitle">Tổng doanh thu trong 7 ngày gần nhất</p>
+    <div class="container-fluid mt-4">
+        <div class="row">
+            <!-- Sidebar -->
+            <div class="col-md-3">
+                <div class="list-group">
+                    <a href="/admin/dashboard.html" class="list-group-item list-group-item-action active">
+                        <i class="bi bi-speedometer2"></i> Dashboard
+                    </a>
+                    <a href="/admin/products.html" class="list-group-item list-group-item-action">
+                        <i class="bi bi-box-seam"></i> Quản lý Sản phẩm
+                    </a>
+                    <a href="/admin/categories.html" class="list-group-item list-group-item-action">
+                        <i class="bi bi-tags"></i> Quản lý Danh mục
+                    </a>
+                    <a href="/admin/orders.html" class="list-group-item list-group-item-action">
+                        <i class="bi bi-receipt"></i> Quản lý Đơn hàng
+                    </a>
+                    <a href="/admin/users.html" class="list-group-item list-group-item-action">
+                        <i class="bi bi-people"></i> Quản lý Người dùng
+                    </a>
+                    <a href="/admin/vouchers.html" class="list-group-item list-group-item-action">
+                        <i class="bi bi-ticket-perforated"></i> Quản lý Voucher
+                    </a>
                 </div>
             </div>
-            <div>
-                <div id="totalRevenue" class="dashboard-metric__value" th:text="${#numbers.formatInteger(totalRevenueLast7Days != null ? totalRevenueLast7Days.intValue() : 0, 0, 'COMMA')}">0</div>
-                <div class="dashboard-metric__unit">VNĐ</div>
-            </div>
-        </article>
 
-        <article class="admin-card">
-            <div class="admin-card__header">
-                <div>
-                    <h2 class="admin-card__title">Đơn hàng mới</h2>
-                    <p class="admin-card__subtitle">Số lượng đơn hàng trong 24 giờ qua</p>
+            <!-- Main Content -->
+            <div class="col-md-9">
+                <h2 class="mb-4">Dashboard</h2>
+                
+                <!-- Stats Cards -->
+                <div class="row g-4 mb-4">
+                    <div class="col-md-3">
+                        <div class="card text-center">
+                            <div class="card-body">
+                                <i class="bi bi-box-seam fs-1 text-primary"></i>
+                                <h5 class="mt-2" id="totalProducts">-</h5>
+                                <p class="text-muted mb-0">Tổng sản phẩm</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card text-center">
+                            <div class="card-body">
+                                <i class="bi bi-tags fs-1 text-success"></i>
+                                <h5 class="mt-2" id="totalCategories">-</h5>
+                                <p class="text-muted mb-0">Danh mục</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card text-center">
+                            <div class="card-body">
+                                <i class="bi bi-receipt fs-1 text-warning"></i>
+                                <h5 class="mt-2" id="totalOrders">-</h5>
+                                <p class="text-muted mb-0">Tổng đơn hàng</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card text-center">
+                            <div class="card-body">
+                                <i class="bi bi-people fs-1 text-info"></i>
+                                <h5 class="mt-2" id="totalUsers">-</h5>
+                                <p class="text-muted mb-0">Người dùng</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Orders -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5><i class="bi bi-clock-history"></i> Đơn hàng gần đây</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Mã đơn hàng</th>
+                                        <th>Khách hàng</th>
+                                        <th class="text-end">Tổng tiền</th>
+                                        <th>Trạng thái</th>
+                                        <th>Ngày đặt</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="recentOrdersBody">
+                                    <tr>
+                                        <td colspan="5" class="text-center">
+                                            <div class="spinner-border spinner-border-sm" role="status">
+                                                <span class="visually-hidden">Loading...</span>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Revenue Charts -->
+                <div class="row g-4 mb-4">
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5><i class="bi bi-graph-up"></i> Doanh thu theo ngày (30 ngày gần nhất)</h5>
+                            </div>
+                            <div class="card-body">
+                                <canvas id="dailyRevenueChart" style="max-height: 300px;"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5><i class="bi bi-graph-up-arrow"></i> Doanh thu theo tháng (12 tháng gần nhất)</h5>
+                            </div>
+                            <div class="card-body">
+                                <canvas id="monthlyRevenueChart" style="max-height: 300px;"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Low Stock Products -->
+                <div class="card">
+                    <div class="card-header">
+                        <h5><i class="bi bi-exclamation-triangle"></i> Sản phẩm sắp hết hàng (≤ 10)</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 60px;">Ảnh</th>
+                                        <th>Tên sản phẩm</th>
+                                        <th class="text-center">Tồn kho</th>
+                                        <th class="text-end">Giá</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="lowStockProductsBody">
+                                    <tr>
+                                        <td colspan="4" class="text-center">
+                                            <div class="spinner-border spinner-border-sm" role="status">
+                                                <span class="visually-hidden">Loading...</span>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
                 </div>
             </div>
-            <div>
-                <div id="newOrders" class="dashboard-metric__value" style="color: #10b981;" th:text="${#numbers.formatInteger(newOrdersLast24Hours, 0, 'COMMA')}">0</div>
-                <div class="dashboard-metric__unit">đơn hàng</div>
-            </div>
-        </article>
-    </section>
-
-    <!-- Revenue Chart -->
-    <section class="admin-card">
-        <div class="admin-card__header">
-            <div>
-                <h2 class="admin-card__title">Biểu đồ doanh thu 7 ngày gần nhất</h2>
-                <p class="admin-card__subtitle">Doanh thu theo từng ngày</p>
-            </div>
         </div>
-        <div class="dashboard-chart">
-            <canvas id="revenueChart"></canvas>
-        </div>
-    </section>
-
-    <!-- Top Products -->
-    <section class="admin-card">
-        <div class="admin-card__header">
-            <div>
-                <h2 class="admin-card__title">Top 5 sản phẩm bán chạy trong tháng</h2>
-                <p class="admin-card__subtitle">Sản phẩm được bán nhiều nhất trong tháng hiện tại</p>
-            </div>
-            <div class="admin-card__actions">
-                <a class="admin-link" href="/admin/products">Xem tất cả sản phẩm →</a>
-            </div>
-        </div>
-        <div class="dashboard-chart">
-            <canvas id="topProductsChart"></canvas>
-        </div>
-        <div id="topProductsList" class="dashboard-list"></div>
-    </section>
-
-    <!-- Revenue by Category and Payment Method -->
-    <div class="dashboard-section__grid">
-        <!-- Revenue by Category -->
-        <section class="admin-card">
-            <div class="admin-card__header">
-                <div>
-                    <h2 class="admin-card__title">Doanh thu theo danh mục</h2>
-                    <p class="admin-card__subtitle">Thống kê doanh thu theo từng danh mục sản phẩm trong tháng</p>
-                </div>
-            </div>
-            <div class="dashboard-chart">
-                <canvas id="revenueByCategoryChart"></canvas>
-            </div>
-        </section>
-
-        <!-- Revenue by Payment Method -->
-        <section class="admin-card">
-            <div class="admin-card__header">
-                <div>
-                    <h2 class="admin-card__title">Doanh thu theo phương thức thanh toán</h2>
-                    <p class="admin-card__subtitle">Thống kê doanh thu theo phương thức thanh toán trong tháng</p>
-                </div>
-            </div>
-            <div class="dashboard-chart">
-                <canvas id="revenueByPaymentChart"></canvas>
-            </div>
-        </section>
     </div>
 
-    <!-- Top Customers -->
-    <section class="admin-card">
-        <div class="admin-card__header">
-            <div>
-                <h2 class="admin-card__title">Top khách hàng mua nhiều nhất</h2>
-                <p class="admin-card__subtitle">Khách hàng có tổng giá trị đơn hàng cao nhất trong tháng</p>
-            </div>
-        </div>
-        <div class="table-wrapper">
-            <table class="table">
-                <thead>
-                <tr>
-                    <th>STT</th>
-                    <th>Khách hàng</th>
-                    <th>Email</th>
-                    <th>Số đơn hàng</th>
-                    <th>Tổng chi tiêu</th>
-                </tr>
-                </thead>
-                <tbody id="topCustomersTableBody">
-                <tr>
-                    <td colspan="5" class="dashboard-empty">Đang tải dữ liệu...</td>
-                </tr>
-                </tbody>
-            </table>
-        </div>
-    </section>
-
-    <!-- Voucher Effectiveness -->
-    <section class="admin-card">
-        <div class="admin-card__header">
-            <div>
-                <h2 class="admin-card__title">Hiệu quả voucher khuyến mãi</h2>
-                <p class="admin-card__subtitle">Thống kê hiệu quả sử dụng của các voucher trong hệ thống</p>
-            </div>
-            <div class="admin-card__actions dashboard-actions">
-                <button class="button button--primary" onclick="exportReport('excel')">Xuất Excel</button>
-                <button class="button button--secondary" onclick="exportReport('pdf')">Xuất PDF</button>
-            </div>
-        </div>
-        <div class="table-wrapper">
-            <table class="table">
-                <thead>
-                <tr>
-                    <th>Mã voucher</th>
-                    <th>Mô tả</th>
-                    <th>Số lần sử dụng</th>
-                    <th>Tổng giảm giá</th>
-                    <th>Tổng doanh thu</th>
-                    <th>Số đơn hàng</th>
-                    <th>Tỷ lệ sử dụng</th>
-                    <th>Trạng thái</th>
-                </tr>
-                </thead>
-                <tbody id="voucherEffectivenessTableBody">
-                <tr>
-                    <td colspan="8" class="dashboard-empty">Đang tải dữ liệu...</td>
-                </tr>
-                </tbody>
-            </table>
-        </div>
-    </section>
-</main>
-
-<script>
-    // Format number with VNĐ currency
-    function formatCurrency(value) {
-        return new Intl.NumberFormat('vi-VN', {
-            style: 'currency',
-            currency: 'VND'
-        }).format(value);
-    }
-
-    // Format number
-    function formatNumber(value) {
-        return new Intl.NumberFormat('vi-VN').format(value);
-    }
-
-    // Format date to Vietnamese format
-    function formatDate(dateString) {
-        const date = new Date(dateString);
-        const day = date.getDate();
-        const month = date.getMonth() + 1;
-        return `${day}/${month}`;
-    }
-
-    // Dashboard data from server (Thymeleaf model)
-    const dashboardData = {
-        revenueByDayLast7Days: /*[[${revenueByDayLast7Days}]]*/ {},
-        top5BestSellingProducts: /*[[${top5BestSellingProducts}]]*/ [],
-        revenueByCategory: /*[[${revenueByCategory}]]*/ [],
-        revenueByPaymentMethod: /*[[${revenueByPaymentMethod}]]*/ {},
-        topCustomers: /*[[${topCustomers}]]*/ [],
-        voucherEffectiveness: /*[[${voucherEffectiveness}]]*/ []
-    };
-
-    // Load dashboard statistics
-    function loadDashboardStats() {
-        try {
-            // Update revenue chart
-            updateRevenueChart(dashboardData.revenueByDayLast7Days);
-
-            // Update top products chart
-            updateTopProductsChart(dashboardData.top5BestSellingProducts);
-
-            // Load additional statistics
-            loadAdditionalStats();
-
-        } catch (error) {
-            console.error('Error loading dashboard stats:', error);
-        }
-    }
-
-    // Load additional statistics
-    function loadAdditionalStats() {
-        try {
-            // Update revenue by category chart
-            updateRevenueByCategoryChart(dashboardData.revenueByCategory);
-
-            // Update revenue by payment method chart
-            updateRevenueByPaymentChart(dashboardData.revenueByPaymentMethod);
-
-            // Update top customers table
-            updateTopCustomersTable(dashboardData.topCustomers);
-
-            // Update voucher effectiveness table
-            updateVoucherEffectivenessTable(dashboardData.voucherEffectiveness);
-
-        } catch (error) {
-            console.error('Error loading additional stats:', error);
-        }
-    }
-
-    // Update revenue chart
-    function updateRevenueChart(revenueByDay) {
-        const ctx = document.getElementById('revenueChart').getContext('2d');
-        
-        // Sort dates
-        const sortedDates = Object.keys(revenueByDay).sort();
-        const labels = sortedDates.map(date => formatDate(date));
-        const values = sortedDates.map(date => revenueByDay[date] || 0);
-
-        if (window.revenueChartInstance) {
-            window.revenueChartInstance.destroy();
-        }
-
-        window.revenueChartInstance = new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: labels,
-                datasets: [{
-                    label: 'Doanh thu (VNĐ)',
-                    data: values,
-                    borderColor: '#4c6ef5',
-                    backgroundColor: 'rgba(76, 110, 245, 0.1)',
-                    borderWidth: 2,
-                    fill: true,
-                    tension: 0.4
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        display: true,
-                        position: 'top'
-                    },
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-                                return 'Doanh thu: ' + formatCurrency(context.parsed.y);
-                            }
-                        }
-                    }
-                },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        ticks: {
-                            callback: function(value) {
-                                return formatNumber(value) + ' VNĐ';
-                            }
-                        }
-                    }
-                }
-            }
-        });
-    }
-
-    // Update top products chart
-    function updateTopProductsChart(products) {
-        const ctx = document.getElementById('topProductsChart').getContext('2d');
-        
-        const labels = products.map(p => p.name || 'Không tên');
-        const quantities = products.map(p => p.totalQuantity || 0);
-        const revenues = products.map(p => p.totalRevenue || 0);
-
-        if (window.topProductsChartInstance) {
-            window.topProductsChartInstance.destroy();
-        }
-
-        window.topProductsChartInstance = new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels: labels,
-                datasets: [{
-                    label: 'Số lượng bán',
-                    data: quantities,
-                    backgroundColor: 'rgba(76, 110, 245, 0.8)',
-                    borderColor: '#4c6ef5',
-                    borderWidth: 1
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        display: true,
-                        position: 'top'
-                    },
-                    tooltip: {
-                        callbacks: {
-                            afterLabel: function(context) {
-                                const index = context.dataIndex;
-                                return 'Doanh thu: ' + formatCurrency(revenues[index]);
-                            }
-                        }
-                    }
-                },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        ticks: {
-                            stepSize: 1
-                        }
-                    }
-                }
-            }
-        });
-
-        // Update top products list
-        const listContainer = document.getElementById('topProductsList');
-        if (products.length === 0) {
-            listContainer.innerHTML = '<p style="color: #64748b; text-align: center;">Chưa có dữ liệu sản phẩm bán chạy</p>';
-        } else {
-            listContainer.innerHTML = '<div style="display: grid; gap: 1rem;">' +
-                products.map((product, index) => `
-                    <div style="display: flex; align-items: center; justify-content: space-between; padding: 1rem; background: #f8fafc; border-radius: 8px; transition: background 0.2s;">
-                        <div style="display: flex; align-items: center; gap: 1rem;">
-                            <div style="width: 32px; height: 32px; border-radius: 50%; background: #4c6ef5; color: white; display: flex; align-items: center; justify-content: center; font-weight: 600;">
-                                ${index + 1}
-                            </div>
-                            <div>
-                                <div style="font-weight: 600; color: #0f172a;">${product.name || 'Không tên'}</div>
-                                <div style="font-size: 0.875rem; color: #64748b;">Đã bán: ${formatNumber(product.totalQuantity || 0)} sản phẩm</div>
-                            </div>
-                        </div>
-                        <div style="text-align: right;">
-                            <div style="font-weight: 600; color: #10b981;">${formatCurrency(product.totalRevenue || 0)}</div>
-                            <a href="/admin/products" style="font-size: 0.875rem; color: #4c6ef5; text-decoration: none; margin-top: 0.25rem; display: inline-block;">Xem chi tiết →</a>
-                        </div>
-                    </div>
-                `).join('') +
-                '</div>';
-        }
-    }
-
-    // Update revenue by category chart
-    function updateRevenueByCategoryChart(categoryData) {
-        const ctx = document.getElementById('revenueByCategoryChart').getContext('2d');
-        
-        const labels = categoryData.map(c => c.name || 'Không tên');
-        const revenues = categoryData.map(c => c.revenue || 0);
-        
-        // Generate colors
-        const colors = [
-            'rgba(76, 110, 245, 0.8)',
-            'rgba(16, 185, 129, 0.8)',
-            'rgba(251, 191, 36, 0.8)',
-            'rgba(239, 68, 68, 0.8)',
-            'rgba(139, 92, 246, 0.8)',
-            'rgba(236, 72, 153, 0.8)',
-        ];
-
-        if (window.revenueByCategoryChartInstance) {
-            window.revenueByCategoryChartInstance.destroy();
-        }
-
-        window.revenueByCategoryChartInstance = new Chart(ctx, {
-            type: 'doughnut',
-            data: {
-                labels: labels,
-                datasets: [{
-                    data: revenues,
-                    backgroundColor: colors.slice(0, labels.length),
-                    borderWidth: 2,
-                    borderColor: '#ffffff'
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        display: true,
-                        position: 'bottom'
-                    },
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-                                return context.label + ': ' + formatCurrency(context.parsed);
-                            }
-                        }
-                    }
-                }
-            }
-        });
-    }
-
-    // Update revenue by payment method chart
-    function updateRevenueByPaymentChart(paymentData) {
-        const ctx = document.getElementById('revenueByPaymentChart').getContext('2d');
-        
-        const labels = Object.keys(paymentData);
-        const revenues = Object.values(paymentData);
-
-        if (window.revenueByPaymentChartInstance) {
-            window.revenueByPaymentChartInstance.destroy();
-        }
-
-        window.revenueByPaymentChartInstance = new Chart(ctx, {
-            type: 'pie',
-            data: {
-                labels: labels,
-                datasets: [{
-                    data: revenues,
-                    backgroundColor: [
-                        'rgba(76, 110, 245, 0.8)',
-                        'rgba(16, 185, 129, 0.8)',
-                        'rgba(251, 191, 36, 0.8)',
-                        'rgba(239, 68, 68, 0.8)',
-                        'rgba(139, 92, 246, 0.8)',
-                        'rgba(236, 72, 153, 0.8)',
-                    ],
-                    borderWidth: 2,
-                    borderColor: '#ffffff'
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        display: true,
-                        position: 'bottom'
-                    },
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-                                return context.label + ': ' + formatCurrency(context.parsed);
-                            }
-                        }
-                    }
-                }
-            }
-        });
-    }
-
-    // Update top customers table
-    function updateTopCustomersTable(customers) {
-        const tbody = document.getElementById('topCustomersTableBody');
-        
-        if (customers.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 2rem; color: #64748b;">Chưa có dữ liệu khách hàng</td></tr>';
-            return;
-        }
-
-        tbody.innerHTML = customers.map((customer, index) => `
-            <tr>
-                <td>${index + 1}</td>
-                <td>
-                    <div class="table__primary">
-                        <span>${customer.name || 'N/A'}</span>
-                    </div>
-                </td>
-                <td>${customer.email || '-'}</td>
-                <td>${formatNumber(customer.orderCount || 0)}</td>
-                <td>
-                    <span style="font-weight: 600; color: #10b981;">
-                        ${formatCurrency(customer.totalSpent || 0)}
-                    </span>
-                </td>
-            </tr>
-        `).join('');
-    }
-
-    // Update voucher effectiveness table
-    function updateVoucherEffectivenessTable(vouchers) {
-        const tbody = document.getElementById('voucherEffectivenessTableBody');
-        
-        if (vouchers.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 2rem; color: #64748b;">Chưa có dữ liệu voucher</td></tr>';
-            return;
-        }
-
-        tbody.innerHTML = vouchers.map(voucher => `
-            <tr>
-                <td>
-                    <div class="table__primary">
-                        <span style="font-weight: 600;">${voucher.code || 'N/A'}</span>
-                    </div>
-                </td>
-                <td>${voucher.description || '-'}</td>
-                <td>${formatNumber(voucher.usedCount || 0)} / ${voucher.usageLimit ? formatNumber(voucher.usageLimit) : '∞'}</td>
-                <td>
-                    <span style="font-weight: 600; color: #10b981;">
-                        ${formatCurrency(voucher.totalDiscount || 0)}
-                    </span>
-                </td>
-                <td>
-                    <span style="font-weight: 600; color: #4c6ef5;">
-                        ${formatCurrency(voucher.totalRevenue || 0)}
-                    </span>
-                </td>
-                <td>${formatNumber(voucher.orderCount || 0)}</td>
-                <td>
-                    ${voucher.usageRate != null ? 
-                        `<span class="status status--info">${voucher.usageRate.toFixed(1)}%</span>` : 
-                        '<span class="status status--secondary">N/A</span>'}
-                </td>
-                <td>
-                    <span class="status ${voucher.isActive ? 'status--active' : 'status--inactive'}"
-                          style="${voucher.isActive ? 'background: rgba(16, 185, 129, 0.18); color: #047857;' : 'background: rgba(248, 113, 113, 0.18); color: #b91c1c;'}">
-                        ${voucher.isActive ? 'Đang hoạt động' : 'Đã tắt'}
-                    </span>
-                </td>
-            </tr>
-        `).join('');
-    }
-
-    // Export report function
-    function exportReport(format) {
-        window.location.href = `/admin/dashboard/export?format=${format}`;
-    }
-
-    // Load dashboard on page load
-    document.addEventListener('DOMContentLoaded', loadDashboardStats);
-</script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/js/api.js"></script>
+    <script src="/js/admin-dashboard.js"></script>
 </body>
 </html>
 

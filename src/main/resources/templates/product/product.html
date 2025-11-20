@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Danh sách sản phẩm - SmartShop</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+    <link rel="stylesheet" href="/css/home.css">
+    <style>
+        .products-container {
+            padding: 40px 0;
+        }
+        
+        .products-header {
+            margin-bottom: 32px;
+        }
+        
+        .products-header h1 {
+            font-size: 2rem;
+            margin-bottom: 8px;
+            color: var(--color-text);
+        }
+        
+        .filter-card {
+            background: var(--color-surface);
+            border-radius: var(--radius-md);
+            padding: 24px;
+            box-shadow: var(--shadow-sm);
+            margin-bottom: 32px;
+        }
+        
+        .filter-form {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            align-items: end;
+        }
+        
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .filter-label {
+            font-weight: 600;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+            color: var(--color-text);
+        }
+        
+        .filter-input,
+        .filter-select {
+            padding: 10px 14px;
+            border: 1px solid rgba(15, 23, 42, 0.12);
+            border-radius: 8px;
+            font-size: 0.95rem;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+            font-family: inherit;
+        }
+        
+        .filter-input:focus,
+        .filter-select:focus {
+            outline: none;
+            border-color: var(--color-primary);
+            box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
+        }
+        
+        .filter-button {
+            padding: 10px 24px;
+            border-radius: 8px;
+            border: none;
+            background: var(--color-primary);
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s ease, transform 0.2s ease;
+        }
+        
+        .filter-button:hover {
+            background: var(--color-primary-dark);
+            transform: translateY(-1px);
+        }
+        
+        .products-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+            gap: 24px;
+            margin-bottom: 40px;
+        }
+        
+        .product-card {
+            background: var(--color-surface);
+            border-radius: var(--radius-md);
+            overflow: hidden;
+            box-shadow: var(--shadow-sm);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            display: flex;
+            flex-direction: column;
+            text-decoration: none;
+            color: inherit;
+        }
+        
+        .product-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-md);
+        }
+        
+        .product-card__image {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            background: #e2e8f0;
+        }
+        
+        .product-card__body {
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+        }
+        
+        .product-card__title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin: 0 0 8px;
+            color: var(--color-text);
+        }
+        
+        .product-card__description {
+            font-size: 0.9rem;
+            color: var(--color-muted);
+            margin: 0 0 12px;
+            flex: 1;
+        }
+        
+        .product-card__price {
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: var(--color-primary);
+            margin: 0 0 16px;
+        }
+        
+        .product-card__actions {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .btn-view,
+        .btn-cart {
+            flex: 1;
+            padding: 10px 16px;
+            border-radius: 8px;
+            border: none;
+            font-weight: 600;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+        
+        .btn-view {
+            background: var(--color-primary);
+            color: white;
+        }
+        
+        .btn-view:hover {
+            background: var(--color-primary-dark);
+            transform: translateY(-1px);
+        }
+        
+        .btn-cart {
+            background: transparent;
+            color: var(--color-primary);
+            border: 1px solid var(--color-primary);
+        }
+        
+        .btn-cart:hover {
+            background: rgba(37, 99, 235, 0.1);
+        }
+        
+        .pagination {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            list-style: none;
+            padding: 0;
+            margin: 40px 0 0;
+        }
+        
+        .pagination__item {
+            display: inline-block;
+        }
+        
+        .pagination__link {
+            padding: 10px 16px;
+            border-radius: 8px;
+            border: 1px solid rgba(15, 23, 42, 0.12);
+            background: var(--color-surface);
+            color: var(--color-text);
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+        
+        .pagination__link:hover:not(.disabled):not(.active) {
+            background: rgba(37, 99, 235, 0.1);
+            border-color: var(--color-primary);
+            color: var(--color-primary);
+        }
+        
+        .pagination__link.active {
+            background: var(--color-primary);
+            color: white;
+            border-color: var(--color-primary);
+        }
+        
+        .pagination__link.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--color-muted);
+        }
+        
+        .empty-state svg {
+            width: 80px;
+            height: 80px;
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+    </style>
+</head>
+<body>
+<header class="header">
+    <div class="container header__content">
+        <div class="logo"><a href="/">SmartShop</a></div>
+        <nav class="nav">
+            <a href="/" class="nav__link">Trang chủ</a>
+            <a href="/product.html" class="nav__link nav__link--active">Sản phẩm</a>
+        </nav>
+        <div class="header__search">
+            <form class="search-form" id="searchForm" onsubmit="handleSearch(event)">
+                <input type="text" 
+                       id="searchInput" 
+                       class="search-input" 
+                       placeholder="Tìm kiếm sản phẩm..." 
+                       autocomplete="off"
+                       aria-label="Tìm kiếm sản phẩm">
+                <button type="submit" class="search-button" aria-label="Tìm kiếm">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M21 21l-6-6m2-5a7 7 0 1 1-14 0 7 7 0 0 1 14 0z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+                    </svg>
+                </button>
+            </form>
+        </div>
+        <div class="header__actions header__actions--quick">
+            <a href="#" id="wishlistLink" class="header__icon" aria-label="Danh sách yêu thích">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M17.657 5.343a4 4 0 0 0-5.657 0L11 6.343l-.999-1a4 4 0 1 0-5.657 5.657L11 17.657l6.657-6.657a4 4 0 0 0 0-5.657z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path>
+                </svg>
+                <span class="visually-hidden">Yêu thích</span>
+            </a>
+            <a href="#" id="cartLink" class="header__icon" aria-label="Giỏ hàng">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M3.5 5h2.2l1.4 9.2a1 1 0 0 0 .99.85h9.26a1 1 0 0 0 .98-.8l1.12-5.6H7.16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path>
+                    <circle cx="10" cy="19" r="1.4" fill="none" stroke="currentColor" stroke-width="1.6"></circle>
+                    <circle cx="16.5" cy="19" r="1.4" fill="none" stroke="currentColor" stroke-width="1.6"></circle>
+                </svg>
+                <span class="visually-hidden">Giỏ hàng</span>
+            </a>
+            <div class="header__account" id="headerAccountAnonymous">
+                <a href="/auth/login.html" class="button button--ghost">Đăng nhập</a>
+                <a href="/auth/register.html" class="button">Đăng ký</a>
+            </div>
+            <div class="header__account header__account--auth d-none" id="headerAccountAuth">
+                <div class="header__user-wrapper">
+                    <a class="header__user" href="#" id="userProfileLink" role="button" aria-expanded="false" aria-haspopup="true">
+                        <span class="header__user-icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24">
+                                <path d="M12 12a4.5 4.5 0 1 0-4.5-4.5A4.5 4.5 0 0 0 12 12Zm0 2.25c-3.03 0-9 1.52-9 4.5v.75A1.5 1.5 0 0 0 4.5 21h15a1.5 1.5 0 0 0 1.5-1.5v-.75c0-2.98-5.97-4.5-9-4.5Z"
+                                      fill="currentColor"/>
+                            </svg>
+                        </span>
+                        <span class="header__user-name" id="userName"></span>
+                        <span class="header__user-chip d-none" id="adminChip">Quản trị</span>
+                        <svg class="header__user-chevron" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+                            <path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </a>
+                    <div class="header__user-menu d-none" id="userMenu">
+                        <div class="user-menu__header">
+                            <span class="user-menu__name" id="userMenuName"></span>
+                            <span class="user-menu__chip d-none" id="userMenuChip">Quản trị</span>
+                        </div>
+                        <div class="user-menu__links">
+                            <a href="/orders.html" class="user-menu__link">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2M9 5a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2M9 5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2"/>
+                                </svg>
+                                <span>Đơn hàng của tôi</span>
+                            </a>
+                            <a href="/profile.html" class="user-menu__link">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                                    <circle cx="12" cy="7" r="4"/>
+                                </svg>
+                                <span>Hồ sơ của tôi</span>
+                            </a>
+                            <a href="/admin/dashboard.html" class="user-menu__link d-none" id="adminMenuLink">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="3" y="3" width="7" height="7"/>
+                                    <rect x="14" y="3" width="7" height="7"/>
+                                    <rect x="14" y="14" width="7" height="7"/>
+                                    <rect x="3" y="14" width="7" height="7"/>
+                                </svg>
+                                <span>Trang quản trị</span>
+                            </a>
+                            <button type="button" class="user-menu__link user-menu__link--logout" id="logoutButton">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                                    <polyline points="16 17 21 12 16 7"/>
+                                    <line x1="21" y1="12" x2="9" y2="12"/>
+                                </svg>
+                                <span>Đăng xuất</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>
+
+<main>
+    <section class="section">
+        <div class="container products-container">
+            <div class="products-header">
+                <h1>Danh sách sản phẩm</h1>
+                <p style="color: var(--color-muted);">Khám phá bộ sưu tập sản phẩm đa dạng từ SmartShop</p>
+            </div>
+
+            <!-- Filters -->
+            <div class="filter-card">
+                <form id="filterForm" class="filter-form">
+                    <div class="filter-group">
+                        <label class="filter-label" for="keyword">Tìm kiếm</label>
+                        <input type="text" id="keyword" class="filter-input" placeholder="Nhập từ khóa...">
+                    </div>
+                    <div class="filter-group">
+                        <label class="filter-label" for="category">Danh mục</label>
+                        <select id="category" class="filter-select">
+                            <option value="">Tất cả danh mục</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label class="filter-label" for="minPrice">Giá tối thiểu</label>
+                        <input type="number" id="minPrice" class="filter-input" placeholder="0">
+                    </div>
+                    <div class="filter-group">
+                        <label class="filter-label" for="maxPrice">Giá tối đa</label>
+                        <input type="number" id="maxPrice" class="filter-input" placeholder="9999999">
+                    </div>
+                    <div class="filter-group">
+                        <label class="filter-label" for="sort">Sắp xếp</label>
+                        <select id="sort" class="filter-select">
+                            <option value="createdAt">Mới nhất</option>
+                            <option value="price">Giá</option>
+                            <option value="name">Tên</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <button type="submit" class="filter-button">Tìm kiếm</button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Products Grid -->
+            <div class="products-grid" id="productsGrid">
+                <div class="empty-state" style="grid-column: 1 / -1;">
+                    <div class="spinner-border" role="status" style="width: 3rem; height: 3rem; color: var(--color-primary);">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pagination -->
+            <ul class="pagination" id="pagination">
+            </ul>
+        </div>
+    </section>
+</main>
+
+<footer class="footer">
+    <div class="container footer__content">
+        <div class="footer__column footer__column--brand">
+            <div class="footer__brand">SmartShop</div>
+            <div class="footer__contact">
+                <svg viewBox="0 0 24 24" class="footer__icon" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                </svg>
+                <a href="mailto:support@smartshop.vn">support@smartshop.vn</a>
+            </div>
+        </div>
+        <div class="footer__column">
+            <h4 class="footer__title">THÔNG TIN</h4>
+            <ul class="footer__list">
+                <li><a href="/product.html">Sản phẩm mới</a></li>
+                <li><a href="/product.html">Sản phẩm bán chạy</a></li>
+                <li><a href="/contact.html">Cửa hàng của chúng tôi</a></li>
+                <li><a href="/contact.html">Khách hàng</a></li>
+            </ul>
+        </div>
+        <div class="footer__column">
+            <h4 class="footer__title">LIÊN KẾT NHANH</h4>
+            <ul class="footer__list">
+                <li><a href="/contact.html">Liên hệ chúng tôi</a></li>
+                <li><a href="/support">Trung tâm trợ giúp</a></li>
+                <li><a href="/policies/returns">Chính sách hoàn tiền</a></li>
+                <li><a href="/policies/shipping">Báo cáo spam</a></li>
+            </ul>
+        </div>
+        <div class="footer__column">
+            <h4 class="footer__title">ĐĂNG KÝ BẢN TIN</h4>
+            <form class="footer__newsletter" id="footerNewsletterForm">
+                <input type="email" 
+                       class="footer__input" 
+                       placeholder="email@example.com" 
+                       required
+                       aria-label="Email đăng ký bản tin">
+                <button type="submit" class="footer__subscribe">Đăng ký</button>
+            </form>
+        </div>
+    </div>
+    <div class="footer__divider"></div>
+    <p class="footer__copyright">© 2025 SmartShop. All rights reserved.</p>
+</footer>
+
+<script src="/js/api.js"></script>
+<script src="/js/home.js" defer></script>
+<script src="/js/products.js"></script>
+<script>
+    // Handle search form
+    function handleSearch(event) {
+        event.preventDefault();
+        const searchInput = document.getElementById('searchInput');
+        const keyword = searchInput ? searchInput.value.trim() : '';
+        
+        if (keyword) {
+            document.getElementById('keyword').value = keyword;
+            document.getElementById('filterForm').dispatchEvent(new Event('submit'));
+        }
+    }
+    
+    // Setup newsletter form
+    function setupNewsletterForm() {
+        const form = document.getElementById('footerNewsletterForm');
+        if (form) {
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const emailInput = form.querySelector('input[type="email"]');
+                const email = emailInput.value.trim();
+                
+                if (email) {
+                    alert('Cảm ơn bạn đã đăng ký nhận bản tin! Chúng tôi sẽ gửi email về ' + email);
+                    emailInput.value = '';
+                }
+            });
+        }
+    }
+    
+    document.addEventListener('DOMContentLoaded', () => {
+        setupNewsletterForm();
+    });
+</script>
+</body>
+</html>

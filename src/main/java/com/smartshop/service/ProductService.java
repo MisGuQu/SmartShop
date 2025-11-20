@@ -1,357 +1,254 @@
 package com.smartshop.service;
 
+import com.cloudinary.Cloudinary;
+import com.cloudinary.utils.ObjectUtils;
+import com.smartshop.dto.product.ProductRequest;
+import com.smartshop.dto.product.ProductResponse;
 import com.smartshop.entity.product.Category;
 import com.smartshop.entity.product.Product;
-import com.smartshop.entity.product.ProductImage;
-import com.smartshop.entity.product.ProductVariant;
-import com.smartshop.repository.CartItemRepository;
 import com.smartshop.repository.CategoryRepository;
-import com.smartshop.repository.OrderItemRepository;
-import com.smartshop.repository.ProductImageRepository;
 import com.smartshop.repository.ProductRepository;
-import com.smartshop.repository.ProductVariantRepository;
-import com.smartshop.repository.spec.ProductSpecifications;
-import jakarta.persistence.EntityNotFoundException;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.hibernate.Hibernate;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.text.Normalizer;
-import java.util.Comparator;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
-@Transactional
-@RequiredArgsConstructor
-@Slf4j
 public class ProductService {
 
     private final ProductRepository productRepository;
     private final CategoryRepository categoryRepository;
-    private final ProductVariantRepository productVariantRepository;
-    private final ProductImageRepository productImageRepository;
-    private final CartItemRepository cartItemRepository;
-    private final OrderItemRepository orderItemRepository;
-    private final CloudinaryService cloudinaryService;
+    private final Cloudinary cloudinary;
 
-    public List<Product> getAllProducts() {
-        return productRepository.findAll(Sort.by(Sort.Direction.DESC, "createdAt"));
+    public ProductService(ProductRepository productRepository,
+                          CategoryRepository categoryRepository,
+                          Cloudinary cloudinary) {
+        this.productRepository = productRepository;
+        this.categoryRepository = categoryRepository;
+        this.cloudinary = cloudinary;
     }
 
-    public Optional<Product> getProductById(Long id) {
-        Objects.requireNonNull(id, "id must not be null");
-        return productRepository.findById(id);
+    // ✅ CRUD sản phẩm (Admin)
+
+    public ProductResponse create(ProductRequest req) {
+        Category category = req.getCategoryId() != null
+                ? categoryRepository.findById(req.getCategoryId())
+                .orElse(null)
+                : null;
+
+        Product product = Product.builder()
+                .name(req.getName())
+                .description(req.getDescription())
+                .price(req.getPrice())
+                .stockQuantity(req.getStockQuantity() != null ? req.getStockQuantity() : 0)
+                .isActive(req.getIsActive() != null ? req.getIsActive() : true)
+                .category(category)
+                .build();
+
+        // Set createdAt if provided (before first save)
+        // Note: @CreationTimestamp will auto-set if createdAt is null
+        if (req.getCreatedAt() != null) {
+            // Use reflection or direct field access to set before @CreationTimestamp runs
+            // Since updatable=false, we need to set it before the first save
+            product.setCreatedAt(req.getCreatedAt());
+        }
+
+        return ProductResponse.fromEntity(productRepository.save(product));
     }
 
-    public Product getProductOrThrow(Long id) {
-        Objects.requireNonNull(id, "id must not be null");
-        return productRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Sản phẩm không tồn tại"));
-    }
-
-    public Product createProduct(Product product, Long categoryId) {
-        Objects.requireNonNull(product, "product must not be null");
-
-        String name = normalizeName(product.getName());
-        product.setName(name);
-
-        if (product.getPrice() == null || product.getPrice() <= 0) {
-            throw new IllegalArgumentException("Giá sản phẩm phải lớn hơn 0");
-        }
-
-        Category category = resolveCategory(categoryId);
-
-        product.setId(null);
-        product.setCategory(category);
-
-        if (StringUtils.hasText(product.getSlug())) {
-            product.setSlug(generateUniqueSlug(product.getSlug(), null));
-        } else {
-            product.setSlug(generateUniqueSlug(name, null));
-        }
-
-        if (!StringUtils.hasText(product.getDescription())) {
-            product.setDescription(null);
-        }
-
-        return productRepository.save(product);
-    }
-
-    public Product updateProduct(Long id, Product updatedProduct, Long categoryId) {
-        Objects.requireNonNull(id, "id must not be null");
-        Objects.requireNonNull(updatedProduct, "updatedProduct must not be null");
-
-        Product existing = productRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Sản phẩm không tồn tại"));
-
-        String newName = normalizeName(updatedProduct.getName());
-        existing.setName(newName);
-
-        if (StringUtils.hasText(updatedProduct.getSlug())) {
-            String newSlug = generateUniqueSlug(updatedProduct.getSlug(), existing.getId());
-            existing.setSlug(newSlug);
-        } else {
-            existing.setSlug(generateUniqueSlug(newName, existing.getId()));
-        }
-
-        if (updatedProduct.getPrice() == null || updatedProduct.getPrice() <= 0) {
-            throw new IllegalArgumentException("Giá sản phẩm phải lớn hơn 0");
-        }
-        existing.setPrice(updatedProduct.getPrice());
-
-        existing.setDescription(StringUtils.hasText(updatedProduct.getDescription())
-                ? updatedProduct.getDescription()
-                : null);
-
-        existing.setActive(updatedProduct.isActive());
-        existing.setHasVariants(updatedProduct.isHasVariants());
-
-        Category category = resolveCategory(categoryId);
-        existing.setCategory(category);
-
-        return productRepository.save(existing);
-    }
-
-    public void deleteProduct(Long id) {
-        Objects.requireNonNull(id, "id must not be null");
+    public ProductResponse update(Long id, ProductRequest req) {
         Product product = productRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Sản phẩm không tồn tại"));
+                .orElseThrow(() -> new RuntimeException("Product not found"));
 
-        if (!orderItemRepository.findByProductId(id).isEmpty()) {
-            throw new DataIntegrityViolationException("Không thể xóa sản phẩm đã có trong đơn hàng");
+        product.setName(req.getName());
+        product.setDescription(req.getDescription());
+        product.setPrice(req.getPrice());
+        if (req.getStockQuantity() != null) product.setStockQuantity(req.getStockQuantity());
+        if (req.getIsActive() != null) product.setActive(req.getIsActive());
+
+        if (req.getCategoryId() != null) {
+            Category category = categoryRepository.findById(req.getCategoryId())
+                    .orElseThrow(() -> new RuntimeException("Category not found"));
+            product.setCategory(category);
         }
 
-        List<com.smartshop.entity.cart.CartItem> cartItems = cartItemRepository.findByProductId(id);
-        if (!cartItems.isEmpty()) {
-            cartItemRepository.deleteAll(cartItems);
-            log.info("Đã xóa {} cart items liên quan đến sản phẩm {}", cartItems.size(), id);
-        }
-
-        Hibernate.initialize(product.getVariants());
-        Hibernate.initialize(product.getImages());
-
-        productRepository.delete(product);
+        return ProductResponse.fromEntity(productRepository.save(product));
     }
 
-    public List<Product> searchProducts(String keyword) {
-        if (!StringUtils.hasText(keyword)) {
-            return getAllProducts();
-        }
-        return productRepository.search(keyword.trim(), Pageable.unpaged()).getContent();
+    public ProductResponse toggleStatus(Long id) {
+        Product product = productRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Product not found"));
+        product.setActive(!product.isActive());
+        return ProductResponse.fromEntity(productRepository.save(product));
     }
 
-    public Page<Product> searchProducts(String keyword,
-                                        Long categoryId,
-                                        Double minPrice,
-                                        Double maxPrice,
-                                        Pageable pageable) {
-        Objects.requireNonNull(pageable, "pageable must not be null");
-        Specification<Product> spec = Specification.where(ProductSpecifications.isActive());
-
-        Specification<Product> keywordSpec = ProductSpecifications.keyword(keyword);
-        if (keywordSpec != null) {
-            spec = spec.and(keywordSpec);
-        }
-
-        Specification<Product> categorySpec = ProductSpecifications.category(categoryId);
-        if (categorySpec != null) {
-            spec = spec.and(categorySpec);
-        }
-
-        Specification<Product> minPriceSpec = ProductSpecifications.minPrice(minPrice);
-        if (minPriceSpec != null) {
-            spec = spec.and(minPriceSpec);
-        }
-
-        Specification<Product> maxPriceSpec = ProductSpecifications.maxPrice(maxPrice);
-        if (maxPriceSpec != null) {
-            spec = spec.and(maxPriceSpec);
-        }
-
-        return productRepository.findAll(spec, pageable);
+    public void delete(Long id) {
+        productRepository.deleteById(id);
     }
 
-    public Product getProductDetail(Long productId) {
-        Product product = getProductOrThrow(productId);
-        Hibernate.initialize(product.getImages());
-        Hibernate.initialize(product.getVariants());
-        product.getImages().sort(Comparator.comparing(ProductImage::isPrimary).reversed()
-                .thenComparing(ProductImage::getId));
-        product.getVariants().sort(Comparator.comparing(ProductVariant::getId));
-        return product;
+    public ProductResponse getById(Long id) {
+        Product p = productRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Product not found"));
+        return ProductResponse.fromEntity(p);
     }
 
-    public Product getProductDetail(String slug) {
-        if (!StringUtils.hasText(slug)) {
-            throw new EntityNotFoundException("Slug không hợp lệ");
-        }
-        Product product = productRepository.findBySlug(slug)
-                .orElseThrow(() -> new EntityNotFoundException("Sản phẩm không tồn tại"));
-        Hibernate.initialize(product.getImages());
-        Hibernate.initialize(product.getVariants());
-        product.getImages().sort(Comparator.comparing(ProductImage::isPrimary).reversed()
-                .thenComparing(ProductImage::getId));
-        product.getVariants().sort(Comparator.comparing(ProductVariant::getId));
-        return product;
+    public List<ProductResponse> getAll() {
+        return productRepository.findAll()
+                .stream()
+                .map(ProductResponse::fromEntity)
+                .collect(Collectors.toList());
     }
 
-    public List<ProductVariant> getActiveVariants(Long productId) {
-        return productVariantRepository.findByProductId(productId);
-    }
+    // ✅ Upload ảnh Cloudinary cho sản phẩm
 
-    public Optional<ProductVariant> getVariant(Long productId, Long variantId) {
-        if (variantId == null) {
-            return Optional.empty();
-        }
-        return productVariantRepository.findById(variantId)
-                .filter(variant -> variant.getProduct() != null && variant.getProduct().getId().equals(productId));
-    }
+    public ProductResponse uploadImage(Long productId, MultipartFile file) throws IOException {
+        // Validate product exists
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new RuntimeException("Product not found"));
 
-    public Optional<ProductImage> getPrimaryImage(Product product) {
-        if (product == null) {
-            return Optional.empty();
-        }
-        if (Hibernate.isInitialized(product.getImages()) && !product.getImages().isEmpty()) {
-            return product.getImages().stream()
-                    .sorted(Comparator.comparing(ProductImage::isPrimary).reversed()
-                            .thenComparing(ProductImage::getId))
-                    .findFirst();
-        }
-        return getPrimaryImage(product.getId());
-    }
-
-    public Optional<ProductImage> getPrimaryImage(Long productId) {
-        if (productId == null) {
-            return Optional.empty();
-        }
-        return productImageRepository.findByProductIdAndIsPrimaryTrue(productId)
-                .or(() -> {
-                    List<ProductImage> images = productImageRepository.findByProductId(productId);
-                    return images.stream()
-                            .sorted(Comparator.comparing(ProductImage::getId))
-                            .findFirst();
-                });
-    }
-
-    @Transactional
-    public void reduceInventory(ProductVariant variant, int quantity) {
-        if (variant == null || quantity <= 0) {
-            return;
-        }
-        if (variant.getStock() < quantity) {
-            throw new IllegalStateException("Sản phẩm không đủ tồn kho");
-        }
-        variant.setStock(variant.getStock() - quantity);
-        productVariantRepository.save(variant);
-    }
-
-    @Transactional
-    public void increaseInventory(ProductVariant variant, int quantity) {
-        if (variant == null || quantity <= 0) {
-            return;
-        }
-        variant.setStock(variant.getStock() + quantity);
-        productVariantRepository.save(variant);
-    }
-
-    private Category resolveCategory(Long categoryId) {
-        if (categoryId == null) {
-            return null;
-        }
-        return categoryRepository.findById(categoryId)
-                .orElseThrow(() -> new EntityNotFoundException("Danh mục không tồn tại"));
-    }
-
-    private String normalizeName(String name) {
-        if (!StringUtils.hasText(name)) {
-            throw new IllegalArgumentException("Tên sản phẩm không được để trống");
-        }
-        return name.trim();
-    }
-
-    private String generateUniqueSlug(String source, Long excludeId) {
-        String baseSlug = slugify(source);
-        String candidate = baseSlug;
-        int counter = 1;
-
-        while (true) {
-            Optional<Product> existing = productRepository.findBySlug(candidate);
-            if (existing.isEmpty() || (excludeId != null && existing.get().getId().equals(excludeId))) {
-                return candidate;
-            }
-            candidate = baseSlug + "-" + counter++;
-        }
-    }
-
-    private String slugify(String input) {
-        String normalized = Normalizer.normalize(input, Normalizer.Form.NFD)
-                .replaceAll("\\p{InCombiningDiacriticalMarks}+", "");
-        String slug = normalized.toLowerCase(Locale.ROOT)
-                .replaceAll("[^a-z0-9]+", "-")
-                .replaceAll("-+", "-")
-                .replaceAll("^-|-$", "");
-
-        if (!StringUtils.hasText(slug)) {
-            slug = "san-pham";
-        }
-        return slug;
-    }
-
-    public void uploadProductImages(Long productId, MultipartFile[] files) throws IOException {
-        if (productId == null || files == null || files.length == 0) {
-            return;
+        // Validate file
+        if (file == null || file.isEmpty()) {
+            throw new IllegalArgumentException("File is empty");
         }
 
-        Product product = getProductOrThrow(productId);
+        // Validate file type
+        String contentType = file.getContentType();
+        if (contentType == null || !contentType.startsWith("image/")) {
+            throw new IllegalArgumentException("File must be an image");
+        }
 
-        List<ProductImage> existingImages = productImageRepository.findByProductId(productId);
-        boolean hasPrimary = existingImages.stream().anyMatch(ProductImage::isPrimary);
+        // Validate file size (max 10MB)
+        if (file.getSize() > 10 * 1024 * 1024) {
+            throw new IllegalArgumentException("File size must be less than 10MB");
+        }
 
-        for (int i = 0; i < files.length; i++) {
-            MultipartFile file = files[i];
-            if (file == null || file.isEmpty()) {
-                continue;
+        try {
+            // Upload to Cloudinary
+            Map<?, ?> uploadResult = cloudinary.uploader().upload(file.getBytes(),
+                    ObjectUtils.asMap(
+                            "folder", "smartshop/products",
+                            "resource_type", "image",
+                            "format", "jpg"
+                    ));
+
+            String url = (String) uploadResult.get("secure_url");
+            if (url == null) {
+                throw new RuntimeException("Failed to get image URL from Cloudinary");
             }
 
-            try {
-                String folder = "products/" + productId;
-                Map<String, Object> uploadResult = cloudinaryService.upload(file, folder);
-
-                String publicId = (String) uploadResult.get("public_id");
-                if (publicId == null) {
-                    log.warn("Upload image failed: public_id is null for product {}", productId);
-                    continue;
-                }
-
-                ProductImage productImage = ProductImage.builder()
-                        .product(product)
-                        .publicId(publicId)
-                        .isPrimary(!hasPrimary && i == 0)
-                        .build();
-
-                productImageRepository.save(productImage);
-
-                if (!hasPrimary && i == 0) {
-                    hasPrimary = true;
-                }
-            } catch (IOException ex) {
-                log.error("Error uploading image for product {}: {}", productId, ex.getMessage(), ex);
-                throw new IOException("Không thể upload hình ảnh: " + ex.getMessage(), ex);
-            }
+            product.setImageUrl(url);
+            return ProductResponse.fromEntity(productRepository.save(product));
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to upload image to Cloudinary: " + e.getMessage(), e);
         }
+    }
+
+    // ✅ Tìm kiếm sản phẩm + không dấu
+
+    public List<ProductResponse> search(String keyword) {
+        if (keyword == null || keyword.isBlank()) {
+            return getAll();
+        }
+        return productRepository.searchByNameIgnoreAccent(keyword)
+                .stream()
+                .map(ProductResponse::fromEntity)
+                .collect(Collectors.toList());
+    }
+
+    // ✅ Lọc theo danh mục
+
+    public List<ProductResponse> getByCategory(Long categoryId) {
+        return productRepository.findByCategoryId(categoryId)
+                .stream()
+                .map(ProductResponse::fromEntity)
+                .collect(Collectors.toList());
+    }
+
+    // ✅ Tìm kiếm và lọc với phân trang, sắp xếp
+    public Page<ProductResponse> searchAndFilter(
+            String keyword,
+            Long categoryId,
+            Double minPrice,
+            Double maxPrice,
+            int page,
+            int size,
+            String sortBy,
+            String direction
+    ) {
+        // Tạo Sort object
+        Sort sort = Sort.by(
+                "desc".equalsIgnoreCase(direction) ? Sort.Direction.DESC : Sort.Direction.ASC,
+                getSortField(sortBy)
+        );
+
+        // Tạo Pageable
+        Pageable pageable = PageRequest.of(page, size, sort);
+
+        // Gọi repository method
+        Page<Product> productPage = productRepository.searchAndFilter(
+                keyword,
+                categoryId,
+                minPrice,
+                maxPrice,
+                pageable
+        );
+
+        // Convert to ProductResponse Page
+        return productPage.map(ProductResponse::fromEntity);
+    }
+
+    // ✅ Tìm kiếm và lọc với phân trang, sắp xếp - lấy TẤT CẢ sản phẩm (cho admin)
+    public Page<ProductResponse> searchAndFilterAll(
+            String keyword,
+            Long categoryId,
+            Double minPrice,
+            Double maxPrice,
+            int page,
+            int size,
+            String sortBy,
+            String direction
+    ) {
+        // Tạo Sort object
+        Sort sort = Sort.by(
+                "desc".equalsIgnoreCase(direction) ? Sort.Direction.DESC : Sort.Direction.ASC,
+                getSortField(sortBy)
+        );
+
+        // Tạo Pageable
+        Pageable pageable = PageRequest.of(page, size, sort);
+
+        // Gọi repository method (lấy tất cả, kể cả inactive)
+        Page<Product> productPage = productRepository.searchAndFilterAll(
+                keyword,
+                categoryId,
+                minPrice,
+                maxPrice,
+                pageable
+        );
+
+        // Convert to ProductResponse Page
+        return productPage.map(ProductResponse::fromEntity);
+    }
+
+    // Helper method để map sort field từ frontend sang entity field
+    private String getSortField(String sortBy) {
+        if (sortBy == null || sortBy.isEmpty()) {
+            return "createdAt";
+        }
+        return switch (sortBy.toLowerCase()) {
+            case "price" -> "price";
+            case "name" -> "name";
+            case "createdat" -> "createdAt";
+            default -> "createdAt";
+        };
     }
 }
+
+

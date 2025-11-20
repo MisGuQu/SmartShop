@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản lý Danh mục - SmartShop Admin</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="/css/admin.css">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/">SmartShop Admin</a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="/">Về trang chủ</a>
+                <a class="nav-link" href="#" onclick="handleLogout()">Đăng xuất</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid mt-4">
+        <div class="row">
+            <!-- Sidebar -->
+            <div class="col-md-3">
+                <div class="list-group">
+                    <a href="/admin/dashboard.html" class="list-group-item list-group-item-action">
+                        <i class="bi bi-speedometer2"></i> Dashboard
+                    </a>
+                    <a href="/admin/products.html" class="list-group-item list-group-item-action">
+                        <i class="bi bi-box-seam"></i> Quản lý Sản phẩm
+                    </a>
+                    <a href="/admin/categories.html" class="list-group-item list-group-item-action active">
+                        <i class="bi bi-tags"></i> Quản lý Danh mục
+                    </a>
+                    <a href="/admin/orders.html" class="list-group-item list-group-item-action">
+                        <i class="bi bi-receipt"></i> Quản lý Đơn hàng
+                    </a>
+                    <a href="/admin/users.html" class="list-group-item list-group-item-action">
+                        <i class="bi bi-people"></i> Quản lý Người dùng
+                    </a>
+                    <a href="/admin/vouchers.html" class="list-group-item list-group-item-action">
+                        <i class="bi bi-ticket-perforated"></i> Quản lý Voucher
+                    </a>
+                </div>
+            </div>
+
+            <!-- Main Content -->
+            <div class="col-md-9">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h2>Quản lý Danh mục</h2>
+                    <div class="btn-group">
+                        <button type="button" class="btn btn-success dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-file-earmark-arrow-down"></i> Xuất báo cáo
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="#" onclick="exportToExcel()"><i class="bi bi-file-earmark-excel"></i> Xuất Excel</a></li>
+                            <li><a class="dropdown-item" href="#" onclick="exportToPDF()"><i class="bi bi-file-earmark-pdf"></i> Xuất PDF</a></li>
+                        </ul>
+                        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#categoryModal" onclick="openCategoryModal()">
+                            <i class="bi bi-plus-circle"></i> Thêm danh mục
+                        </button>
+                    </div>
+                </div>
+
+                <div id="alertContainer"></div>
+
+                <!-- Categories Table -->
+                <div class="card">
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Tên danh mục</th>
+                                        <th>Danh mục cha</th>
+                                        <th>Số sản phẩm</th>
+                                        <th>Mô tả</th>
+                                        <th>Thao tác</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="categoriesTableBody">
+                                    <tr>
+                                        <td colspan="6" class="text-center">
+                                            <div class="spinner-border" role="status">
+                                                <span class="visually-hidden">Loading...</span>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Category Modal -->
+    <div class="modal fade" id="categoryModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="categoryModalTitle">Thêm danh mục</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="categoryForm">
+                        <input type="hidden" id="categoryId">
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Tên danh mục *</label>
+                            <input type="text" class="form-control" id="categoryName" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Mô tả</label>
+                            <textarea class="form-control" id="categoryDescription" rows="3"></textarea>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Danh mục cha (tùy chọn)</label>
+                            <select class="form-select" id="categoryParent">
+                                <option value="">Không có (danh mục gốc)</option>
+                            </select>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button type="button" class="btn btn-primary" onclick="saveCategory()">Lưu</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Include libraries for Excel and PDF export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/js/api.js"></script>
+    <script src="/js/admin-categories.js"></script>
+    <script>
+        // Handle logout
+        async function handleLogout() {
+            if (confirm('Bạn có chắc chắn muốn đăng xuất?')) {
+                try {
+                    await api.logout();
+                    window.location.href = '/';
+                } catch (error) {
+                    console.error('Logout error:', error);
+                    window.location.href = '/';
+                }
+            }
+        }
+    </script>
+</body>
+</html>
+
