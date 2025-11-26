@@ -4,16 +4,12 @@ import com.cloudinary.Cloudinary;
 import com.cloudinary.utils.ObjectUtils;
 import com.smartshop.dto.auth.*;
 import com.smartshop.entity.enums.RoleName;
-import com.smartshop.entity.user.PasswordResetToken;
 import com.smartshop.entity.user.Role;
 import com.smartshop.entity.user.User;
-import com.smartshop.repository.PasswordResetTokenRepository;
 import com.smartshop.repository.RoleRepository;
 import com.smartshop.repository.UserRepository;
 import com.smartshop.security.JwtTokenProvider;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.mail.SimpleMailMessage;
-import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -25,7 +21,6 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.UUID;
@@ -37,11 +32,9 @@ public class AuthService {
 
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
-    private final PasswordResetTokenRepository passwordResetTokenRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider tokenProvider;
     private final AuthenticationManager authenticationManager;
-    private final JavaMailSender mailSender;
     private final Cloudinary cloudinary;
     private final RestTemplate restTemplate = new RestTemplate();
 
@@ -50,19 +43,15 @@ public class AuthService {
 
     public AuthService(UserRepository userRepository,
                        RoleRepository roleRepository,
-                       PasswordResetTokenRepository passwordResetTokenRepository,
                        PasswordEncoder passwordEncoder,
                        JwtTokenProvider tokenProvider,
                        AuthenticationManager authenticationManager,
-                       JavaMailSender mailSender,
                        Cloudinary cloudinary) {
         this.userRepository = userRepository;
         this.roleRepository = roleRepository;
-        this.passwordResetTokenRepository = passwordResetTokenRepository;
         this.passwordEncoder = passwordEncoder;
         this.tokenProvider = tokenProvider;
         this.authenticationManager = authenticationManager;
-        this.mailSender = mailSender;
         this.cloudinary = cloudinary;
     }
 
@@ -137,61 +126,42 @@ public class AuthService {
                 .build();
     }
 
-    // 6️⃣ Quên mật khẩu – gửi email reset
-    public void forgotPassword(ForgotPasswordRequest request) {
-        User user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new RuntimeException("Email không tồn tại"));
-
-        String token = UUID.randomUUID().toString();
-        PasswordResetToken resetToken = PasswordResetToken.builder()
-                .token(token)
-                .user(user)
-                .expiresAt(LocalDateTime.now().plusMinutes(30))
-                .build();
-        passwordResetTokenRepository.save(resetToken);
-
-        String resetLink = appBaseUrl + "/reset-password?token=" + token;
-
-        SimpleMailMessage message = new SimpleMailMessage();
-        message.setTo(user.getEmail());
-        message.setSubject("Reset mật khẩu SmartShop");
-        message.setText("Nhấp vào link sau để reset mật khẩu: " + resetLink);
-        mailSender.send(message);
-    }
-
-    // 6️⃣ Reset mật khẩu – dùng token
-    public void resetPassword(ResetPasswordRequest request) {
-        PasswordResetToken resetToken = passwordResetTokenRepository.findByToken(request.getToken())
-                .orElseThrow(() -> new RuntimeException("Token không hợp lệ"));
-
-        if (resetToken.isExpired() || resetToken.isUsed()) {
-            throw new RuntimeException("Token đã hết hạn hoặc đã sử dụng");
-        }
-
-        User user = resetToken.getUser();
-        user.setPassword(passwordEncoder.encode(request.getNewPassword()));
-        userRepository.save(user);
-
-        resetToken.setUsedAt(LocalDateTime.now());
-        passwordResetTokenRepository.save(resetToken);
-    }
-
     // 7️⃣ Login Google OAuth2 – nhận idToken từ FE
     public AuthResponse loginWithGoogle(GoogleLoginRequest request) {
-        String url = "https://oauth2.googleapis.com/tokeninfo?id_token=" + request.getIdToken();
-        Map<String, Object> googleUser = restTemplate.getForObject(url, Map.class);
-
-        if (googleUser == null || !"true".equals(String.valueOf(googleUser.get("email_verified")))) {
-            throw new RuntimeException("Google token không hợp lệ");
+        if (request == null || request.getIdToken() == null || request.getIdToken().trim().isEmpty()) {
+            throw new RuntimeException("Google token không được để trống");
         }
+        
+        try {
+            String url = "https://oauth2.googleapis.com/tokeninfo?id_token=" + request.getIdToken();
+            Map<String, Object> googleUser = restTemplate.getForObject(url, Map.class);
 
-        String email = String.valueOf(googleUser.get("email"));
-        Object nameObj = googleUser.get("name");
-        String name = nameObj != null ? nameObj.toString() : email;
-        Object pictureObj = googleUser.get("picture");
-        String pictureUrl = pictureObj != null ? pictureObj.toString() : null;
+            if (googleUser == null) {
+                throw new RuntimeException("Không thể xác thực token từ Google. Vui lòng thử lại.");
+            }
+            
+            // Check for error in response
+            if (googleUser.containsKey("error")) {
+                String error = String.valueOf(googleUser.get("error"));
+                String errorDescription = googleUser.containsKey("error_description") 
+                    ? String.valueOf(googleUser.get("error_description")) 
+                    : error;
+                throw new RuntimeException("Google token không hợp lệ: " + errorDescription);
+            }
+            
+            // Verify email is verified
+            Object emailVerifiedObj = googleUser.get("email_verified");
+            if (emailVerifiedObj == null || !"true".equals(String.valueOf(emailVerifiedObj))) {
+                throw new RuntimeException("Email Google chưa được xác thực. Vui lòng xác thực email trước khi đăng nhập.");
+            }
+            
+            String email = String.valueOf(googleUser.get("email"));
+            Object nameObj = googleUser.get("name");
+            String name = nameObj != null ? nameObj.toString() : email;
+            Object pictureObj = googleUser.get("picture");
+            String pictureUrl = pictureObj != null ? pictureObj.toString() : null;
 
-        User user = userRepository.findByEmail(email).orElseGet(() -> {
+            User user = userRepository.findByEmail(email).orElseGet(() -> {
             Role customerRole = roleRepository.findByName(RoleName.ROLE_CUSTOMER.name())
                     .orElseGet(() -> {
                         Role newRole = new Role();
@@ -214,37 +184,45 @@ public class AuthService {
                 newUser.setAvatar(pictureUrl);
             }
             
-            return userRepository.save(newUser);
-        });
-        
-        // Update user info if needed (for existing users)
-        boolean updated = false;
-        if (user.getFullName() == null || user.getFullName().isEmpty()) {
-            user.setFullName(name);
-            updated = true;
-        }
-        if ((user.getAvatar() == null || user.getAvatar().isEmpty()) && pictureUrl != null && !pictureUrl.isEmpty()) {
-            user.setAvatar(pictureUrl);
-            updated = true;
-        }
-        if (updated) {
-            userRepository.save(user);
-        }
+                return userRepository.save(newUser);
+            });
+            
+            // Update user info if needed (for existing users)
+            boolean updated = false;
+            if (user.getFullName() == null || user.getFullName().isEmpty()) {
+                user.setFullName(name);
+                updated = true;
+            }
+            if ((user.getAvatar() == null || user.getAvatar().isEmpty()) && pictureUrl != null && !pictureUrl.isEmpty()) {
+                user.setAvatar(pictureUrl);
+                updated = true;
+            }
+            if (updated) {
+                userRepository.save(user);
+            }
 
-        String jwt = tokenProvider.generateToken(user);
+            String jwt = tokenProvider.generateToken(user);
 
-        return AuthResponse.builder()
-                .token(jwt)
-                .id(user.getId())
-                .username(user.getUsername())
-                .email(user.getEmail())
-                .fullName(user.getFullName())
-                .phone(user.getPhone())
-                .avatar(user.getAvatar())
-                .roles(user.getRoles().stream()
-                        .map(Role::getName)
-                        .collect(Collectors.toList()))
-                .build();
+            return AuthResponse.builder()
+                    .token(jwt)
+                    .id(user.getId())
+                    .username(user.getUsername())
+                    .email(user.getEmail())
+                    .fullName(user.getFullName())
+                    .phone(user.getPhone())
+                    .avatar(user.getAvatar())
+                    .roles(user.getRoles().stream()
+                            .map(Role::getName)
+                            .collect(Collectors.toList()))
+                    .build();
+        } catch (org.springframework.web.client.RestClientException e) {
+            throw new RuntimeException("Không thể kết nối đến Google để xác thực. Vui lòng kiểm tra kết nối internet và thử lại.", e);
+        } catch (RuntimeException e) {
+            // Re-throw our custom exceptions
+            throw e;
+        } catch (Exception e) {
+            throw new RuntimeException("Lỗi khi xử lý đăng nhập Google: " + e.getMessage(), e);
+        }
     }
     
     // Update user profile

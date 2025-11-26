@@ -180,84 +180,9 @@ async function addToWishlist() {
     }
 }
 
+// Reviews are now handled by reviews.js
 async function loadReviews() {
-    try {
-        const [reviewsResponse, summaryResponse] = await Promise.all([
-            api.getProductReviews(productId, { page: 0, size: 10 }),
-            api.getReviewSummary(productId).catch(() => null)
-        ]);
-        
-        // Handle different response formats
-        let reviews = [];
-        if (Array.isArray(reviewsResponse)) {
-            reviews = reviewsResponse;
-        } else if (reviewsResponse && reviewsResponse.content && Array.isArray(reviewsResponse.content)) {
-            reviews = reviewsResponse.content;
-        } else if (reviewsResponse && Array.isArray(reviewsResponse.data)) {
-            reviews = reviewsResponse.data;
-        }
-        
-        displayReviews(reviews, summaryResponse);
-    } catch (error) {
-        console.error('Error loading reviews:', error);
-        const container = document.getElementById('reviewsContent');
-        if (container) {
-            container.innerHTML = '<p style="color: var(--color-muted);">Không thể tải đánh giá</p>';
-        }
-    }
-}
-
-function displayReviews(reviews, summary) {
-    const container = document.getElementById('reviewsContent');
-    if (!container) return;
-    
-    let html = '';
-    
-    if (summary) {
-        html += `
-            <div style="background: var(--color-panel); padding: 24px; border-radius: var(--radius-md); margin-bottom: 24px; box-shadow: var(--shadow-sm);">
-                <h3 style="margin: 0 0 16px; font-size: 1.25rem;">Đánh giá tổng quan</h3>
-                <div style="display: flex; gap: 32px; flex-wrap: wrap;">
-                    <div>
-                        <div style="font-size: 2rem; font-weight: 700; color: var(--color-primary);">
-                            ${summary.averageRating ? summary.averageRating.toFixed(1) : '0.0'}
-                        </div>
-                        <div style="color: var(--color-muted); font-size: 0.9rem;">/ 5.0</div>
-                    </div>
-                    <div>
-                        <div style="font-size: 1.5rem; font-weight: 600;">
-                            ${summary.reviewCount || 0}
-                        </div>
-                        <div style="color: var(--color-muted); font-size: 0.9rem;">đánh giá</div>
-                    </div>
-                </div>
-            </div>
-        `;
-    }
-    
-    if (reviews.length === 0) {
-        html += '<p style="color: var(--color-muted);">Chưa có đánh giá nào</p>';
-    } else {
-        html += '<div style="display: grid; gap: 16px;">';
-        reviews.forEach(review => {
-            const stars = '★'.repeat(review.rating || 0) + '☆'.repeat(5 - (review.rating || 0));
-            html += `
-                <div style="background: var(--color-panel); padding: 20px; border-radius: var(--radius-md); box-shadow: var(--shadow-sm);">
-                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
-                        <div>
-                            <strong style="display: block; margin-bottom: 6px;">${escapeHtml(review.userName || 'Người dùng')}</strong>
-                            <div style="color: #fbbf24; font-size: 1rem;">${stars}</div>
-                        </div>
-                        <small style="color: var(--color-muted);">${new Date(review.createdAt).toLocaleDateString('vi-VN')}</small>
-                    </div>
-                    ${review.comment ? `<p style="margin: 0; color: var(--color-text); line-height: 1.6;">${escapeHtml(review.comment)}</p>` : ''}
-                </div>
-            `;
-        });
-        html += '</div>';
-    }
-    
-    container.innerHTML = html;
+    // This function is kept for compatibility but reviews are loaded by reviews.js
 }
 
 async function updateAuthUI() {

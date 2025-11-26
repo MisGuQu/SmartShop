@@ -11,19 +11,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     await updateAuthUI();
     await loadWishlist();
     
-    // Setup search form
-    const searchForm = document.getElementById('searchForm');
-    if (searchForm) {
-        searchForm.addEventListener('submit', (e) => {
-            e.preventDefault();
-            filterWishlist();
-        });
-        
-        const searchInput = document.getElementById('searchKeyword');
-        if (searchInput) {
-            searchInput.addEventListener('input', filterWishlist);
-        }
-    }
 });
 
 async function loadWishlist() {
@@ -37,71 +24,50 @@ async function loadWishlist() {
     }
 }
 
-function filterWishlist() {
-    const searchKeyword = document.getElementById('searchKeyword')?.value?.toLowerCase().trim() || '';
-    
-    if (!searchKeyword) {
-        displayWishlist(allWishlistItems);
-        return;
-    }
-    
-    const filteredItems = allWishlistItems.filter(item => {
-        const productName = (item.productName || '').toLowerCase();
-        return productName.includes(searchKeyword);
-    });
-    
-    displayWishlist(filteredItems, searchKeyword);
-}
 
-function displayWishlist(items, searchKeyword = '') {
+function displayWishlist(items) {
     const container = document.getElementById('wishlistContent');
     
     if (!items || items.length === 0) {
-        if (searchKeyword) {
-            container.innerHTML = `
-                <div class="text-center py-5">
-                    <i class="bi bi-search fs-1 text-muted"></i>
-                    <p class="mt-3">Không tìm thấy sản phẩm nào với từ khóa "${searchKeyword}"</p>
-                    <button class="btn btn-outline-secondary" onclick="clearSearch()">Xóa bộ lọc</button>
-                </div>
-            `;
-        } else {
-            container.innerHTML = `
-                <div class="text-center py-5">
-                    <i class="bi bi-heart fs-1 text-muted"></i>
-                    <p class="mt-3">Danh sách yêu thích của bạn đang trống</p>
-                    <a href="/product.html" class="btn btn-primary">Tiếp tục mua sắm</a>
-                </div>
-            `;
-        }
+        container.innerHTML = `
+            <div class="empty-wishlist">
+                <svg class="empty-wishlist-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                </svg>
+                <h3>Danh sách yêu thích trống</h3>
+                <p>Bạn chưa có sản phẩm nào trong danh sách yêu thích</p>
+                <a href="/product.html" class="button">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                        <path d="M3 3h7v7H3zM14 3h7v7h-7zM3 14h7v7H3zM14 14h7v7h-7z"/>
+                    </svg>
+                    Tiếp tục mua sắm
+                </a>
+            </div>
+        `;
         return;
     }
     
     container.innerHTML = `
-        ${searchKeyword ? `<div class="alert alert-info mb-3">Tìm thấy ${items.length} sản phẩm với từ khóa "${searchKeyword}"</div>` : ''}
-        <div class="row g-4">
+        <div class="wishlist-grid">
             ${items.map(item => {
                 const price = item.price || 0;
+                const imageUrl = item.imageUrl || 'https://via.placeholder.com/300x300?text=No+Image';
                 return `
-                <div class="col-md-3 col-sm-6">
-                    <div class="card h-100">
-                        <img src="${item.imageUrl || '/images/placeholder.jpg'}" 
-                             class="card-img-top" 
+                <div class="wishlist-item" onclick="window.location.href='/product-detail.html?id=${item.productId}'">
+                    <div class="wishlist-item__favorite-icon" onclick="event.stopPropagation(); removeFromWishlist(${item.productId})">
+                        <svg viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                        </svg>
+                    </div>
+                    <div class="wishlist-item__image-wrapper">
+                        <img src="${imageUrl}" 
+                             class="wishlist-item__image" 
                              alt="${item.productName || 'Sản phẩm'}"
-                             style="height: 200px; object-fit: cover;">
-                        <div class="card-body d-flex flex-column">
-                            <h5 class="card-title">${item.productName || 'Sản phẩm'}</h5>
-                            <p class="card-text fw-bold text-primary">${formatPrice(price)}</p>
-                            <div class="mt-auto">
-                                <a href="/product-detail.html?id=${item.productId}" class="btn btn-primary btn-sm w-100 mb-2">Xem chi tiết</a>
-                                <button class="btn btn-outline-primary btn-sm w-100 mb-2" onclick="addToCartFromWishlist(${item.productId})">
-                                    <i class="bi bi-cart-plus"></i> Thêm vào giỏ
-                                </button>
-                                <button class="btn btn-outline-danger btn-sm w-100" onclick="removeFromWishlist(${item.productId})">
-                                    <i class="bi bi-trash"></i> Xóa
-                                </button>
-                            </div>
-                        </div>
+                             onerror="this.src='https://via.placeholder.com/300x300?text=No+Image'">
+                    </div>
+                    <div class="wishlist-item__body">
+                        <h3 class="wishlist-item__title">${item.productName || 'Sản phẩm'}</h3>
+                        <div class="wishlist-item__price">${formatPrice(price)}</div>
                     </div>
                 </div>
             `;
@@ -110,37 +76,41 @@ function displayWishlist(items, searchKeyword = '') {
     `;
 }
 
-function clearSearch() {
-    const searchInput = document.getElementById('searchKeyword');
-    if (searchInput) {
-        searchInput.value = '';
-    }
-    displayWishlist(allWishlistItems);
-}
 
 async function addToCartFromWishlist(productId) {
     try {
         await api.addToCart(productId, null, 1);
-        showAlert('Đã thêm vào giỏ hàng', 'success');
+        showToast('Đã thêm vào giỏ hàng');
     } catch (error) {
         console.error('Error adding to cart:', error);
-        showAlert('Không thể thêm vào giỏ hàng', 'danger');
+        showToast('Không thể thêm vào giỏ hàng', 'error');
     }
 }
 
 async function removeFromWishlist(productId) {
-    if (!confirm('Bạn có chắc muốn xóa sản phẩm này khỏi danh sách yêu thích?')) {
-        return;
-    }
-    
     try {
         await api.removeFromWishlist(productId);
         await loadWishlist();
-        showAlert('Đã xóa khỏi danh sách yêu thích', 'success');
+        showToast('Đã xóa khỏi danh sách yêu thích');
     } catch (error) {
         console.error('Error removing from wishlist:', error);
-        showAlert('Không thể xóa', 'danger');
+        showToast('Không thể xóa', 'error');
     }
+}
+
+function showToast(message, type = 'success') {
+    const toast = document.createElement('div');
+    toast.className = 'wishlist-toast';
+    toast.style.background = type === 'error' ? 'rgba(239, 68, 68, 0.95)' : 'rgba(37, 99, 235, 0.95)';
+    toast.textContent = message;
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateY(20px)';
+        toast.style.transition = 'all 0.3s ease';
+        setTimeout(() => toast.remove(), 300);
+    }, 3000);
 }
 
 async function updateAuthUI() {

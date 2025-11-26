@@ -112,20 +112,6 @@ public class AuthController {
         return ResponseEntity.ok(authResponse);
     }
 
-    // 6️⃣ Quên mật khẩu – gửi email reset
-    @PostMapping("/forgot-password")
-    public ResponseEntity<Void> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
-        authService.forgotPassword(request);
-        return ResponseEntity.ok().build();
-    }
-
-    // 6️⃣ Reset mật khẩu
-    @PostMapping("/reset-password")
-    public ResponseEntity<Void> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
-        authService.resetPassword(request);
-        return ResponseEntity.ok().build();
-    }
-
     // 7️⃣ Login Google – nhận idToken từ frontend
     @PostMapping("/google")
     public ResponseEntity<AuthResponse> loginWithGoogle(@Valid @RequestBody GoogleLoginRequest request,

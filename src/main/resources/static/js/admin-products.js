@@ -1,23 +1,43 @@
 // Admin Products Management
 let products = [];
 let categories = [];
+let currentFilters = {
+    categoryId: '',
+    sort: 'id',
+    direction: 'asc'
+};
 
 // Initialize
 document.addEventListener('DOMContentLoaded', function() {
-    loadProducts();
-    loadCategories();
+    // Set default values for sort dropdowns
+    const sortBy = document.getElementById('sortBy');
+    const sortDirection = document.getElementById('sortDirection');
+    if (sortBy) sortBy.value = 'id';
+    if (sortDirection) sortDirection.value = 'asc';
+    
+    loadCategories().then(() => {
+        loadProducts();
+    });
 });
 
 // Load products
 async function loadProducts() {
     try {
-        // For admin, we want all products including inactive ones
-        // Pass a large size to get all products and includeInactive=true
-        const response = await api.getProducts({ 
+        // Build query parameters
+        const params = {
             page: 0, 
             size: 10000,
-            includeInactive: true 
-        });
+            includeInactive: true,
+            sort: currentFilters.sort,
+            direction: currentFilters.direction
+        };
+        
+        // Add category filter if selected
+        if (currentFilters.categoryId) {
+            params.categoryId = currentFilters.categoryId;
+        }
+        
+        const response = await api.getProducts(params);
         
         // Handle Page object response (from paginated API)
         // Page object has structure: { content: [...], totalElements: ..., totalPages: ..., ... }
@@ -48,17 +68,65 @@ async function loadProducts() {
 async function loadCategories() {
     try {
         categories = await api.getCategories();
+        
+        // Populate category select in modal
         const select = document.getElementById('productCategory');
-        select.innerHTML = '<option value="">Chọn danh mục</option>';
-        categories.forEach(cat => {
-            const option = document.createElement('option');
-            option.value = cat.id;
-            option.textContent = cat.name;
-            select.appendChild(option);
-        });
+        if (select) {
+            select.innerHTML = '<option value="">Chọn danh mục</option>';
+            categories.forEach(cat => {
+                const option = document.createElement('option');
+                option.value = cat.id;
+                option.textContent = cat.name;
+                select.appendChild(option);
+            });
+        }
+        
+        // Populate category filter dropdown
+        const filterSelect = document.getElementById('categoryFilter');
+        if (filterSelect) {
+            filterSelect.innerHTML = '<option value="">Tất cả danh mục</option>';
+            categories.forEach(cat => {
+                const option = document.createElement('option');
+                option.value = cat.id;
+                option.textContent = cat.name;
+                filterSelect.appendChild(option);
+            });
+        }
     } catch (error) {
         console.error('Error loading categories:', error);
     }
+}
+
+// Apply filters and sorting
+function applyFilters() {
+    const categoryFilter = document.getElementById('categoryFilter');
+    const sortBy = document.getElementById('sortBy');
+    const sortDirection = document.getElementById('sortDirection');
+    
+    currentFilters.categoryId = categoryFilter ? categoryFilter.value : '';
+    currentFilters.sort = sortBy ? sortBy.value : 'id';
+    currentFilters.direction = sortDirection ? sortDirection.value : 'asc';
+    
+    loadProducts();
+}
+
+// Reset filters
+function resetFilters() {
+    currentFilters = {
+        categoryId: '',
+        sort: 'id',
+        direction: 'asc'
+    };
+    
+    const categoryFilter = document.getElementById('categoryFilter');
+    const sortBy = document.getElementById('sortBy');
+    const sortDirection = document.getElementById('sortDirection');
+    
+    if (categoryFilter) categoryFilter.value = '';
+    if (sortBy) sortBy.value = 'id';
+    if (sortDirection) sortDirection.value = 'asc';
+    
+    loadProducts();
 }
 
 // Render products table

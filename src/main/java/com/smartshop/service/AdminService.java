@@ -1,7 +1,6 @@
 package com.smartshop.service;
 
 import com.smartshop.dto.admin.UserResponse;
-import com.smartshop.entity.order.Order;
 import com.smartshop.entity.review.Review;
 import com.smartshop.entity.user.Role;
 import com.smartshop.entity.user.User;
@@ -65,8 +64,11 @@ public class AdminService {
     }
 
     // Quản lý Orders (xem tất cả)
-    public List<Order> getAllOrders() {
-        return orderRepository.findAll();
+    // Thực hiện mapping sang DTO bên trong service để tránh LazyInitializationException
+    public List<com.smartshop.dto.order.OrderSummaryResponse> getAllOrders() {
+        return orderRepository.findAll().stream()
+                .map(com.smartshop.dto.order.OrderSummaryResponse::fromEntity)
+                .collect(Collectors.toList());
     }
 
     // Quản lý Reviews

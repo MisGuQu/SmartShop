@@ -101,21 +101,26 @@ async function handleRegister(e) {
     e.preventDefault();
     
     const submitButton = document.getElementById('submitButton');
+    const usernameField = document.getElementById('usernameField');
     const fullNameField = document.getElementById('fullNameField');
     const emailField = document.getElementById('emailField');
     const passwordField = document.getElementById('passwordField');
+    const usernameError = document.getElementById('usernameError');
     const fullNameError = document.getElementById('fullNameError');
     const emailError = document.getElementById('emailError');
     const passwordError = document.getElementById('passwordError');
     
     // Reset errors
+    usernameField.classList.remove('form-field--error');
     fullNameField.classList.remove('form-field--error');
     emailField.classList.remove('form-field--error');
     passwordField.classList.remove('form-field--error');
+    if (usernameError) usernameError.style.display = 'none';
     if (fullNameError) fullNameError.style.display = 'none';
     if (emailError) emailError.style.display = 'none';
     if (passwordError) passwordError.style.display = 'none';
     
+    const username = document.getElementById('username').value.trim();
     const fullName = document.getElementById('fullName').value.trim();
     const email = document.getElementById('email').value.trim();
     const password = document.getElementById('password').value;
@@ -123,11 +128,25 @@ async function handleRegister(e) {
     let hasError = false;
     
     // Validation
-    if (!fullName) {
-        fullNameField.classList.add('form-field--error');
-        if (fullNameError) {
-            fullNameError.textContent = 'Họ tên là bắt buộc';
-            fullNameError.style.display = 'block';
+    if (!username) {
+        usernameField.classList.add('form-field--error');
+        if (usernameError) {
+            usernameError.textContent = 'Tên đăng nhập là bắt buộc';
+            usernameError.style.display = 'block';
+        }
+        hasError = true;
+    } else if (username.length < 3) {
+        usernameField.classList.add('form-field--error');
+        if (usernameError) {
+            usernameError.textContent = 'Tên đăng nhập phải có ít nhất 3 ký tự';
+            usernameError.style.display = 'block';
+        }
+        hasError = true;
+    } else if (username.length > 50) {
+        usernameField.classList.add('form-field--error');
+        if (usernameError) {
+            usernameError.textContent = 'Tên đăng nhập không được quá 50 ký tự';
+            usernameError.style.display = 'block';
         }
         hasError = true;
     }
@@ -176,8 +195,8 @@ async function handleRegister(e) {
     
     try {
         const response = await api.register({
-            username: email, // Use email as username
-            fullName,
+            username: username,
+            fullName: fullName || null, // Allow empty fullName
             email,
             password
         });
@@ -194,6 +213,13 @@ async function handleRegister(e) {
             
             // Handle field-specific errors if provided by API
             if (error.errors) {
+                if (error.errors.username) {
+                    usernameField.classList.add('form-field--error');
+                    if (usernameError) {
+                        usernameError.textContent = error.errors.username;
+                        usernameError.style.display = 'block';
+                    }
+                }
                 if (error.errors.fullName) {
                     fullNameField.classList.add('form-field--error');
                     if (fullNameError) {
@@ -213,13 +239,6 @@ async function handleRegister(e) {
                     if (passwordError) {
                         passwordError.textContent = error.errors.password;
                         passwordError.style.display = 'block';
-                    }
-                }
-                if (error.errors.username) {
-                    emailField.classList.add('form-field--error');
-                    if (emailError) {
-                        emailError.textContent = error.errors.username;
-                        emailError.style.display = 'block';
                     }
                 }
             }

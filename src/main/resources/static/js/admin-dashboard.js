@@ -56,8 +56,26 @@ async function loadOrders() {
 // Load products
 async function loadProducts() {
     try {
-        const response = await api.getProducts();
-        products = response.data || response || [];
+        const response = await api.getProducts({
+            page: 0,
+            size: 10000,
+            includeInactive: true
+        });
+
+        // Chuẩn hóa dữ liệu sản phẩm thành mảng
+        if (response && Array.isArray(response.content)) {
+            // Trường hợp backend trả về Page<ProductResponse>
+            products = response.content;
+        } else if (response && response.data && Array.isArray(response.data)) {
+            // Trường hợp bọc trong ApiResponse
+            products = response.data;
+        } else if (Array.isArray(response)) {
+            // Trường hợp trả về mảng trực tiếp
+            products = response;
+        } else {
+            products = [];
+        }
+
         renderLowStockProducts();
         // Re-render stats to update category count
         renderStats();

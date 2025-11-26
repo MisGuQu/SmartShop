@@ -32,7 +32,19 @@
 
             <div class="form-field" id="passwordField">
                 <label for="password">Mật khẩu</label>
-                <input id="password" type="password" name="password" placeholder="••••••••" required>
+                <div class="password-input-wrapper">
+                    <input id="password" type="password" name="password" placeholder="••••••••" required>
+                    <button type="button" class="password-toggle" id="passwordToggle" aria-label="Hiển thị mật khẩu">
+                        <svg class="eye-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                            <circle cx="12" cy="12" r="3"></circle>
+                        </svg>
+                        <svg class="eye-off-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: none;">
+                            <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                            <line x1="1" y1="1" x2="23" y2="23"></line>
+                        </svg>
+                    </button>
+                </div>
                 <p class="field-error" id="passwordError" style="display: none;"></p>
             </div>
 
@@ -77,16 +89,47 @@
     // Initialize Google Sign-In
     function initGoogleSignIn() {
         if (typeof google !== 'undefined' && google.accounts) {
-            google.accounts.id.initialize({
-                client_id: '740735252992-4lvlddgsh2bkla8vb46rfc0iam5ph3po.apps.googleusercontent.com',
-                callback: handleGoogleSignIn
-            });
-            
-            const googleBtn = document.getElementById('googleLoginBtn');
-            if (googleBtn) {
-                googleBtn.addEventListener('click', () => {
-                    google.accounts.id.prompt();
+            try {
+                google.accounts.id.initialize({
+                    client_id: '740735252992-4lvlddgsh2bkla8vb46rfc0iam5ph3po.apps.googleusercontent.com',
+                    callback: handleGoogleSignIn,
+                    auto_select: false,
+                    cancel_on_tap_outside: true
                 });
+                
+                const googleBtn = document.getElementById('googleLoginBtn');
+                if (googleBtn) {
+                    // Replace the button with Google's rendered button
+                    googleBtn.style.display = 'none';
+                    
+                    // Create container for Google button
+                    const googleBtnContainer = document.createElement('div');
+                    googleBtnContainer.id = 'google-button-container';
+                    googleBtnContainer.style.width = '100%';
+                    googleBtn.parentNode.insertBefore(googleBtnContainer, googleBtn.nextSibling);
+                    
+                    // Render Google Sign-In button
+                    google.accounts.id.renderButton(
+                        googleBtnContainer,
+                        {
+                            type: 'standard',
+                            theme: 'outline',
+                            size: 'large',
+                            text: 'signin_with',
+                            width: '100%'
+                        }
+                    );
+                }
+            } catch (error) {
+                console.error('Error initializing Google Sign-In:', error);
+                // Fallback: show original button and use click handler
+                const googleBtn = document.getElementById('googleLoginBtn');
+                if (googleBtn) {
+                    googleBtn.style.display = 'block';
+                    googleBtn.addEventListener('click', () => {
+                        google.accounts.id.prompt();
+                    });
+                }
             }
         } else {
             // Retry after a short delay if Google SDK not loaded yet
@@ -94,19 +137,30 @@
         }
     }
     
-    window.onload = function() {
+    // Try to initialize when DOM is ready
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initGoogleSignIn);
+    } else {
         initGoogleSignIn();
-    };
+    }
     
     async function handleGoogleSignIn(response) {
+        if (!response || !response.credential) {
+            showAlert('Không nhận được thông tin từ Google. Vui lòng thử lại.', 'danger');
+            return;
+        }
+        
         try {
+            showAlert('Đang xử lý đăng nhập với Google...', 'info');
+            
             const result = await api.loginWithGoogle(response.credential);
             
-            if (result) {
+            if (result && result.token) {
                 // Token is set via cookie, reset auth status to force fresh check
                 if (typeof resetAuthStatus === 'function') {
                     resetAuthStatus();
                 }
+                
                 showAlert('Đăng nhập thành công! Đang chuyển hướng...', 'success');
                 
                 // Redirect after short delay to allow cookie to be set
@@ -115,10 +169,18 @@
                     const separator = redirectUrl.includes('?') ? '&' : '?';
                     window.location.href = `${redirectUrl}${separator}login=success`;
                 }, 1000);
+            } else {
+                throw new Error(result?.message || 'Đăng nhập với Google thất bại');
             }
         } catch (error) {
             console.error('Google login error:', error);
-            showAlert(error.message || 'Đăng nhập với Google thất bại. Vui lòng thử lại.', 'danger');
+            let errorMessage = 'Đăng nhập với Google thất bại. Vui lòng thử lại.';
+            
+            if (error.message) {
+                errorMessage = error.message;
+            }
+            
+            showAlert(errorMessage, 'danger');
         }
     }
     
@@ -153,6 +215,30 @@
                 }, 300);
             }
         }, 5000);
+    }
+
+    // Toggle password visibility
+    const passwordToggle = document.getElementById('passwordToggle');
+    const passwordInput = document.getElementById('password');
+    
+    if (passwordToggle && passwordInput) {
+        passwordToggle.addEventListener('click', function() {
+            const isPassword = passwordInput.type === 'password';
+            passwordInput.type = isPassword ? 'text' : 'password';
+            
+            const eyeIcon = passwordToggle.querySelector('.eye-icon');
+            const eyeOffIcon = passwordToggle.querySelector('.eye-off-icon');
+            
+            if (isPassword) {
+                eyeIcon.style.display = 'none';
+                eyeOffIcon.style.display = 'block';
+                passwordToggle.setAttribute('aria-label', 'Ẩn mật khẩu');
+            } else {
+                eyeIcon.style.display = 'block';
+                eyeOffIcon.style.display = 'none';
+                passwordToggle.setAttribute('aria-label', 'Hiển thị mật khẩu');
+            }
+        });
     }
 </script>
 </body>

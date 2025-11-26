@@ -248,7 +248,7 @@ cd smartshop
 
 1. Tạo database MySQL:
 ```sql
-CREATE DATABASE smartshop_db;
+CREATE DATABASE smartshop;
 ```
 
 2. Hoặc chạy file SQL có sẵn:
@@ -262,7 +262,7 @@ Mở file `src/main/resources/application.properties` và cập nhật:
 
 ```properties
 # Database
-spring.datasource.url=jdbc:mysql://localhost:3306/smartshop_db?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Ho_Chi_Minh
+spring.datasource.url=jdbc:mysql://localhost:3306/smartshop?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Ho_Chi_Minh
 spring.datasource.username=root
 spring.datasource.password=your_password
 
@@ -278,6 +278,16 @@ spring.mail.password=your_app_password
 # Google OAuth2 (nếu muốn đăng nhập Google)
 spring.security.oauth2.client.registration.google.client-id=your_client_id
 spring.security.oauth2.client.registration.google.client-secret=your_client_secret
+
+**Lưu ý quan trọng khi cấu hình Google OAuth:**
+1. Truy cập [Google Cloud Console](https://console.cloud.google.com/)
+2. Tạo OAuth 2.0 Client ID (nếu chưa có)
+3. Trong phần "Authorized JavaScript origins", thêm:
+   - `http://localhost:8080`
+   - `http://127.0.0.1:8080` (nếu cần)
+4. Trong phần "Authorized redirect URIs", thêm:
+   - `http://localhost:8080` (cho Google Identity Services)
+5. Đảm bảo Client ID trong `application.properties` và trong HTML templates (`register.html`, `login.html`) khớp nhau
 ```
 
 ### Bước 4: Build và Chạy Ứng Dụng
@@ -312,7 +322,7 @@ mvn spring-boot:run
 File `application.properties`:
 
 ```properties
-spring.datasource.url=jdbc:mysql://localhost:3306/smartshop_db
+spring.datasource.url=jdbc:mysql://localhost:3306/smartshop
 spring.datasource.username=root
 spring.datasource.password=
 spring.jpa.hibernate.ddl-auto=update
@@ -426,8 +436,9 @@ Xem chi tiết trong file `database.sql`
 Sau khi chạy `database.sql`, có sẵn các tài khoản:
 
 ### Admin
-- **Username**: `admin123@gmail.com`
-- **Password**: `admin123@gmail.com` (hoặc mật khẩu đã hash trong DB)
+- **Username**: `admin`
+- **Email**: `admin123@gmail.com`
+- **Password**: `123456`
 - **Role**: ROLE_ADMIN
 
 ### Customer

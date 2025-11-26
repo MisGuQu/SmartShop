@@ -240,13 +240,15 @@ public class ProductService {
     // Helper method để map sort field từ frontend sang entity field
     private String getSortField(String sortBy) {
         if (sortBy == null || sortBy.isEmpty()) {
-            return "createdAt";
+            return "id";
         }
         return switch (sortBy.toLowerCase()) {
+            case "id" -> "id";
             case "price" -> "price";
             case "name" -> "name";
+            case "stockquantity" -> "stockQuantity";
             case "createdat" -> "createdAt";
-            default -> "createdAt";
+            default -> "id";
         };
     }
 }

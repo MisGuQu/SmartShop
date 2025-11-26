@@ -9,47 +9,65 @@
     <link rel="stylesheet" href="/css/admin.css">
 </head>
 <body>
-    <!-- Navigation -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-        <div class="container-fluid">
-            <a class="navbar-brand" href="/">SmartShop Admin</a>
-            <div class="navbar-nav ms-auto">
-                <a class="nav-link" href="/">Về trang chủ</a>
-                <a class="nav-link" href="#" onclick="handleLogout()">Đăng xuất</a>
-            </div>
-        </div>
-    </nav>
-
-    <div class="container-fluid mt-4">
-        <div class="row">
-            <!-- Sidebar -->
-            <div class="col-md-3">
-                <div class="list-group">
-                    <a href="/admin/dashboard.html" class="list-group-item list-group-item-action">
-                        <i class="bi bi-speedometer2"></i> Dashboard
-                    </a>
-                    <a href="/admin/products.html" class="list-group-item list-group-item-action active">
-                        <i class="bi bi-box-seam"></i> Quản lý Sản phẩm
-                    </a>
-                    <a href="/admin/categories.html" class="list-group-item list-group-item-action">
-                        <i class="bi bi-tags"></i> Quản lý Danh mục
-                    </a>
-                    <a href="/admin/orders.html" class="list-group-item list-group-item-action">
-                        <i class="bi bi-receipt"></i> Quản lý Đơn hàng
-                    </a>
-                    <a href="/admin/users.html" class="list-group-item list-group-item-action">
-                        <i class="bi bi-people"></i> Quản lý Người dùng
-                    </a>
-                    <a href="/admin/vouchers.html" class="list-group-item list-group-item-action">
-                        <i class="bi bi-ticket-perforated"></i> Quản lý Voucher
-                    </a>
+    <div class="admin-container">
+        <!-- Sidebar -->
+        <aside class="admin-sidebar" id="adminSidebar">
+            <div class="admin-sidebar__header">
+                <div class="admin-sidebar__logo">
+                    <i class="bi bi-shop"></i>
+                    <span>SmartShop</span>
                 </div>
+                <button class="admin-sidebar__toggle" onclick="toggleSidebar()">
+                    <i class="bi bi-list"></i>
+                </button>
             </div>
+            <nav class="admin-sidebar__nav">
+                <a href="/admin/dashboard.html" class="admin-sidebar__item">
+                    <i class="bi bi-speedometer2"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="/admin/products.html" class="admin-sidebar__item active">
+                    <i class="bi bi-box-seam"></i>
+                    <span>Quản lý Sản phẩm</span>
+                </a>
+                <a href="/admin/categories.html" class="admin-sidebar__item">
+                    <i class="bi bi-tags"></i>
+                    <span>Quản lý Danh mục</span>
+                </a>
+                <a href="/admin/orders.html" class="admin-sidebar__item">
+                    <i class="bi bi-receipt"></i>
+                    <span>Quản lý Đơn hàng</span>
+                </a>
+                <a href="/admin/users.html" class="admin-sidebar__item">
+                    <i class="bi bi-people"></i>
+                    <span>Quản lý Người dùng</span>
+                </a>
+                <a href="/admin/vouchers.html" class="admin-sidebar__item">
+                    <i class="bi bi-ticket-perforated"></i>
+                    <span>Quản lý Voucher</span>
+                </a>
+            </nav>
+        </aside>
 
-            <!-- Main Content -->
-            <div class="col-md-9">
+        <!-- Main Content -->
+        <div class="admin-main-content">
+            <!-- Top Navbar -->
+            <nav class="admin-navbar">
+                <h1 class="admin-navbar__title">Quản lý Sản phẩm</h1>
+                <div class="admin-navbar__actions">
+                    <a href="/" class="admin-navbar__link">
+                        <i class="bi bi-house"></i> Về trang chủ
+                    </a>
+                    <button class="admin-navbar__logout" onclick="handleLogout()">
+                        <i class="bi bi-box-arrow-right"></i> Đăng xuất
+                    </button>
+                </div>
+            </nav>
+
+            <!-- Content -->
+            <div class="admin-content">
                 <div class="d-flex justify-content-between align-items-center mb-4">
-                    <h2>Quản lý Sản phẩm</h2>
+                    <div></div>
                     <div class="btn-group">
                         <button type="button" class="btn btn-success dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
                             <i class="bi bi-file-earmark-arrow-down"></i> Xuất báo cáo
@@ -65,6 +83,42 @@
                 </div>
 
                 <div id="alertContainer"></div>
+
+                <!-- Filter and Sort Section -->
+                <div class="card mb-3">
+                    <div class="card-body">
+                        <div class="row g-3 align-items-end">
+                            <div class="col-md-4">
+                                <label class="form-label">Lọc theo danh mục</label>
+                                <select class="form-select" id="categoryFilter" onchange="applyFilters()">
+                                    <option value="">Tất cả danh mục</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Sắp xếp theo</label>
+                                <select class="form-select" id="sortBy" onchange="applyFilters()">
+                                    <option value="id" selected>ID</option>
+                                    <option value="createdAt">Ngày tạo</option>
+                                    <option value="name">Tên sản phẩm</option>
+                                    <option value="price">Giá</option>
+                                    <option value="stockQuantity">Tồn kho</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Thứ tự</label>
+                                <select class="form-select" id="sortDirection" onchange="applyFilters()">
+                                    <option value="asc" selected>Tăng dần</option>
+                                    <option value="desc">Giảm dần</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <button class="btn btn-secondary w-100" onclick="resetFilters()">
+                                    <i class="bi bi-arrow-clockwise"></i> Đặt lại
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
                 <!-- Products Table -->
                 <div class="card">
@@ -184,6 +238,24 @@
     <script src="/js/api.js"></script>
     <script src="/js/admin-products.js"></script>
     <script>
+        // Toggle sidebar
+        function toggleSidebar() {
+            const sidebar = document.getElementById('adminSidebar');
+            sidebar.classList.toggle('collapsed');
+        }
+
+        // Set active sidebar item
+        document.addEventListener('DOMContentLoaded', function() {
+            const currentPath = window.location.pathname;
+            const sidebarItems = document.querySelectorAll('.admin-sidebar__item');
+            sidebarItems.forEach(item => {
+                item.classList.remove('active');
+                if (item.getAttribute('href') === currentPath) {
+                    item.classList.add('active');
+                }
+            });
+        });
+
         // Handle logout
         async function handleLogout() {
             if (confirm('Bạn có chắc chắn muốn đăng xuất?')) {

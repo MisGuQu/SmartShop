@@ -60,9 +60,7 @@ public class AdminController {
     // Quản lý Orders
     @GetMapping("/orders")
     public ResponseEntity<ApiResponse<List<OrderSummaryResponse>>> getAllOrders() {
-        List<OrderSummaryResponse> orders = adminService.getAllOrders().stream()
-                .map(OrderSummaryResponse::fromEntity)
-                .collect(Collectors.toList());
+        List<OrderSummaryResponse> orders = adminService.getAllOrders();
         return ResponseEntity.ok(ApiResponse.success(orders));
     }
 

@@ -33,8 +33,8 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
            SELECT p FROM Product p
            WHERE p.isActive = true
              AND (:keyword IS NULL OR :keyword = '' OR 
-                  LOWER(FUNCTION('REPLACE', FUNCTION('REPLACE', FUNCTION('REPLACE', p.name, 'đ', 'd'), 'Đ', 'D'), ' ', ''))
-                  LIKE LOWER(CONCAT('%', FUNCTION('REPLACE', FUNCTION('REPLACE', :keyword, 'đ', 'd'), 'Đ', 'D'), '%')))
+                  LOWER(p.name) LIKE LOWER(CONCAT('%', :keyword, '%'))
+                  OR LOWER(COALESCE(p.description, '')) LIKE LOWER(CONCAT('%', :keyword, '%')))
              AND (:categoryId IS NULL OR p.category.id = :categoryId)
              AND (:minPrice IS NULL OR p.price >= :minPrice)
              AND (:maxPrice IS NULL OR p.price <= :maxPrice)
@@ -51,8 +51,8 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     @Query("""
            SELECT p FROM Product p
            WHERE (:keyword IS NULL OR :keyword = '' OR 
-                  LOWER(FUNCTION('REPLACE', FUNCTION('REPLACE', FUNCTION('REPLACE', p.name, 'đ', 'd'), 'Đ', 'D'), ' ', ''))
-                  LIKE LOWER(CONCAT('%', FUNCTION('REPLACE', FUNCTION('REPLACE', :keyword, 'đ', 'd'), 'Đ', 'D'), '%')))
+                  LOWER(p.name) LIKE LOWER(CONCAT('%', :keyword, '%'))
+                  OR LOWER(COALESCE(p.description, '')) LIKE LOWER(CONCAT('%', :keyword, '%')))
              AND (:categoryId IS NULL OR p.category.id = :categoryId)
              AND (:minPrice IS NULL OR p.price >= :minPrice)
              AND (:maxPrice IS NULL OR p.price <= :maxPrice)

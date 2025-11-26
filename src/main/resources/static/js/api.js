@@ -243,23 +243,51 @@ const api = {
     },
 
     // Reviews
-    getProductReviews: (productId, params = {}) => {
-        const queryString = new URLSearchParams(params).toString();
-        return apiRequest(`/reviews/product/${productId}?${queryString}`);
+    getProductReviews: (productId) => {
+        return apiRequest(`/reviews/product/${productId}`);
     },
-    getReviewSummary: (productId) => {
-        return apiRequest(`/reviews/product/${productId}/summary`);
+    getProductRatingStats: (productId) => {
+        return apiRequest(`/reviews/product/${productId}/stats`);
     },
-    createReview: (data) => {
-        return apiRequest('/reviews', {
+    createReview: (productId, rating, comment, files) => {
+        const formData = new FormData();
+        formData.append('productId', productId);
+        formData.append('rating', rating);
+        if (comment) formData.append('comment', comment);
+        if (files && files.length > 0) {
+            files.forEach(file => formData.append('files', file));
+        }
+        return fetch(`${API_BASE_URL}/reviews`, {
             method: 'POST',
-            body: JSON.stringify(data)
+            credentials: 'include',
+            body: formData
+        }).then(res => {
+            if (!res.ok) {
+                return res.json().then(err => {
+                    throw new Error(err.message || 'Tạo bình luận thất bại');
+                });
+            }
+            return res.json();
         });
     },
-    updateReview: (reviewId, data) => {
-        return apiRequest(`/reviews/${reviewId}`, {
+    updateReview: (reviewId, rating, comment, files) => {
+        const formData = new FormData();
+        formData.append('rating', rating);
+        if (comment) formData.append('comment', comment);
+        if (files && files.length > 0) {
+            files.forEach(file => formData.append('files', file));
+        }
+        return fetch(`${API_BASE_URL}/reviews/${reviewId}`, {
             method: 'PUT',
-            body: JSON.stringify(data)
+            credentials: 'include',
+            body: formData
+        }).then(res => {
+            if (!res.ok) {
+                return res.json().then(err => {
+                    throw new Error(err.message || 'Sửa bình luận thất bại');
+                });
+            }
+            return res.json();
         });
     },
     deleteReview: (reviewId) => {

@@ -26,6 +26,11 @@ body {
     line-height: 1.6;
 }
 
+main {
+    margin: 0;
+    padding: 0;
+}
+
 a {
     color: inherit;
     text-decoration: none;
@@ -645,7 +650,11 @@ img {
 }
 
 .section {
-    padding: 90px 0;
+    padding: 40px 0;
+}
+
+.section:first-of-type {
+    padding-top: 20px;
 }
 
 .section--alt {
