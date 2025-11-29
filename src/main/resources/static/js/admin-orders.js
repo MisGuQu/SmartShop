@@ -104,7 +104,7 @@ function renderOrdersTable(ordersToRender) {
                     <button class="btn btn-sm btn-info me-1" onclick="viewOrderDetail(${order.id})" title="Xem chi tiết">
                         <i class="bi bi-eye"></i> Xem
                     </button>
-                    ${order.status !== 'CANCELLED' && order.status !== 'DELIVERED' ? `
+                    ${order.status !== 'CANCELLED' && order.status !== 'COMPLETED' && order.status !== 'REFUNDED' ? `
                         <select class="form-select form-select-sm" style="width: auto;" 
                                 onchange="updateOrderStatus(${order.id}, this.value)">
                             <option value="">Cập nhật</option>
@@ -121,11 +121,15 @@ function renderOrdersTable(ordersToRender) {
 // Get status badge
 function getStatusBadge(status) {
     const badges = {
-        'PENDING': '<span class="badge bg-warning">Chờ xử lý</span>',
-        'PROCESSING': '<span class="badge bg-info">Đang xử lý</span>',
-        'SHIPPED': '<span class="badge bg-primary">Đã giao hàng</span>',
-        'DELIVERED': '<span class="badge bg-success">Đã nhận hàng</span>',
-        'CANCELLED': '<span class="badge bg-danger">Đã hủy</span>'
+        'PENDING': '<span class="badge bg-warning">Chờ xác nhận</span>',
+        'CONFIRMED': '<span class="badge bg-info">Đã xác nhận</span>',
+        'PROCESSING': '<span class="badge bg-primary">Đang xử lý</span>',
+        'SHIPPING': '<span class="badge bg-info">Đang giao hàng</span>',
+        'SHIPPED': '<span class="badge bg-info">Đang giao hàng</span>',
+        'DELIVERED': '<span class="badge bg-success">Đã giao hàng</span>',
+        'COMPLETED': '<span class="badge bg-success">Hoàn thành</span>',
+        'CANCELLED': '<span class="badge bg-danger">Đã hủy</span>',
+        'REFUNDED': '<span class="badge bg-secondary">Đã hoàn tiền</span>'
     };
     return badges[status] || '<span class="badge bg-secondary">' + status + '</span>';
 }
@@ -134,8 +138,11 @@ function getStatusBadge(status) {
 function getStatusOptions(currentStatus) {
     const statusMap = {
         'PENDING': '<option value="PROCESSING">Đang xử lý</option><option value="CANCELLED">Hủy</option>',
-        'PROCESSING': '<option value="SHIPPED">Đã giao hàng</option><option value="CANCELLED">Hủy</option>',
-        'SHIPPED': '<option value="DELIVERED">Đã nhận hàng</option>'
+        'CONFIRMED': '<option value="PROCESSING">Đang xử lý</option><option value="CANCELLED">Hủy</option>',
+        'PROCESSING': '<option value="SHIPPING">Đang giao hàng</option><option value="CANCELLED">Hủy</option>',
+        'SHIPPING': '<option value="DELIVERED">Đã giao hàng</option>',
+        'SHIPPED': '<option value="DELIVERED">Đã giao hàng</option>',
+        'DELIVERED': '<option value="COMPLETED">Hoàn thành</option>'
     };
     return statusMap[currentStatus] || '';
 }
@@ -156,6 +163,7 @@ async function viewOrderDetail(orderId) {
         // Get customer info from order or items
         const customerName = order.customerName || 'N/A';
         const customerEmail = order.customerEmail || 'N/A';
+        const customerPhone = order.customerPhone || 'N/A';
         
         modalBody.innerHTML = `
             <div class="row">
@@ -171,6 +179,7 @@ async function viewOrderDetail(orderId) {
                 <div class="col-md-6">
                     <p><strong>Khách hàng:</strong> ${customerName}</p>
                     <p><strong>Email:</strong> ${customerEmail}</p>
+                    <p><strong>Số điện thoại:</strong> ${customerPhone}</p>
                     <p><strong>Địa chỉ:</strong> ${order.shippingAddress || '-'}</p>
                 </div>
                 <div class="col-md-6">
@@ -208,22 +217,20 @@ async function viewOrderDetail(orderId) {
                         `).join('') : '<tr><td colspan="4" class="text-center">Không có sản phẩm</td></tr>'}
                     </tbody>
                     <tfoot>
-                        ${order.voucherDiscount ? `
-                            <tr>
-                                <td colspan="3" class="text-end"><strong>Tạm tính:</strong></td>
-                                <td class="text-end">${formatPrice((order.items || []).reduce((sum, item) => sum + (item.lineTotal || 0), 0))}</td>
-                            </tr>
+                        <tr>
+                            <td colspan="3" class="text-end"><strong>Tạm tính:</strong></td>
+                            <td class="text-end">${formatPrice((order.items || []).reduce((sum, item) => sum + (item.lineTotal || 0), 0))}</td>
+                        </tr>
+                        ${order.voucherDiscount && order.voucherDiscount > 0 ? `
                             <tr>
                                 <td colspan="3" class="text-end"><strong>Giảm giá:</strong></td>
                                 <td class="text-end text-danger">-${formatPrice(order.voucherDiscount || 0)}</td>
                             </tr>
                         ` : ''}
-                        ${order.shippingFee ? `
-                            <tr>
-                                <td colspan="3" class="text-end"><strong>Phí vận chuyển:</strong></td>
-                                <td class="text-end">${formatPrice(order.shippingFee)}</td>
-                            </tr>
-                        ` : ''}
+                        <tr>
+                            <td colspan="3" class="text-end"><strong>Phí vận chuyển:</strong></td>
+                            <td class="text-end">${formatPrice(order.shippingFee || 0)}</td>
+                        </tr>
                         <tr class="table-primary">
                             <td colspan="3" class="text-end"><strong>Tổng cộng:</strong></td>
                             <td class="text-end"><strong>${formatPrice(order.totalAmount || 0)}</strong></td>

@@ -111,6 +111,10 @@ function displayOrder(order) {
                             <span class="detail-label">Trạng thái thanh toán</span>
                             <span class="order-status-badge ${paymentStatusClass}">${paymentStatusText}</span>
                         </div>
+                        <div class="detail-group">
+                            <span class="detail-label">Số điện thoại</span>
+                            <span class="detail-value">${escapeHtml(order.customerPhone || 'N/A')}</span>
+                        </div>
                         <div class="detail-group" style="grid-column: 1 / -1;">
                             <span class="detail-label">Địa chỉ giao hàng</span>
                             <span class="detail-value detail-value--address">${escapeHtml(order.shippingAddress || 'N/A')}</span>
@@ -155,12 +159,10 @@ function displayOrder(order) {
                         <span class="total-value total-value--discount">-${formatPrice(voucherDiscount)}</span>
                     </div>
                     ` : ''}
-                    ${shippingFee > 0 ? `
                     <div class="total-row">
                         <span class="total-label">Phí vận chuyển</span>
                         <span class="total-value">${formatPrice(shippingFee)}</span>
                     </div>
-                    ` : ''}
                     <div class="order-total-section">
                         <div class="total-row final">
                             <span>Tổng cộng</span>

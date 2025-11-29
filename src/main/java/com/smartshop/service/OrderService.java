@@ -106,10 +106,10 @@ public class OrderService {
             }
         }
 
-        // Kiểm tra trạng thái: chỉ cho phép hủy khi đơn ở trạng thái PENDING hoặc PROCESSING
+        // Kiểm tra trạng thái: chỉ cho phép hủy khi đơn ở trạng thái PENDING
         String currentStatus = order.getStatus();
-        if (!"PENDING".equals(currentStatus) && !"PROCESSING".equals(currentStatus)) {
-            throw new RuntimeException("Chỉ có thể hủy đơn hàng khi đơn ở trạng thái 'Chờ xử lý' hoặc 'Đang xử lý'");
+        if (!"PENDING".equals(currentStatus)) {
+            throw new RuntimeException("Chỉ có thể hủy đơn hàng khi đơn ở trạng thái 'Chờ xác nhận'");
         }
 
         // Cập nhật trạng thái thành CANCELLED

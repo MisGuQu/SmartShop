@@ -261,6 +261,31 @@ public class AuthService {
                 .build();
     }
     
+    // Change password
+    public void changePassword(String username, ChangePasswordRequest request) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+        
+        // Verify current password
+        if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPassword())) {
+            throw new RuntimeException("Mật khẩu hiện tại không đúng");
+        }
+        
+        // Check if new password matches confirm password
+        if (!request.getNewPassword().equals(request.getConfirmPassword())) {
+            throw new RuntimeException("Mật khẩu mới và xác nhận mật khẩu không khớp");
+        }
+        
+        // Check if new password is different from current password
+        if (passwordEncoder.matches(request.getNewPassword(), user.getPassword())) {
+            throw new RuntimeException("Mật khẩu mới phải khác mật khẩu hiện tại");
+        }
+        
+        // Update password
+        user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        userRepository.save(user);
+    }
+    
     // Upload avatar
     public AuthResponse uploadAvatar(String username, MultipartFile file) throws IOException {
         User user = userRepository.findByUsername(username)

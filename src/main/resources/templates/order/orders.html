@@ -363,6 +363,7 @@
             padding-top: 16px;
             border-top: 1px solid #e5e7eb;
             flex-wrap: wrap;
+            align-items: center;
         }
         
         .btn-order-action {
@@ -389,11 +390,35 @@
             background: #f97316;
             color: white;
             border-color: #f97316;
+            font-weight: 600;
         }
         
         .btn-order-action--primary:hover {
             background: #ea580c;
             border-color: #ea580c;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(249, 115, 22, 0.3);
+        }
+        
+        .btn-order-action--confirm {
+            background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
+            color: white;
+            border-color: #16a34a;
+            font-weight: 600;
+            box-shadow: 0 2px 8px rgba(22, 163, 74, 0.25);
+            transition: all 0.3s ease;
+        }
+        
+        .btn-order-action--confirm:hover {
+            background: linear-gradient(135deg, #15803d 0%, #166534 100%);
+            border-color: #15803d;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(22, 163, 74, 0.4);
+        }
+        
+        .btn-order-action--confirm:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 4px rgba(22, 163, 74, 0.3);
         }
         
         .empty-state {
@@ -590,9 +615,10 @@
                 <div class="orders-tabs">
                     <button class="orders-tab active" data-status="all">Tất cả</button>
                     <button class="orders-tab" data-status="PENDING">Chờ xác nhận</button>
-                    <button class="orders-tab" data-status="PROCESSING">Vận chuyển</button>
-                    <button class="orders-tab" data-status="SHIPPING">Chờ giao hàng</button>
-                    <button class="orders-tab" data-status="DELIVERED">Hoàn thành</button>
+                    <button class="orders-tab" data-status="PROCESSING">Đang xử lý</button>
+                    <button class="orders-tab" data-status="SHIPPING">Đang giao hàng</button>
+                    <button class="orders-tab" data-status="DELIVERED">Đã giao hàng</button>
+                    <button class="orders-tab" data-status="COMPLETED">Hoàn thành</button>
                     <button class="orders-tab" data-status="CANCELLED">Đã hủy</button>
                     <button class="orders-tab" data-status="REFUNDED">Trả hàng/Hoàn tiền</button>
                 </div>

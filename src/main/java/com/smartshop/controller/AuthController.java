@@ -15,6 +15,8 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.Map;
+
 @RestController
 @RequestMapping("/api/auth")
 @CrossOrigin(origins = {"http://localhost:8080", "http://localhost:3000"}, maxAge = 3600, allowCredentials = "true")
@@ -164,6 +166,30 @@ public class AuthController {
         UserDetails userDetails = (UserDetails) authentication.getPrincipal();
         AuthResponse response = authService.updateProfile(userDetails.getUsername(), request);
         return ResponseEntity.ok(response);
+    }
+    
+    // Change password
+    @PutMapping("/change-password")
+    public ResponseEntity<Map<String, String>> changePassword(@Valid @RequestBody ChangePasswordRequest request) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        
+        if (authentication == null || !authentication.isAuthenticated() || 
+            authentication.getPrincipal().equals("anonymousUser")) {
+            return ResponseEntity.status(401).build();
+        }
+        
+        try {
+            UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+            authService.changePassword(userDetails.getUsername(), request);
+            
+            Map<String, String> response = new java.util.HashMap<>();
+            response.put("message", "Đổi mật khẩu thành công");
+            return ResponseEntity.ok(response);
+        } catch (RuntimeException e) {
+            Map<String, String> errorResponse = new java.util.HashMap<>();
+            errorResponse.put("message", e.getMessage());
+            return ResponseEntity.badRequest().body(errorResponse);
+        }
     }
     
     // Upload avatar

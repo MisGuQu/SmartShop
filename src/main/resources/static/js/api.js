@@ -140,6 +140,31 @@ const api = {
         });
     },
     
+    // Change password
+    changePassword: (currentPassword, newPassword, confirmPassword) => {
+        return fetch(`${API_BASE_URL}/auth/change-password`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            credentials: 'include',
+            body: JSON.stringify({
+                currentPassword,
+                newPassword,
+                confirmPassword
+            })
+        }).then(res => {
+            if (!res.ok) {
+                return res.json().then(err => {
+                    throw new Error(err.message || 'Đổi mật khẩu thất bại');
+                }).catch(() => {
+                    throw new Error(`Đổi mật khẩu thất bại: ${res.status} ${res.statusText}`);
+                });
+            }
+            return res.json();
+        });
+    },
+    
     // Upload avatar
     uploadAvatar: (formData) => {
         return fetch(`${API_BASE_URL}/auth/avatar`, {
@@ -251,8 +276,9 @@ const api = {
     },
     createReview: (productId, rating, comment, files) => {
         const formData = new FormData();
-        formData.append('productId', productId);
-        formData.append('rating', rating);
+        // Đảm bảo productId và rating được convert thành string (FormData tự động làm điều này)
+        formData.append('productId', String(productId));
+        formData.append('rating', String(rating));
         if (comment) formData.append('comment', comment);
         if (files && files.length > 0) {
             files.forEach(file => formData.append('files', file));
@@ -260,11 +286,14 @@ const api = {
         return fetch(`${API_BASE_URL}/reviews`, {
             method: 'POST',
             credentials: 'include',
+            // Không set Content-Type header, để browser tự động set multipart/form-data với boundary
             body: formData
         }).then(res => {
             if (!res.ok) {
                 return res.json().then(err => {
                     throw new Error(err.message || 'Tạo bình luận thất bại');
+                }).catch(() => {
+                    throw new Error(`Tạo bình luận thất bại: ${res.status} ${res.statusText}`);
                 });
             }
             return res.json();
@@ -272,7 +301,7 @@ const api = {
     },
     updateReview: (reviewId, rating, comment, files) => {
         const formData = new FormData();
-        formData.append('rating', rating);
+        formData.append('rating', String(rating));
         if (comment) formData.append('comment', comment);
         if (files && files.length > 0) {
             files.forEach(file => formData.append('files', file));
@@ -280,11 +309,14 @@ const api = {
         return fetch(`${API_BASE_URL}/reviews/${reviewId}`, {
             method: 'PUT',
             credentials: 'include',
+            // Không set Content-Type header, để browser tự động set multipart/form-data với boundary
             body: formData
         }).then(res => {
             if (!res.ok) {
                 return res.json().then(err => {
                     throw new Error(err.message || 'Sửa bình luận thất bại');
+                }).catch(() => {
+                    throw new Error(`Sửa bình luận thất bại: ${res.status} ${res.statusText}`);
                 });
             }
             return res.json();

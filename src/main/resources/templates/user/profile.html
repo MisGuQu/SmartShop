@@ -148,22 +148,39 @@
         }
         
         .alert {
-            padding: 12px 16px;
+            padding: 16px 20px;
             border-radius: 8px;
             margin-bottom: 20px;
             font-size: 0.9rem;
+            line-height: 1.6;
+            position: relative;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            animation: slideDown 0.3s ease-out;
+        }
+        
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
         
         .alert-success {
-            background: rgba(34, 197, 94, 0.1);
+            background: linear-gradient(135deg, rgba(34, 197, 94, 0.1) 0%, rgba(34, 197, 94, 0.05) 100%);
             color: #16a34a;
-            border: 1px solid rgba(34, 197, 94, 0.2);
+            border: 1px solid rgba(34, 197, 94, 0.3);
+            border-left: 4px solid #16a34a;
         }
         
         .alert-error {
-            background: rgba(239, 68, 68, 0.1);
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(239, 68, 68, 0.05) 100%);
             color: #dc2626;
-            border: 1px solid rgba(239, 68, 68, 0.2);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            border-left: 4px solid #dc2626;
         }
         
         .loading-overlay {
@@ -260,6 +277,32 @@
                 </div>
             </form>
         </div>
+        
+        <!-- Change Password Form -->
+        <div class="profile-form" style="margin-top: 32px;">
+            <h3 style="font-size: 1.2rem; font-weight: 600; margin: 0 0 24px; color: var(--color-text); padding-bottom: 12px; border-bottom: 1px solid rgba(15, 23, 42, 0.08);">Đổi mật khẩu</h3>
+            <form id="changePasswordForm">
+                <div class="form-group">
+                    <label class="form-label" for="currentPassword">Mật khẩu hiện tại</label>
+                    <input type="password" id="currentPassword" name="currentPassword" class="form-input" placeholder="Nhập mật khẩu hiện tại" required>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="newPassword">Mật khẩu mới</label>
+                    <input type="password" id="newPassword" name="newPassword" class="form-input" placeholder="Nhập mật khẩu mới (tối thiểu 6 ký tự)" required minlength="6">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="confirmPassword">Xác nhận mật khẩu mới</label>
+                    <input type="password" id="confirmPassword" name="confirmPassword" class="form-input" placeholder="Nhập lại mật khẩu mới" required minlength="6">
+                </div>
+                
+                <div class="form-actions">
+                    <button type="button" class="btn-cancel" onclick="resetPasswordForm()">Hủy</button>
+                    <button type="submit" class="button">Đổi mật khẩu</button>
+                </div>
+            </form>
+        </div>
     </div>
 </main>
 
@@ -342,6 +385,9 @@
         
         // Setup form submit
         setupFormSubmit();
+        
+        // Setup change password form
+        setupChangePasswordForm();
         
         // Setup newsletter form
         setupNewsletterForm();
@@ -477,14 +523,43 @@
         const container = document.getElementById('alertContainer');
         const alert = document.createElement('div');
         alert.className = `alert alert-${type === 'error' ? 'error' : 'success'}`;
-        alert.textContent = message;
+        
+        // Support multi-line messages
+        if (message.includes('\n')) {
+            const lines = message.split('\n');
+            lines.forEach((line, index) => {
+                if (line.trim()) {
+                    const lineElement = document.createElement('div');
+                    lineElement.textContent = line;
+                    if (index > 0) {
+                        lineElement.style.marginTop = '4px';
+                    }
+                    alert.appendChild(lineElement);
+                }
+            });
+        } else {
+            alert.textContent = message;
+        }
+        
+        // Add close button
+        const closeBtn = document.createElement('button');
+        closeBtn.innerHTML = '&times;';
+        closeBtn.style.cssText = 'float: right; background: none; border: none; font-size: 1.5rem; cursor: pointer; opacity: 0.7; line-height: 1; padding: 0; margin-left: 12px;';
+        closeBtn.onclick = () => alert.remove();
+        closeBtn.onmouseover = () => closeBtn.style.opacity = '1';
+        closeBtn.onmouseout = () => closeBtn.style.opacity = '0.7';
+        alert.appendChild(closeBtn);
         
         container.innerHTML = '';
         container.appendChild(alert);
         
+        // Auto remove after 7 seconds for success, 10 seconds for error
+        const timeout = type === 'error' ? 10000 : 7000;
         setTimeout(() => {
-            alert.remove();
-        }, 5000);
+            if (alert.parentNode) {
+                alert.remove();
+            }
+        }, timeout);
     }
     
     function showLoading(show) {
@@ -494,6 +569,97 @@
         } else {
             overlay.classList.remove('active');
         }
+    }
+    
+    function setupChangePasswordForm() {
+        const form = document.getElementById('changePasswordForm');
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const currentPassword = document.getElementById('currentPassword').value;
+            const newPassword = document.getElementById('newPassword').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            
+            // Validate
+            if (!currentPassword) {
+                showAlert('❌ Vui lòng nhập mật khẩu hiện tại.', 'error');
+                document.getElementById('currentPassword').focus();
+                return;
+            }
+            
+            if (!newPassword || newPassword.length < 6) {
+                showAlert('❌ Mật khẩu mới phải có ít nhất 6 ký tự.', 'error');
+                document.getElementById('newPassword').focus();
+                return;
+            }
+            
+            if (newPassword !== confirmPassword) {
+                showAlert('❌ Mật khẩu mới và xác nhận mật khẩu không khớp. Vui lòng kiểm tra lại.', 'error');
+                document.getElementById('confirmPassword').focus();
+                return;
+            }
+            
+            // Check if new password is same as current password
+            if (currentPassword === newPassword) {
+                showAlert('⚠️ Mật khẩu mới phải khác mật khẩu hiện tại.', 'error');
+                document.getElementById('newPassword').focus();
+                return;
+            }
+            
+            // Confirm before changing password
+            const confirmed = confirm(
+                '🔒 Xác nhận đổi mật khẩu\n\n' +
+                'Bạn có chắc chắn muốn đổi mật khẩu?\n\n' +
+                'Sau khi đổi mật khẩu, bạn sẽ cần đăng nhập lại với mật khẩu mới.'
+            );
+            
+            if (!confirmed) {
+                return;
+            }
+            
+            try {
+                showLoading(true);
+                const result = await api.changePassword(currentPassword, newPassword, confirmPassword);
+                
+                // Show success message with more details
+                showAlert(
+                    '✅ Đổi mật khẩu thành công!\n\n' +
+                    'Mật khẩu của bạn đã được thay đổi. Vui lòng sử dụng mật khẩu mới cho lần đăng nhập tiếp theo.',
+                    'success'
+                );
+                
+                // Reset form after a short delay
+                setTimeout(() => {
+                    resetPasswordForm();
+                }, 1000);
+                
+            } catch (error) {
+                console.error('Error changing password:', error);
+                let errorMessage = 'Không thể đổi mật khẩu. Vui lòng thử lại sau.';
+                
+                // Parse error message from response
+                if (error.message) {
+                    errorMessage = error.message;
+                } else if (error.response) {
+                    try {
+                        const errorData = await error.response.json();
+                        errorMessage = errorData.message || errorMessage;
+                    } catch (e) {
+                        // If can't parse JSON, use default message
+                    }
+                }
+                
+                showAlert('❌ ' + errorMessage, 'error');
+            } finally {
+                showLoading(false);
+            }
+        });
+    }
+    
+    function resetPasswordForm() {
+        document.getElementById('currentPassword').value = '';
+        document.getElementById('newPassword').value = '';
+        document.getElementById('confirmPassword').value = '';
     }
     
     function setupNewsletterForm() {

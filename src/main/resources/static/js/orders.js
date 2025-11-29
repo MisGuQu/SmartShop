@@ -138,14 +138,27 @@ function renderOrderCard(order) {
     const items = order.items || [];
     const itemsHtml = items.map(item => renderOrderItem(item)).join('');
     
-    const canCancel = order.status === 'PENDING' || order.status === 'PROCESSING';
-    const canReview = order.status === 'DELIVERED';
+    const canCancel = order.status === 'PENDING';
+    const canReview = order.status === 'COMPLETED';
     const canConfirmReceived = order.status === 'DELIVERED';
     
     const actionsHtml = getOrderActions(order, canCancel, canReview, canConfirmReceived);
     
     // Get status display text
     const statusDisplayText = getStatusDisplayText(order.status);
+    
+    // Thêm thông báo đặc biệt khi đơn hàng đã giao thành công
+    const deliveredNotice = order.status === 'DELIVERED' ? `
+        <div style="background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%); border-left: 4px solid #3b82f6; padding: 12px 16px; margin-bottom: 16px; border-radius: 6px; display: flex; align-items: center; gap: 12px;">
+            <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#3b82f6" stroke-width="2" style="flex-shrink: 0;">
+                <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+            <div style="flex: 1;">
+                <strong style="color: #1e40af; display: block; margin-bottom: 4px;">Đơn hàng đã được giao thành công!</strong>
+                <span style="color: #1e3a8a; font-size: 13px;">Vui lòng xác nhận đã nhận hàng để hoàn tất đơn hàng.</span>
+            </div>
+        </div>
+    ` : '';
     
     return `
         <div class="order-card">
@@ -158,6 +171,8 @@ function renderOrderCard(order) {
                 </div>
                 <span class="order-status-badge ${statusBadgeClass}">${statusText}</span>
             </div>
+            
+            ${deliveredNotice}
             
             <div class="order-items">
                 ${itemsHtml}
@@ -208,8 +223,11 @@ function getOrderActions(order, canCancel, canReview, canConfirmReceived) {
     
     if (canConfirmReceived) {
         actions.push(`
-            <button class="btn-order-action btn-order-action--primary" onclick="confirmReceived(${order.id})">
-                Đã nhận hàng
+            <button class="btn-order-action btn-order-action--confirm" onclick="confirmReceived(${order.id}, this)" style="flex: 1; max-width: 300px; justify-content: center;">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-right: 8px;">
+                    <path d="M20 6L9 17l-5-5"/>
+                </svg>
+                <span style="font-size: 14px; font-weight: 600;">Đã nhận hàng</span>
             </button>
         `);
     }
@@ -236,7 +254,7 @@ function getOrderActions(order, canCancel, canReview, canConfirmReceived) {
         </a>
     `);
     
-    if (order.status === 'DELIVERED') {
+    if (order.status === 'COMPLETED') {
         actions.push(`
             <button class="btn-order-action" onclick="requestReturn(${order.id})">
                 Yêu Cầu Trả Hàng/Hoàn Tiền
@@ -254,18 +272,18 @@ function getStatusDisplayText(status) {
         'PROCESSING': 'Đang xử lý',
         'SHIPPING': 'Đang giao hàng',
         'SHIPPED': 'Đang giao hàng',
-        'DELIVERED': 'Giao hàng thành công',
+        'DELIVERED': 'Đã giao hàng - Vui lòng xác nhận đã nhận hàng',
         'COMPLETED': 'Hoàn thành',
         'CANCELLED': 'Đã hủy',
         'REFUNDED': 'Đã hoàn tiền'
     };
-    return statusMap[status] || 'Chờ xử lý';
+    return statusMap[status] || status || 'Chờ xử lý';
 }
 
 function getStatusClass(status) {
     const statusLower = (status || '').toUpperCase();
     if (statusLower.includes('PENDING')) return 'pending';
-    if (statusLower.includes('CONFIRMED') || statusLower.includes('PROCESSING')) return 'confirmed';
+    if (statusLower.includes('PROCESSING')) return 'processing';
     if (statusLower.includes('SHIPPING') || statusLower.includes('SHIPPED')) return 'shipping';
     if (statusLower.includes('DELIVERED') || statusLower.includes('COMPLETED')) return 'delivered';
     if (statusLower.includes('CANCELLED')) return 'cancelled';
@@ -289,7 +307,7 @@ function getStatusText(status) {
         'PROCESSING': 'ĐANG XỬ LÝ',
         'SHIPPING': 'ĐANG GIAO HÀNG',
         'SHIPPED': 'ĐANG GIAO HÀNG',
-        'DELIVERED': 'HOÀN THÀNH',
+        'DELIVERED': 'ĐÃ GIAO HÀNG',
         'COMPLETED': 'HOÀN THÀNH',
         'CANCELLED': 'ĐÃ HỦY',
         'REFUNDED': 'ĐÃ HOÀN TIỀN'
@@ -325,8 +343,61 @@ async function cancelOrderFromList(orderId) {
     }
 }
 
-function reviewOrder(orderId) {
-    window.location.href = `/order-detail.html?id=${orderId}#review`;
+async function reviewOrder(orderId) {
+    try {
+        // Lấy thông tin đơn hàng để có danh sách sản phẩm
+        const order = await api.getOrder(orderId);
+        
+        if (!order || !order.items || order.items.length === 0) {
+            alert('Đơn hàng không có sản phẩm để đánh giá');
+            return;
+        }
+        
+        // Nếu đơn hàng có 1 sản phẩm, chuyển trực tiếp đến trang sản phẩm đó
+        if (order.items.length === 1) {
+            const productId = order.items[0].productId;
+            if (!productId) {
+                alert('Không tìm thấy thông tin sản phẩm');
+                return;
+            }
+            // Chuyển đến trang chi tiết sản phẩm với hash #review để tự động scroll đến phần đánh giá
+            window.location.href = `/product-detail.html?id=${productId}#review`;
+            return;
+        }
+        
+        // Nếu đơn hàng có nhiều sản phẩm, hiển thị danh sách để chọn
+        const productList = order.items.map((item, index) => 
+            `${index + 1}. ${item.productName || 'Sản phẩm ' + (index + 1)}`
+        ).join('\n');
+        
+        const choice = prompt(
+            `Đơn hàng có ${order.items.length} sản phẩm. Vui lòng chọn số thứ tự sản phẩm muốn đánh giá:\n\n${productList}\n\nNhập số (1-${order.items.length}):`
+        );
+        
+        if (!choice) {
+            return; // Người dùng hủy
+        }
+        
+        const selectedIndex = parseInt(choice) - 1;
+        if (isNaN(selectedIndex) || selectedIndex < 0 || selectedIndex >= order.items.length) {
+            alert('Lựa chọn không hợp lệ');
+            return;
+        }
+        
+        const selectedProduct = order.items[selectedIndex];
+        const productId = selectedProduct.productId;
+        
+        if (!productId) {
+            alert('Không tìm thấy thông tin sản phẩm');
+            return;
+        }
+        
+        // Chuyển đến trang chi tiết sản phẩm với hash #review
+        window.location.href = `/product-detail.html?id=${productId}#review`;
+    } catch (error) {
+        console.error('Error loading order for review:', error);
+        alert('Không thể tải thông tin đơn hàng. Vui lòng thử lại sau.');
+    }
 }
 
 function requestReturn(orderId) {
@@ -335,19 +406,39 @@ function requestReturn(orderId) {
     }
 }
 
-async function confirmReceived(orderId) {
-    if (!confirm('Bạn có chắc chắn đã nhận được hàng?')) {
+async function confirmReceived(orderId, buttonElement) {
+    const confirmed = confirm('✅ Xác nhận nhận hàng\n\nBạn có chắc chắn đã nhận được hàng và hàng hóa đúng như đơn đặt?\n\nSau khi xác nhận, đơn hàng sẽ được hoàn tất.');
+    if (!confirmed) {
         return;
     }
     
+    const button = buttonElement;
+    const originalText = button?.innerHTML;
+    
     try {
+        // Hiển thị loading
+        if (button) {
+            button.disabled = true;
+            button.innerHTML = '<span style="display: inline-flex; align-items: center; gap: 8px;"><span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Đang xử lý...</span>';
+        }
+        
         await api.confirmReceived(orderId);
-        alert('Đã xác nhận nhận hàng thành công');
+        
+        // Thông báo thành công
+        alert('🎉 Cảm ơn bạn!\n\nĐã xác nhận nhận hàng thành công. Đơn hàng của bạn đã được hoàn tất.');
+        
+        // Reload danh sách đơn hàng
         await loadOrders();
     } catch (error) {
         console.error('Error confirming received:', error);
         const errorMessage = error.message || 'Không thể xác nhận nhận hàng. Vui lòng thử lại sau.';
-        alert(errorMessage);
+        alert('❌ Lỗi\n\n' + errorMessage);
+        
+        // Khôi phục button nếu có
+        if (button && originalText) {
+            button.disabled = false;
+            button.innerHTML = originalText;
+        }
     }
 }
 

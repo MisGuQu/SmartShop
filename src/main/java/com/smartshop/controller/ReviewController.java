@@ -33,9 +33,9 @@ public class ReviewController {
     @PostMapping(consumes = {"multipart/form-data"})
     @PreAuthorize("hasRole('CUSTOMER') or hasRole('ADMIN')")
     public ResponseEntity<ReviewResponse> createReview(
-            @RequestPart("productId") Long productId,
-            @RequestPart("rating") Integer rating,
-            @RequestPart(value = "comment", required = false) String comment,
+            @RequestParam("productId") Long productId,
+            @RequestParam("rating") Integer rating,
+            @RequestParam(value = "comment", required = false) String comment,
             @RequestPart(value = "files", required = false) List<MultipartFile> files
     ) throws IOException {
 
@@ -49,12 +49,12 @@ public class ReviewController {
     }
 
     // ✅ 3. Sửa bình luận (chỉ user sở hữu)
-    @PutMapping("/{reviewId}")
+    @PutMapping(value = "/{reviewId}", consumes = {"multipart/form-data"})
     @PreAuthorize("hasRole('CUSTOMER') or hasRole('ADMIN')")
     public ResponseEntity<ReviewResponse> updateReview(
             @PathVariable Long reviewId,
-            @RequestPart("rating") Integer rating,
-            @RequestPart(value = "comment", required = false) String comment,
+            @RequestParam("rating") Integer rating,
+            @RequestParam(value = "comment", required = false) String comment,
             @RequestPart(value = "files", required = false) List<MultipartFile> files
     ) throws IOException {
 

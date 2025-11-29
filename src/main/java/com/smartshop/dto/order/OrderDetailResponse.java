@@ -24,6 +24,11 @@ public class OrderDetailResponse {
     private String shippingAddress;
     private LocalDateTime createdAt;
 
+    // Customer information
+    private String customerName;
+    private String customerEmail;
+    private String customerPhone;
+
     private List<OrderItemResponse> items;
     private List<OrderStatusHistoryResponse> statusHistory;
 
@@ -65,6 +70,45 @@ public class OrderDetailResponse {
         double totalAmount = o.getTotalAmount() != null ? o.getTotalAmount() : 0.0;
         double shippingFee = Math.max(0, totalAmount - subtotalAfterDiscount);
 
+        // Get customer information
+        String customerName = null;
+        String customerEmail = null;
+        String customerPhone = null;
+        String shippingAddress = o.getShippingAddress();
+        String parsedAddress = shippingAddress;
+        
+        if (o.getUser() != null) {
+            customerName = o.getUser().getFullName() != null ? o.getUser().getFullName() : o.getUser().getUsername();
+            customerEmail = o.getUser().getEmail();
+        }
+        
+        // Parse shippingAddress to extract phone, fullName, and address
+        // Format: "fullName - phone\naddress"
+        if (shippingAddress != null && !shippingAddress.isEmpty()) {
+            String[] parts = shippingAddress.split("\n", 2);
+            if (parts.length > 0) {
+                String namePhonePart = parts[0].trim();
+                // Extract phone from "fullName - phone"
+                if (namePhonePart.contains(" - ")) {
+                    String[] namePhone = namePhonePart.split(" - ", 2);
+                    if (namePhone.length == 2) {
+                        // Use parsed name from shipping address if available
+                        if (customerName == null || customerName.equals(o.getUser() != null ? o.getUser().getUsername() : null)) {
+                            customerName = namePhone[0].trim();
+                        }
+                        customerPhone = namePhone[1].trim();
+                    }
+                }
+                // Extract address (everything after the first newline)
+                if (parts.length > 1) {
+                    parsedAddress = parts[1].trim();
+                } else {
+                    // If no newline, try to extract address from remaining part
+                    parsedAddress = namePhonePart;
+                }
+            }
+        }
+
         return OrderDetailResponse.builder()
                 .id(o.getId())
                 .orderNumber(o.getOrderNumber())
@@ -75,8 +119,11 @@ public class OrderDetailResponse {
                 .status(o.getStatus())
                 .paymentStatus(o.getPaymentStatus())
                 .paymentMethod(o.getPaymentMethod())
-                .shippingAddress(o.getShippingAddress())
+                .shippingAddress(parsedAddress)
                 .createdAt(o.getCreatedAt())
+                .customerName(customerName)
+                .customerEmail(customerEmail)
+                .customerPhone(customerPhone)
                 .items(itemResponses)
                 .statusHistory(history)
                 .build();
