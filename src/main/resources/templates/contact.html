@@ -130,27 +130,59 @@
                         </div>
                     </div>
                 </div>
-                <div style="background: var(--color-surface); padding: 32px; border-radius: var(--radius-lg); box-shadow: var(--shadow-sm);">
-                    <h2 style="margin: 0 0 24px; font-size: 1.8rem;">Gửi tin nhắn</h2>
-                    <form id="contactForm" style="display: grid; gap: 20px;">
-                        <div style="display: flex; flex-direction: column; gap: 8px;">
-                            <label style="font-weight: 600; font-size: 0.95rem;">Họ và tên</label>
-                            <input type="text" name="fullName" required style="padding: 12px 16px; border-radius: 12px; border: 1px solid var(--color-border); font-size: 0.95rem; outline: none; transition: border-color 0.2s ease, box-shadow 0.2s ease;">
+                <div style="background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%); padding: 2.5rem; border-radius: 20px; box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.04); border: 1px solid rgba(226, 232, 240, 0.6); position: relative; overflow: hidden;">
+                    <div style="position: absolute; top: 0; left: 0; right: 0; height: 4px; background: linear-gradient(90deg, #4c6ef5, #7c3aed, #ec4899); opacity: 0.8;"></div>
+                    <h2 style="margin: 0 0 2rem; font-size: 1.8rem; font-weight: 700; color: var(--color-text);">Bản đồ & Mạng xã hội</h2>
+                    
+                    <!-- Google Maps -->
+                    <div style="margin-bottom: 2rem;">
+                        <h3 style="margin: 0 0 1rem; font-size: 1.2rem; font-weight: 600; color: var(--color-text);">Vị trí cửa hàng</h3>
+                        <div style="border-radius: 12px; overflow: hidden; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); height: 300px; background: #f1f5f9; display: flex; align-items: center; justify-content: center; color: var(--color-muted);">
+                            <div style="text-align: center; padding: 2rem;">
+                                <svg viewBox="0 0 24 24" style="width: 64px; height: 64px; margin: 0 auto 1rem; color: var(--color-primary);" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+                                    <path d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                </svg>
+                                <p style="margin: 0; font-weight: 600;">123 Đường ABC, Quận 1</p>
+                                <p style="margin: 0.5rem 0 0; color: var(--color-muted);">TP. Hồ Chí Minh</p>
+                                <a href="https://maps.google.com/?q=123+Đường+ABC,+Quận+1,+TP.+Hồ+Chí+Minh" target="_blank" class="button button--primary" style="margin-top: 1rem; display: inline-block; text-decoration: none;">
+                                    Xem trên Google Maps
+                                </a>
+                            </div>
                         </div>
-                        <div style="display: flex; flex-direction: column; gap: 8px;">
-                            <label style="font-weight: 600; font-size: 0.95rem;">Email</label>
-                            <input type="email" name="email" required style="padding: 12px 16px; border-radius: 12px; border: 1px solid var(--color-border); font-size: 0.95rem; outline: none; transition: border-color 0.2s ease, box-shadow 0.2s ease;">
+                    </div>
+                    
+                    <!-- Social Media -->
+                    <div>
+                        <h3 style="margin: 0 0 1rem; font-size: 1.2rem; font-weight: 600; color: var(--color-text);">Kết nối với chúng tôi</h3>
+                        <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                            <a href="https://facebook.com" target="_blank" style="display: flex; align-items: center; gap: 0.75rem; padding: 0.875rem 1.5rem; border-radius: 12px; background: linear-gradient(135deg, #1877f2, #0d6efd); color: white; text-decoration: none; font-weight: 600; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 4px 12px rgba(24, 119, 242, 0.3);">
+                                <svg viewBox="0 0 24 24" style="width: 24px; height: 24px;" fill="currentColor">
+                                    <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+                                </svg>
+                                Facebook
+                            </a>
+                            <a href="https://zalo.me" target="_blank" style="display: flex; align-items: center; gap: 0.75rem; padding: 0.875rem 1.5rem; border-radius: 12px; background: linear-gradient(135deg, #0068ff, #0051d5); color: white; text-decoration: none; font-weight: 600; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 4px 12px rgba(0, 104, 255, 0.3);">
+                                <svg viewBox="0 0 24 24" style="width: 24px; height: 24px;" fill="currentColor">
+                                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                                </svg>
+                                Zalo
+                            </a>
+                            <a href="mailto:support@smartshop.vn" style="display: flex; align-items: center; gap: 0.75rem; padding: 0.875rem 1.5rem; border-radius: 12px; background: linear-gradient(135deg, #ea4335, #c5221f); color: white; text-decoration: none; font-weight: 600; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 4px 12px rgba(234, 67, 53, 0.3);">
+                                <svg viewBox="0 0 24 24" style="width: 24px; height: 24px;" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                                </svg>
+                                Email
+                            </a>
                         </div>
-                        <div style="display: flex; flex-direction: column; gap: 8px;">
-                            <label style="font-weight: 600; font-size: 0.95rem;">Tiêu đề</label>
-                            <input type="text" name="subject" required style="padding: 12px 16px; border-radius: 12px; border: 1px solid var(--color-border); font-size: 0.95rem; outline: none; transition: border-color 0.2s ease, box-shadow 0.2s ease;">
-                        </div>
-                        <div style="display: flex; flex-direction: column; gap: 8px;">
-                            <label style="font-weight: 600; font-size: 0.95rem;">Nội dung</label>
-                            <textarea name="message" rows="6" required style="padding: 12px 16px; border-radius: 12px; border: 1px solid var(--color-border); font-size: 0.95rem; resize: vertical; font-family: inherit; outline: none; transition: border-color 0.2s ease, box-shadow 0.2s ease;"></textarea>
-                        </div>
-                        <button type="submit" class="button button--primary" style="width: 100%;">Gửi tin nhắn</button>
-                    </form>
+                    </div>
+                    
+                    <style>
+                        .button:hover {
+                            transform: translateY(-2px);
+                            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+                        }
+                    </style>
                 </div>
             </div>
         </div>
@@ -219,16 +251,6 @@
         // Setup footer newsletter form
         if (typeof setupFooterNewsletterForm === 'function') {
             setupFooterNewsletterForm();
-        }
-
-        // Setup contact form
-        const contactForm = document.getElementById('contactForm');
-        if (contactForm) {
-            contactForm.addEventListener('submit', function(e) {
-                e.preventDefault();
-                alert('Cảm ơn bạn đã liên hệ! Chúng tôi sẽ phản hồi sớm nhất có thể.');
-                this.reset();
-            });
         }
     });
 </script>

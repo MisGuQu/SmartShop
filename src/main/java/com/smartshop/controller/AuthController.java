@@ -96,12 +96,29 @@ public class AuthController {
 
     // 5️⃣ Đăng nhập – trả JWT token và set cookie
     @PostMapping("/login")
-    public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest loginRequest, 
+    public ResponseEntity<?> login(@Valid @RequestBody LoginRequest loginRequest, 
                                              HttpServletResponse response) {
-        AuthResponse authResponse = authService.login(loginRequest);
-        // Set cookie
-        setCookie(response, authResponse.getToken());
-        return ResponseEntity.ok(authResponse);
+        try {
+            AuthResponse authResponse = authService.login(loginRequest);
+            // Set cookie
+            setCookie(response, authResponse.getToken());
+            return ResponseEntity.ok(authResponse);
+        } catch (RuntimeException e) {
+            // Trả về error message nếu tài khoản bị khóa hoặc lỗi khác
+            Map<String, String> errorResponse = new java.util.HashMap<>();
+            errorResponse.put("message", e.getMessage());
+            return ResponseEntity.status(403).body(errorResponse);
+        } catch (Exception e) {
+            // Xử lý các exception khác (BadCredentialsException, etc.)
+            Map<String, String> errorResponse = new java.util.HashMap<>();
+            String errorMessage = e.getMessage();
+            if (errorMessage != null && errorMessage.contains("khóa")) {
+                errorResponse.put("message", errorMessage);
+            } else {
+                errorResponse.put("message", "Email hoặc mật khẩu không đúng");
+            }
+            return ResponseEntity.status(401).body(errorResponse);
+        }
     }
 
     // 4️⃣ Đăng ký – BCrypt và set cookie

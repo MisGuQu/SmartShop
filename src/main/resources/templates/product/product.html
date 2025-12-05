@@ -48,8 +48,8 @@
         .product-card__image {
             width: 100%;
             height: 200px;
-            object-fit: cover;
-            background: #e2e8f0;
+            background: #e2e8f0 center/cover no-repeat;
+            min-height: 200px;
         }
         
         .product-card__body {
@@ -133,6 +133,100 @@
             margin-bottom: 16px;
             opacity: 0.5;
         }
+        
+        /* Category Dropdown Styles */
+        .nav__dropdown {
+            position: relative;
+        }
+        
+        .nav__link--dropdown {
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            gap: 0;
+            cursor: pointer;
+            background: none;
+            border: none;
+            font-family: inherit;
+            font-size: inherit;
+            color: var(--color-muted);
+            font-weight: 500;
+            padding: 0;
+            margin: 0;
+            position: relative;
+            height: 100%;
+            line-height: 1.2;
+            white-space: nowrap;
+            text-decoration: none;
+        }
+        
+        .nav__dropdown-arrow {
+            display: none; /* Ẩn mũi tên */
+        }
+        
+        .nav__dropdown-menu {
+            position: absolute;
+            top: calc(100% + 8px);
+            left: 0;
+            background: var(--color-surface);
+            border: 1px solid rgba(15, 23, 42, 0.12);
+            border-radius: var(--radius-sm);
+            box-shadow: var(--shadow-md);
+            min-width: 220px;
+            max-height: 400px;
+            overflow-y: auto;
+            z-index: 1000;
+            display: none;
+            padding: 8px 0;
+        }
+        
+        .nav__dropdown[aria-expanded="true"] .nav__dropdown-menu {
+            display: block !important;
+        }
+        
+        .nav__dropdown-menu.show {
+            display: block !important;
+        }
+        
+        .nav__dropdown-item {
+            display: block;
+            padding: 12px 20px;
+            color: var(--color-text);
+            text-decoration: none;
+            transition: background 0.2s ease;
+            cursor: pointer;
+            border: none;
+            background: none;
+            width: 100%;
+            text-align: left;
+            font-family: inherit;
+            font-size: 0.95rem;
+        }
+        
+        .nav__dropdown-item:hover {
+            background: rgba(37, 99, 235, 0.08);
+            color: var(--color-primary);
+        }
+        
+        .nav__dropdown-item--active {
+            background: rgba(37, 99, 235, 0.1);
+            color: var(--color-primary);
+            font-weight: 600;
+        }
+        
+        .nav__dropdown-loading {
+            padding: 20px;
+            text-align: center;
+            color: var(--color-muted);
+            font-size: 0.9rem;
+        }
+        
+        .nav__dropdown-empty {
+            padding: 20px;
+            text-align: center;
+            color: var(--color-muted);
+            font-size: 0.9rem;
+        }
     </style>
 </head>
 <body>
@@ -142,6 +236,17 @@
         <nav class="nav">
             <a href="/" class="nav__link">Trang chủ</a>
             <a href="/product.html" class="nav__link nav__link--active">Sản phẩm</a>
+            <div class="nav__dropdown" id="categoryDropdown">
+                <button class="nav__link nav__link--dropdown" id="categoryDropdownBtn" aria-expanded="false" aria-haspopup="true">
+                    Danh Mục
+                    <svg class="nav__dropdown-arrow" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+                        <path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </button>
+                <div class="nav__dropdown-menu" id="categoryDropdownMenu">
+                    <div class="nav__dropdown-loading">Đang tải...</div>
+                </div>
+            </div>
         </nav>
         <div class="header__search">
             <form class="search-form" id="searchForm" onsubmit="return handleSearch(event)">
@@ -241,8 +346,8 @@
     <section class="section">
         <div class="container products-container">
             <div class="products-header">
-                <h1>Danh sách sản phẩm</h1>
-                <p style="color: var(--color-muted);">Khám phá bộ sưu tập sản phẩm đa dạng từ SmartShop</p>
+                <h1 id="productsTitle">Danh sách sản phẩm</h1>
+                <p id="productsSubtitle" style="color: var(--color-muted);">Khám phá bộ sưu tập sản phẩm đa dạng từ SmartShop</p>
             </div>
 
             <!-- Products Grid -->
@@ -357,6 +462,8 @@
     
     document.addEventListener('DOMContentLoaded', () => {
         setupNewsletterForm();
+        setupProductCategoryDropdown(); // Đổi tên để tránh conflict với home.js
+        updatePageTitle();
         
         // Set search input value from URL parameter on page load
         const urlParams = new URLSearchParams(window.location.search);
@@ -367,6 +474,188 @@
             console.log('Set search input value:', searchKeyword);
         }
     });
+    
+    // Update page title based on selected category
+    async function updatePageTitle() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const categoryId = urlParams.get('category') || urlParams.get('categoryId');
+        
+        if (categoryId) {
+            try {
+                const category = await api.getCategory(categoryId);
+                const titleEl = document.getElementById('productsTitle');
+                const subtitleEl = document.getElementById('productsSubtitle');
+                
+                if (titleEl && category && category.name) {
+                    titleEl.textContent = category.name;
+                }
+                if (subtitleEl && category && category.name) {
+                    subtitleEl.textContent = `Danh sách sản phẩm trong danh mục ${category.name}`;
+                }
+            } catch (error) {
+                console.error('Error loading category:', error);
+                // Fallback: try to get from dropdown
+                const dropdownItems = document.querySelectorAll('.nav__dropdown-item[data-category-id="' + categoryId + '"]');
+                if (dropdownItems.length > 0) {
+                    const categoryName = dropdownItems[0].textContent.trim().split('(')[0].trim();
+                    const titleEl = document.getElementById('productsTitle');
+                    const subtitleEl = document.getElementById('productsSubtitle');
+                    if (titleEl) titleEl.textContent = categoryName;
+                    if (subtitleEl) subtitleEl.textContent = `Danh sách sản phẩm trong danh mục ${categoryName}`;
+                }
+            }
+        }
+    }
+    
+    // Setup Category Dropdown (cho trang product.html)
+    async function setupProductCategoryDropdown() {
+        // Đợi một chút để đảm bảo DOM đã sẵn sàng
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
+        const dropdown = document.getElementById('categoryDropdown');
+        const dropdownBtn = document.getElementById('categoryDropdownBtn');
+        const dropdownMenu = document.getElementById('categoryDropdownMenu');
+        
+        if (!dropdown || !dropdownBtn || !dropdownMenu) {
+            console.error('Category dropdown elements not found');
+            return;
+        }
+        
+        console.log('Setting up category dropdown for product page');
+        
+        // Remove any existing event listeners by cloning
+        const newBtn = dropdownBtn.cloneNode(true);
+        dropdownBtn.parentNode.replaceChild(newBtn, dropdownBtn);
+        const newDropdownBtn = document.getElementById('categoryDropdownBtn');
+        
+        // Toggle dropdown
+        newDropdownBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const isExpanded = dropdown.getAttribute('aria-expanded') === 'true';
+            const newState = !isExpanded;
+            dropdown.setAttribute('aria-expanded', newState);
+            console.log('Dropdown toggled, new state:', newState);
+            
+            // Force display update using both methods
+            if (newState) {
+                dropdownMenu.style.display = 'block';
+                dropdownMenu.classList.add('show');
+            } else {
+                dropdownMenu.style.display = 'none';
+                dropdownMenu.classList.remove('show');
+            }
+        });
+        
+        // Close dropdown when clicking outside (only add once)
+        if (!window.productCategoryDropdownOutsideClickAdded) {
+            document.addEventListener('click', (e) => {
+                const dropdown = document.getElementById('categoryDropdown');
+                const dropdownMenu = document.getElementById('categoryDropdownMenu');
+                if (dropdown && dropdownMenu && !dropdown.contains(e.target)) {
+                    dropdown.setAttribute('aria-expanded', 'false');
+                    dropdownMenu.style.display = 'none';
+                    dropdownMenu.classList.remove('show');
+                }
+            });
+            window.productCategoryDropdownOutsideClickAdded = true;
+        }
+        
+        // Load categories
+        try {
+            dropdownMenu.innerHTML = '<div class="nav__dropdown-loading">Đang tải...</div>';
+            const categories = await api.getCategories();
+            
+            if (!categories || categories.length === 0) {
+                dropdownMenu.innerHTML = '<div class="nav__dropdown-empty">Không có danh mục nào</div>';
+                return;
+            }
+            
+            // Get current category from URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const currentCategoryId = urlParams.get('category') || urlParams.get('categoryId');
+            
+            // Render categories
+            dropdownMenu.innerHTML = categories.map(category => {
+                const isActive = currentCategoryId && String(category.id) === String(currentCategoryId);
+                const safeName = escapeHtml(category.name);
+                return `
+                    <button class="nav__dropdown-item ${isActive ? 'nav__dropdown-item--active' : ''}" 
+                            data-category-id="${category.id}"
+                            data-category-name="${safeName}">
+                        ${safeName}
+                        ${category.productCount !== undefined ? `<span style="color: var(--color-muted); font-size: 0.85rem; margin-left: 8px;">(${category.productCount})</span>` : ''}
+                    </button>
+                `;
+            }).join('');
+            
+            // Add "Tất cả" option
+            const allButton = `
+                <div style="border-top: 1px solid rgba(15, 23, 42, 0.08); margin: 4px 0;"></div>
+                <button class="nav__dropdown-item ${!currentCategoryId ? 'nav__dropdown-item--active' : ''}" 
+                        data-category-id="all">
+                    Tất cả sản phẩm
+                </button>
+            `;
+            dropdownMenu.innerHTML += allButton;
+            
+            // Add event listeners to all category buttons
+            const categoryButtons = dropdownMenu.querySelectorAll('.nav__dropdown-item');
+            categoryButtons.forEach(button => {
+                button.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const categoryId = button.getAttribute('data-category-id');
+                    const categoryName = button.getAttribute('data-category-name') || button.textContent.trim();
+                    
+                    if (categoryId === 'all') {
+                        filterByCategory(null, 'Tất cả');
+                    } else {
+                        filterByCategory(parseInt(categoryId), categoryName);
+                    }
+                    
+                    // Close dropdown
+                    dropdown.setAttribute('aria-expanded', 'false');
+                });
+            });
+            
+        } catch (error) {
+            console.error('Error loading categories:', error);
+            dropdownMenu.innerHTML = '<div class="nav__dropdown-empty">Lỗi khi tải danh mục</div>';
+        }
+    }
+    
+    // Utility function để escape HTML
+    function escapeHtml(text) {
+        if (!text) return '';
+        const map = {
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#039;'
+        };
+        return text.replace(/[&<>"']/g, m => map[m]);
+    }
+    
+    // Filter products by category
+    function filterByCategory(categoryId, categoryName) {
+        console.log('Filtering by category:', categoryId, categoryName);
+        const url = new URL(window.location);
+        
+        if (categoryId) {
+            url.searchParams.set('category', categoryId);
+        } else {
+            url.searchParams.delete('category');
+            url.searchParams.delete('categoryId');
+        }
+        
+        // Remove page parameter to reset to first page
+        url.searchParams.delete('page');
+        
+        // Navigate to filtered page
+        window.location.href = url.toString();
+    }
 </script>
 </body>
 </html>

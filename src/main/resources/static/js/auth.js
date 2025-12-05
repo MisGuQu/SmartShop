@@ -75,9 +75,16 @@ async function handleLogin(e) {
                 window.location.href = `${redirectUrl}${separator}login=success`;
             }, 1000);
         } else {
+            // Parse error response
             const error = await response.json().catch(() => ({ message: 'Đăng nhập thất bại' }));
             const errorMessage = error.message || 'Email hoặc mật khẩu không đúng';
-            showAlert(errorMessage, 'danger');
+            
+            // Hiển thị thông báo lỗi - đặc biệt cho tài khoản bị khóa
+            if (errorMessage.includes('khóa') || errorMessage.includes('bị khóa')) {
+                showAlert(errorMessage, 'danger');
+            } else {
+                showAlert(errorMessage, 'danger');
+            }
             
             // Re-enable submit button
             if (submitButton) {
@@ -87,7 +94,10 @@ async function handleLogin(e) {
         }
     } catch (error) {
         console.error('Login error:', error);
-        showAlert('Đăng nhập thất bại. Vui lòng thử lại.', 'danger');
+        const errorMessage = error.message && error.message.includes('khóa') 
+            ? error.message 
+            : 'Đăng nhập thất bại. Vui lòng thử lại.';
+        showAlert(errorMessage, 'danger');
         
         // Re-enable submit button
         if (submitButton) {

@@ -12,6 +12,9 @@ public class CheckoutRequest {
     // 2️⃣0️⃣ Phương thức thanh toán: "COD", "VNPAY", "MOMO"
     private String paymentMethod;
 
+    // Phương thức vận chuyển: "STANDARD", "EXPRESS"
+    private String shippingMethod;
+
     // Mã voucher (có thể null)
     private String voucherCode;
 }

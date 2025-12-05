@@ -109,11 +109,14 @@ async function handleCheckout(e) {
         return;
     }
     
+    const shippingMethod = document.querySelector('input[name="shippingMethod"]:checked')?.value || 'STANDARD';
+    
     const checkoutData = {
         fullName,
         phone,
         address,
         paymentMethod,
+        shippingMethod,
         voucherCode: appliedVoucherCheckout ? appliedVoucherCheckout.code : null
     };
     
@@ -126,11 +129,39 @@ async function handleCheckout(e) {
         
         const response = await api.checkout(checkoutData);
         
-        // Order placed successfully
-        showAlert('Đặt hàng thành công!', 'success');
-        setTimeout(() => {
-            window.location.href = `/order-detail.html?id=${response.orderId}`;
-        }, 2000);
+        // Nếu thanh toán online (VNPAY, MOMO), tạo payment URL và redirect
+        if (paymentMethod === 'VNPAY' || paymentMethod === 'MOMO') {
+            try {
+                showAlert('Đang chuyển đến cổng thanh toán...', 'info');
+                
+                // Tạo payment URL
+                const paymentResponse = paymentMethod === 'VNPAY' 
+                    ? await api.createVNPayPayment(response.orderId)
+                    : await api.createMoMoPayment(response.orderId);
+                
+                // Redirect đến cổng thanh toán
+                if (paymentResponse && paymentResponse.paymentUrl) {
+                    window.location.href = paymentResponse.paymentUrl;
+                } else {
+                    throw new Error('Không thể tạo URL thanh toán');
+                }
+            } catch (error) {
+                console.error('Payment error:', error);
+                showAlert('Lỗi khi tạo thanh toán: ' + (error.message || 'Vui lòng thử lại'), 'danger');
+                
+                const submitBtn = document.querySelector('button[type="submit"]');
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Đặt hàng';
+                }
+            }
+        } else {
+            // COD hoặc phương thức khác: redirect đến order detail
+            showAlert('Đặt hàng thành công!', 'success');
+            setTimeout(() => {
+                window.location.href = `/order-detail.html?id=${response.orderId}`;
+            }, 2000);
+        }
     } catch (error) {
         console.error('Checkout error:', error);
         const errorMessage = error.message || 'Đặt hàng thất bại. Vui lòng thử lại.';

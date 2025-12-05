@@ -64,11 +64,20 @@ public class OrderDetailResponse {
                 .mapToDouble(item -> item.getLineTotal())
                 .sum();
         
-        // Calculate shipping fee: totalAmount - (subtotal - voucherDiscount)
+        // Get shipping fee from Order entity (if available), otherwise calculate
+        double shippingFee = 0.0;
+        if (o.getShippingFee() != null) {
+            shippingFee = o.getShippingFee();
+        } else {
+            // Fallback: calculate from totalAmount if shippingFee is not stored
+            double voucherDiscount = o.getVoucherDiscount() != null ? o.getVoucherDiscount() : 0.0;
+            double subtotalAfterDiscount = subtotal - voucherDiscount;
+            double totalAmount = o.getTotalAmount() != null ? o.getTotalAmount() : 0.0;
+            shippingFee = Math.max(0, totalAmount - subtotalAfterDiscount);
+        }
+        
         double voucherDiscount = o.getVoucherDiscount() != null ? o.getVoucherDiscount() : 0.0;
-        double subtotalAfterDiscount = subtotal - voucherDiscount;
         double totalAmount = o.getTotalAmount() != null ? o.getTotalAmount() : 0.0;
-        double shippingFee = Math.max(0, totalAmount - subtotalAfterDiscount);
 
         // Get customer information
         String customerName = null;

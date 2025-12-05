@@ -58,7 +58,7 @@ INSERT INTO categories (id, name, parent_id) VALUES
 -- 3. PRODUCTS
 -- ============================================================
 CREATE TABLE products (
-    id BIGINT PRIMARY KEY ,
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
     name VARCHAR(255) NOT NULL,
     description TEXT,
     price DECIMAL(10,2) NOT NULL,
@@ -207,65 +207,65 @@ INSERT INTO roles (id, name) VALUES
 -- Tất cả đều từ chuỗi gốc: 123456
 
 INSERT INTO users (id, username, password, email, full_name, phone, avatar, is_active, created_at, updated_at) VALUES
-(1,'admin','123456','admin123@gmail.com',NULL,'0900000000',NULL,1,'2025-01-05 10:00:00','2025-01-05 10:00:00'),
+(1,'admin','Password@123','admin123@gmail.com',NULL,'0900000000',NULL,1,'2025-01-05 10:00:00','2025-01-05 10:00:00'),
 
-(2,'nguyenvana@gmail.com','123456','nguyenvana@gmail.com','Nguyễn Văn A','0900000001',NULL,1,'2025-01-10 09:00:00','2025-01-10 09:00:00'),
+(2,'nguyenvana@gmail.com','Password@123','nguyenvana@gmail.com','Nguyễn Văn A','0900000001',NULL,1,'2025-01-10 09:00:00','2025-01-10 09:00:00'),
 
-(3,'tranthib@gmail.com','123456','tranthib@gmail.com','Trần Thị B','0900000002',NULL,1,'2025-02-10 08:00:00','2025-02-10 08:00:00'),
+(3,'tranthib@gmail.com','Password@123','tranthib@gmail.com','Trần Thị B','0900000002',NULL,1,'2025-02-10 08:00:00','2025-02-10 08:00:00'),
 
-(4,'lequangc@gmail.com','123456','lequangc@gmail.com','Lê Quang C','0900000003',NULL,1,'2025-03-12 14:00:00','2025-03-12 14:00:00'),
+(4,'lequangc@gmail.com','Password@123','lequangc@gmail.com','Lê Quang C','0900000003',NULL,1,'2025-03-12 14:00:00','2025-03-12 14:00:00'),
 
-(5,'phamminhd@gmail.com','123456','phamminhd@gmail.com','Phạm Minh D','0900000004',NULL,1,'2025-04-05 11:00:00','2025-04-05 11:00:00'),
+(5,'phamminhd@gmail.com','Password@123','phamminhd@gmail.com','Phạm Minh D','0900000004',NULL,1,'2025-04-05 11:00:00','2025-04-05 11:00:00'),
 
-(6,'danghoae@gmail.com','123456','danghoae@gmail.com','Đặng Hoà E','0900000005',NULL,1,'2025-05-17 16:30:00','2025-05-17 16:30:00'),
+(6,'danghoae@gmail.com','Password@123','danghoae@gmail.com','Đặng Hoà E','0900000005',NULL,1,'2025-05-17 16:30:00','2025-05-17 16:30:00'),
 
-(7,'hoanglongf@gmail.com','123456','hoanglongf@gmail.com','Hoàng Long F','0900000006',NULL,1,'2025-06-20 13:20:00','2025-06-20 13:20:00'),
+(7,'hoanglongf@gmail.com','Password@123','hoanglongf@gmail.com','Hoàng Long F','0900000006',NULL,1,'2025-06-20 13:20:00','2025-06-20 13:20:00'),
 
-(8,'buidieug@gmail.com','123456','buidieug@gmail.com','Bùi Diệu G','0900000007',NULL,1,'2025-07-22 09:45:00','2025-07-22 09:45:00'),
+(8,'buidieug@gmail.com','Password@123','buidieug@gmail.com','Bùi Diệu G','0900000007',NULL,1,'2025-07-22 09:45:00','2025-07-22 09:45:00'),
 
-(9,'truonghanh@gmail.com','123456','truonghanh@gmail.com','Trương Hạnh H','0900000008',NULL,1,'2025-08-15 10:10:00','2025-08-15 10:10:00'),
+(9,'truonghanh@gmail.com','Password@123','truonghanh@gmail.com','Trương Hạnh H','0900000008',NULL,1,'2025-08-15 10:10:00','2025-08-15 10:10:00'),
 
-(10,'doquangi@gmail.com','123456','doquangi@gmail.com','Đỗ Quang I','0900000009',NULL,1,'2025-09-09 19:30:00','2025-09-09 19:30:00'),
+(10,'doquangi@gmail.com','Password@123','doquangi@gmail.com','Đỗ Quang I','0900000009',NULL,1,'2025-09-09 19:30:00','2025-09-09 19:30:00'),
 
-(11,'phamthanhj@gmail.com','123456','phamthanhj@gmail.com','Phạm Thanh J','0900000010',NULL,1,'2025-01-18 08:00:00','2025-01-18 08:00:00'),
+(11,'phamthanhj@gmail.com','Password@123','phamthanhj@gmail.com','Phạm Thanh J','0900000010',NULL,1,'2025-01-18 08:00:00','2025-01-18 08:00:00'),
 
-(12,'huynhak@gmail.com','123456','huynhak@gmail.com','Huỳnh A K','0900000011',NULL,1,'2025-02-05 09:15:00','2025-02-05 09:15:00'),
+(12,'huynhak@gmail.com','Password@123','huynhak@gmail.com','Huỳnh A K','0900000011',NULL,1,'2025-02-05 09:15:00','2025-02-05 09:15:00'),
 
-(13,'trungkhoal@gmail.com','123456','trungkhoal@gmail.com','Trung Khoa L','0900000012',NULL,1,'2025-02-22 10:30:00','2025-02-22 10:30:00'),
+(13,'trungkhoal@gmail.com','Password@123','trungkhoal@gmail.com','Trung Khoa L','0900000012',NULL,1,'2025-02-22 10:30:00','2025-02-22 10:30:00'),
 
-(14,'lethanhm@gmail.com','123456','lethanhm@gmail.com','Lê Thành M','0900000013',NULL,1,'2025-03-08 11:45:00','2025-03-08 11:45:00'),
+(14,'lethanhm@gmail.com','Password@123','lethanhm@gmail.com','Lê Thành M','0900000013',NULL,1,'2025-03-08 11:45:00','2025-03-08 11:45:00'),
 
-(15,'ngothanhn@gmail.com','123456','ngothanhn@gmail.com','Ngô Thanh N','0900000014',NULL,1,'2025-03-25 13:00:00','2025-03-25 13:00:00'),
+(15,'ngothanhn@gmail.com','Password@123','ngothanhn@gmail.com','Ngô Thanh N','0900000014',NULL,1,'2025-03-25 13:00:00','2025-03-25 13:00:00'),
 
-(16,'vokhanho@gmail.com','123456','vokhanho@gmail.com','Võ Khánh O','0900000015',NULL,1,'2025-04-02 14:15:00','2025-04-02 14:15:00'),
+(16,'vokhanho@gmail.com','Password@123','vokhanho@gmail.com','Võ Khánh O','0900000015',NULL,1,'2025-04-02 14:15:00','2025-04-02 14:15:00'),
 
-(17,'truongminhp@gmail.com','123456','truongminhp@gmail.com','Trương Minh P','0900000016',NULL,1,'2025-04-18 15:30:00','2025-04-18 15:30:00'),
+(17,'truongminhp@gmail.com','Password@123','truongminhp@gmail.com','Trương Minh P','0900000016',NULL,1,'2025-04-18 15:30:00','2025-04-18 15:30:00'),
 
-(18,'nguyenkhanhq@gmail.com','123456','nguyenkhanhq@gmail.com','Nguyễn Khánh Q','0900000017',NULL,1,'2025-05-03 16:45:00','2025-05-03 16:45:00'),
+(18,'nguyenkhanhq@gmail.com','Password@123','nguyenkhanhq@gmail.com','Nguyễn Khánh Q','0900000017',NULL,1,'2025-05-03 16:45:00','2025-05-03 16:45:00'),
 
-(19,'doantrungr@gmail.com','123456','doantrungr@gmail.com','Đoàn Trung R','0900000018',NULL,1,'2025-05-20 18:00:00','2025-05-20 18:00:00'),
+(19,'doantrungr@gmail.com','Password@123','doantrungr@gmail.com','Đoàn Trung R','0900000018',NULL,1,'2025-05-20 18:00:00','2025-05-20 18:00:00'),
 
-(20,'duongminhs@gmail.com','123456','duongminhs@gmail.com','Dương Minh S','0900000019',NULL,1,'2025-06-06 19:15:00','2025-06-06 19:15:00'),
+(20,'duongminhs@gmail.com','Password@123','duongminhs@gmail.com','Dương Minh S','0900000019',NULL,1,'2025-06-06 19:15:00','2025-06-06 19:15:00'),
 
-(21,'phamtrongt@gmail.com','123456','phamtrongt@gmail.com','Phạm Trọng T','0900000020',NULL,1,'2025-06-21 09:20:00','2025-06-21 09:20:00'),
+(21,'phamtrongt@gmail.com','Password@123','phamtrongt@gmail.com','Phạm Trọng T','0900000020',NULL,1,'2025-06-21 09:20:00','2025-06-21 09:20:00'),
 
-(22,'hoanglinhu@gmail.com','123456','hoanglinhu@gmail.com','Hoàng Linh U','0900000021',NULL,1,'2025-07-02 10:25:00','2025-07-02 10:25:00'),
+(22,'hoanglinhu@gmail.com','Password@123','hoanglinhu@gmail.com','Hoàng Linh U','0900000021',NULL,1,'2025-07-02 10:25:00','2025-07-02 10:25:00'),
 
-(23,'danghaiduyv@gmail.com','123456','danghaiduyv@gmail.com','Đặng Hải Duy V','0900000022',NULL,1,'2025-07-18 11:30:00','2025-07-18 11:30:00'),
+(23,'danghaiduyv@gmail.com','Password@123','danghaiduyv@gmail.com','Đặng Hải Duy V','0900000022',NULL,1,'2025-07-18 11:30:00','2025-07-18 11:30:00'),
 
-(24,'ngocanhw@gmail.com','123456','ngocanhw@gmail.com','Ngọc Anh W','0900000023',NULL,1,'2025-08-01 13:40:00','2025-08-01 13:40:00'),
+(24,'ngocanhw@gmail.com','Password@123','ngocanhw@gmail.com','Ngọc Anh W','0900000023',NULL,1,'2025-08-01 13:40:00','2025-08-01 13:40:00'),
 
-(25,'phamvanx@gmail.com','123456','phamvanx@gmail.com','Phạm Văn X','0900000024',NULL,1,'2025-08-16 15:00:00','2025-08-16 15:00:00'),
+(25,'phamvanx@gmail.com','Password@123','phamvanx@gmail.com','Phạm Văn X','0900000024',NULL,1,'2025-08-16 15:00:00','2025-08-16 15:00:00'),
 
-(26,'tranhoangy@gmail.com','123456','tranhoangy@gmail.com','Trần Hoàng Y','0900000025',NULL,1,'2025-09-01 16:10:00','2025-09-01 16:10:00'),
+(26,'tranhoangy@gmail.com','Password@123','tranhoangy@gmail.com','Trần Hoàng Y','0900000025',NULL,1,'2025-09-01 16:10:00','2025-09-01 16:10:00'),
 
-(27,'nguyenthivan@gmail.com','123456','nguyenthivan@gmail.com','Nguyễn Thị Vân','0900000026',NULL,1,'2025-09-15 17:20:00','2025-09-15 17:20:00'),
+(27,'nguyenthivan@gmail.com','Password@123','nguyenthivan@gmail.com','Nguyễn Thị Vân','0900000026',NULL,1,'2025-09-15 17:20:00','2025-09-15 17:20:00'),
 
-(28,'lephuongmai@gmail.com','123456','lephuongmai@gmail.com','Lê Phương Mai','0900000027',NULL,1,'2025-10-01 18:30:00','2025-10-01 18:30:00'),
+(28,'lephuongmai@gmail.com','Password@123','lephuongmai@gmail.com','Lê Phương Mai','0900000027',NULL,1,'2025-10-01 18:30:00','2025-10-01 18:30:00'),
 
-(29,'buingoclam@gmail.com','123456','buingoclam@gmail.com','Bùi Ngọc Lâm','0900000028',NULL,1,'2025-10-15 19:40:00','2025-10-15 19:40:00'),
+(29,'buingoclam@gmail.com','Password@123','buingoclam@gmail.com','Bùi Ngọc Lâm','0900000028',NULL,1,'2025-10-15 19:40:00','2025-10-15 19:40:00'),
 
-(30,'dangkimanh@gmail.com','123456','dangkimanh@gmail.com','Đặng Kim Anh','0900000029',NULL,1,'2025-11-01 20:50:00','2025-11-01 20:50:00');
+(30,'dangkimanh@gmail.com','Password@123','dangkimanh@gmail.com','Đặng Kim Anh','0900000029',NULL,1,'2025-11-01 20:50:00','2025-11-01 20:50:00');
 
 
 
@@ -367,6 +367,7 @@ INSERT INTO products (id,name,description,price,stock_quantity,image_url,is_acti
 -- ================================
 --  ĐỒNG HỒ ĐEO TAY (1)
 -- ================================
+INSERT INTO products (id,name,description,price,stock_quantity,image_url,is_active,category_id,created_at,updated_at) VALUES
 (76,'Đồng hồ nam dây thép 01','Đồng hồ chống nước, dây thép',1250000,20,'https://example.com/img/w1.jpg',1,1,'2025-06-10 10:00:00','2025-06-10 10:00:00'),
 (77,'Đồng hồ nữ mặt tròn','Đồng hồ thời trang nữ',950000,30,'https://example.com/img/w2.jpg',1,1,'2025-06-12 11:00:00','2025-06-12 11:00:00'),
 (78,'Đồng hồ nam dây da','Dây da cao cấp',1150000,25,'https://example.com/img/w3.jpg',1,1,'2025-06-14 12:00:00','2025-06-14 12:00:00'),

@@ -8,6 +8,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.view.RedirectView;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -40,12 +41,23 @@ public class PaymentController {
 
     // VNPay return URL
     @GetMapping("/vnpay/return")
-    public ResponseEntity<Map<String, String>> vnpayReturn(@RequestParam Map<String, String> allParams)
+    public RedirectView vnpayReturn(@RequestParam Map<String, String> allParams)
             throws JsonProcessingException {
         String status = paymentService.handleVNPayReturn(allParams);
-        Map<String, String> result = new HashMap<>();
-        result.put("status", status);
-        return ResponseEntity.ok(result);
+        
+        // Lấy orderId từ transaction
+        String txnRef = allParams.get("vnp_TxnRef");
+        Long orderId = paymentService.getOrderIdByTransactionNo(txnRef);
+        
+        // Redirect về trang order detail
+        String redirectUrl = "/order-detail.html?id=" + orderId;
+        if ("SUCCESS".equals(status)) {
+            redirectUrl += "&payment=success";
+        } else {
+            redirectUrl += "&payment=failed";
+        }
+        
+        return new RedirectView(redirectUrl);
     }
 
     // MoMo return URL (demo)

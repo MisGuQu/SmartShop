@@ -6,6 +6,7 @@ import com.smartshop.dto.order.CheckoutResponse;
 import com.smartshop.dto.voucher.ApplyVoucherResponse;
 import com.smartshop.entity.cart.CartItem;
 import com.smartshop.entity.cart.ShoppingCart;
+import com.smartshop.entity.enums.ShippingMethod;
 import com.smartshop.entity.order.Order;
 import com.smartshop.entity.order.OrderItem;
 import com.smartshop.entity.user.User;
@@ -77,6 +78,27 @@ public class CheckoutService {
         ApplyVoucherResponse voucherResult = cartService.applyVoucher(req.getVoucherCode());
         double finalTotal = voucherResult.getFinalTotal();
 
+        // Tính phí vận chuyển
+        double shippingFee = 0.0;
+        String shippingMethod = req.getShippingMethod();
+        if (shippingMethod != null && !shippingMethod.isEmpty()) {
+            try {
+                ShippingMethod method = ShippingMethod.valueOf(shippingMethod);
+                shippingFee = method.getFee();
+            } catch (IllegalArgumentException e) {
+                // Nếu không tìm thấy, mặc định là STANDARD
+                shippingFee = ShippingMethod.STANDARD.getFee();
+                shippingMethod = "STANDARD";
+            }
+        } else {
+            // Mặc định là STANDARD nếu không có
+            shippingFee = ShippingMethod.STANDARD.getFee();
+            shippingMethod = "STANDARD";
+        }
+
+        // Tổng tiền cuối cùng = tổng tiền sau voucher + phí vận chuyển
+        double totalAmount = finalTotal + shippingFee;
+
         // 1️⃣8️⃣ + 1️⃣9️⃣ + 2️⃣0️⃣: Tạo Order
         String orderNumber = "ORD-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
 
@@ -84,12 +106,14 @@ public class CheckoutService {
                 .orderNumber(orderNumber)
                 .user(user)
                 .status("PENDING")
-                .totalAmount(finalTotal)
+                .totalAmount(totalAmount)
                 .voucherCode(voucherResult.getCode())
                 .voucherDiscount(voucherResult.getDiscount())
                 .paymentMethod(req.getPaymentMethod())
                 .paymentStatus("PENDING") // COD: sẽ thanh toán khi nhận hàng; online: update sau khi callback
                 .shippingAddress(req.getFullName() + " - " + req.getPhone() + "\n" + req.getAddress())
+                .shippingFee(shippingFee)
+                .shippingMethod(shippingMethod)
                 .build();
 
         // 2️⃣2️⃣ Lưu OrderItem + Giảm stock
@@ -141,7 +165,7 @@ public class CheckoutService {
                 .orderNumber(savedOrder.getOrderNumber())
                 .originalTotal(originalTotal)
                 .discount(voucherResult.getDiscount())
-                .finalTotal(finalTotal)
+                .finalTotal(totalAmount) // Tổng cuối cùng đã bao gồm phí vận chuyển
                 .paymentMethod(savedOrder.getPaymentMethod())
                 .paymentStatus(savedOrder.getPaymentStatus())
                 .status(savedOrder.getStatus())

@@ -235,6 +235,20 @@ const api = {
             body: JSON.stringify(data)
         });
     },
+    
+    // Payment
+    createVNPayPayment: (orderId) => {
+        return apiRequest('/payments/vnpay/create', {
+            method: 'POST',
+            body: JSON.stringify({ orderId })
+        });
+    },
+    createMoMoPayment: (orderId) => {
+        return apiRequest('/payments/momo/create', {
+            method: 'POST',
+            body: JSON.stringify({ orderId })
+        });
+    },
 
     // Orders
     getOrders: () => {

@@ -20,9 +20,10 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 async function loadProducts() {
-    // Get search keyword from URL - support both 'q' and 'keyword'
+    // Get search keyword and category from URL
     const urlParams = new URLSearchParams(window.location.search);
     const keyword = urlParams.get('q') || urlParams.get('keyword') || '';
+    const categoryId = urlParams.get('category') || urlParams.get('categoryId') || null;
 
     const params = {
         page: currentPage,
@@ -34,6 +35,12 @@ async function loadProducts() {
     // API supports both 'keyword' and 'q' parameter
     if (keyword) {
         params.keyword = keyword;
+    }
+    
+    // Add category filter if provided
+    if (categoryId) {
+        params.category = categoryId;
+        params.categoryId = categoryId; // Support both parameter names
     }
 
     try {
@@ -115,19 +122,34 @@ function displayProducts(products) {
         return;
     }
 
-    container.innerHTML = products.map(product => `
+    container.innerHTML = products.map(product => {
+        // Xử lý image URL - giống như trang chủ
+        let imageUrl = product.imageUrl || '';
+        const placeholderImage = 'https://via.placeholder.com/300x300/e2e8f0/94a3b8?text=No+Image';
+        
+        // Nếu imageUrl là null, rỗng, hoặc là example.com thì dùng placeholder
+        if (!imageUrl || 
+            imageUrl.trim() === '' || 
+            imageUrl.includes('example.com') ||
+            imageUrl.includes('placeholder')) {
+            imageUrl = placeholderImage;
+        }
+        
+        // Làm sạch URL - loại bỏ các ký tự nguy hiểm nhưng giữ nguyên URL hợp lệ
+        // Thay thế dấu nháy đơn bằng dấu nháy kép để tránh lỗi CSS
+        const safeImageUrl = imageUrl.replace(/'/g, "\\'");
+        
+        return `
         <a href="/product-detail.html?id=${product.id}" class="product-card">
-            <img src="${product.imageUrl || 'https://images.unsplash.com/photo-1512447608772-994891cd05d0?auto=format&fit=crop&w=640&q=80'}" 
-                 class="product-card__image" 
-                 alt="${escapeHtml(product.name)}"
-                 onerror="this.src='https://via.placeholder.com/300x300?text=No+Image'">
+            <div class="product-card__image" style="background-image: url('${safeImageUrl}'); background-size: cover; background-position: center; background-repeat: no-repeat;"></div>
             <div class="product-card__body">
                 <h3 class="product-card__title">${escapeHtml(product.name)}</h3>
                 <p class="product-card__description">${escapeHtml((product.description || '').substring(0, 100))}${product.description && product.description.length > 100 ? '...' : ''}</p>
                 <p class="product-card__price">${formatPrice(product.price || 0)}</p>
             </div>
         </a>
-    `).join('');
+        `;
+    }).join('');
 }
 
 function escapeHtml(text) {

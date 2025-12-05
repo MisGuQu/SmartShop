@@ -15,6 +15,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         }, 500);
     }
 
+    // Load featured categories
+    await loadFeaturedCategories();
+    
     // Load featured products
     await loadFeaturedProducts();
 
@@ -26,6 +29,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Setup footer newsletter form
     setupFooterNewsletterForm();
+    
+    // Setup category dropdown
+    setupCategoryDropdown();
 });
 
 // Carousel functionality
@@ -251,6 +257,72 @@ async function updateAuthUI() {
     }
 }
 
+// Load Featured Categories
+async function loadFeaturedCategories() {
+    try {
+        const container = document.getElementById('featuredCategoriesGrid');
+        if (!container) {
+            console.error('Featured categories container not found');
+            return;
+        }
+
+        console.log('Fetching categories from API...');
+        const categories = await api.getCategories();
+        console.log('Categories API response:', categories);
+        
+        if (!categories || categories.length === 0) {
+            container.innerHTML = '<div class="text-center" style="grid-column: 1 / -1;"><p>Chưa có danh mục nào</p></div>';
+            return;
+        }
+
+        // Lấy 6 danh mục đầu tiên (hoặc tất cả nếu ít hơn 6)
+        const featuredCategories = categories.slice(0, 6);
+        
+        // Màu sắc cho các category cards (rotate nếu có nhiều hơn 6)
+        const categoryColors = [
+            { class: 'category-icon-card__circle--audio', svg: 'audio' },
+            { class: 'category-icon-card__circle--wearable', svg: 'wearable' },
+            { class: 'category-icon-card__circle--fashion', svg: 'fashion' },
+            { class: 'category-icon-card__circle--home', svg: 'home' },
+            { class: 'category-icon-card__circle--computing', svg: 'computing' },
+            { class: 'category-icon-card__circle--accessories', svg: 'accessories' }
+        ];
+        
+        // SVG icons cho các category
+        const categoryIcons = {
+            audio: '<path d="M5 14v2a3 3 0 0 0 3 3h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H5m14 0h-4a2 2 0 0 0-2 2v3a2 2 0 0 0 2 2h1a3 3 0 0 0 3-3v-2m0 0a7 7 0 1 0-14 0" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path>',
+            wearable: '<rect x="7" y="7" width="10" height="10" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.6"></rect><path d="M9 4.5 10.5 7m4 0L15 4.5M9 19.5 10.5 17m4 0 1.5 2.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"></path>',
+            fashion: '<path d="M9 5.5 6.5 8 5 21h14l-1.5-13L15 5.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"></path><path d="M9 5.5c.5.7 1.3 1.1 2 1.1s1.5-.4 2-1.1" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"></path><path d="M12 6.6V3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"></path>',
+            home: '<path d="M4 11.5 12 5l8 6.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path><path d="M6.5 10.5V19a1 1 0 0 0 1 1h9a1 1 0 0 0 1-1v-8.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"></path><path d="M10 20v-4.5a2 2 0 0 1 4 0V20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"></path>',
+            computing: '<rect x="5" y="6" width="14" height="10" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.6"></rect><path d="M4 18h16m-10 0 .8 2h2.4l.8-2" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path>',
+            accessories: '<path d="M7.5 3h9l1.5 4h-12z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"></path><path d="M6 7h12v7.5A4.5 4.5 0 0 1 13.5 19h-3A4.5 4.5 0 0 1 6 14.5z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"></path><path d="M9.5 11h5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"></path>'
+        };
+
+        container.innerHTML = featuredCategories.map((category, index) => {
+            const colorConfig = categoryColors[index % categoryColors.length];
+            const iconSvg = categoryIcons[colorConfig.svg] || categoryIcons.accessories;
+            
+            return `
+                <a class="category-icon-card" href="/product.html?category=${category.id}">
+                    <div class="category-icon-card__circle ${colorConfig.class}">
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                            ${iconSvg}
+                        </svg>
+                    </div>
+                    <span class="category-icon-card__label">${escapeHtml(category.name)}</span>
+                </a>
+            `;
+        }).join('');
+        
+    } catch (error) {
+        console.error('Error loading categories:', error);
+        const container = document.getElementById('featuredCategoriesGrid');
+        if (container) {
+            container.innerHTML = '<div class="text-center" style="grid-column: 1 / -1;"><p class="text-danger">Không thể tải danh mục. Vui lòng thử lại sau.</p></div>';
+        }
+    }
+}
+
 async function loadFeaturedProducts() {
     try {
         const container = document.getElementById('featuredProductsGrid');
@@ -259,10 +331,15 @@ async function loadFeaturedProducts() {
             return;
         }
 
-        // API trả về List<ProductResponse> trực tiếp, không có pagination
-        console.log('Fetching products from API...');
-        const response = await api.getProducts({});
-        console.log('API Response:', response);
+        // Load sản phẩm được yêu thích - sort theo createdAt desc để lấy sản phẩm mới nhất
+        console.log('Fetching featured products from API...');
+        const response = await api.getProducts({
+            page: 0,
+            size: 8, // Lấy 8 sản phẩm để chọn 4 sản phẩm tốt nhất
+            sort: 'createdAt',
+            direction: 'desc'
+        });
+        console.log('Products API Response:', response);
         
         // Kiểm tra xem response là array hay object có content property
         let products = [];
@@ -281,7 +358,7 @@ async function loadFeaturedProducts() {
             return;
         }
 
-        // Giới hạn số lượng sản phẩm hiển thị (4 sản phẩm)
+        // Lấy 4 sản phẩm đầu tiên (sản phẩm mới nhất)
         const featuredProducts = products.slice(0, 4);
 
         if (featuredProducts.length === 0) {
@@ -290,14 +367,25 @@ async function loadFeaturedProducts() {
         }
 
         container.innerHTML = featuredProducts.map(product => {
-            const imageUrl = product.imageUrl || 'https://images.unsplash.com/photo-1512447608772-994891cd05d0?auto=format&fit=crop&w=640&q=80';
+            // Xử lý image URL - giống như products.js
+            let imageUrl = product.imageUrl || '';
+            const placeholderImage = 'https://via.placeholder.com/300x300/e2e8f0/94a3b8?text=No+Image';
+            
+            if (!imageUrl || 
+                imageUrl.trim() === '' || 
+                imageUrl.includes('example.com') ||
+                imageUrl.includes('placeholder')) {
+                imageUrl = placeholderImage;
+            }
+            
+            const safeImageUrl = imageUrl.replace(/'/g, "\\'");
             const description = product.description ? 
                 (product.description.length > 80 ? product.description.substring(0, 80) + '...' : product.description) : 
                 'Sản phẩm chất lượng cao từ SmartShop';
             
             return `
                 <a class="product-card" href="/product-detail.html?id=${product.id}">
-                    <div class="product-card__image" style="background-image: url('${imageUrl}');"></div>
+                    <div class="product-card__image" style="background-image: url('${safeImageUrl}'); background-size: cover; background-position: center; background-repeat: no-repeat;"></div>
                     <div class="product-card__body">
                         <h3 class="product-card__title">${escapeHtml(product.name || 'Sản phẩm')}</h3>
                         <p class="product-card__price">${formatPrice(product.price || 0)}</p>
@@ -468,4 +556,61 @@ function closeUserMenu() {
     
     userMenu.classList.add('d-none');
     userProfileLink.setAttribute('aria-expanded', 'false');
+}
+
+// Setup Category Dropdown
+async function setupCategoryDropdown() {
+    const dropdown = document.getElementById('categoryDropdown');
+    const dropdownBtn = document.getElementById('categoryDropdownBtn');
+    const dropdownMenu = document.getElementById('categoryDropdownMenu');
+    
+    if (!dropdown || !dropdownBtn || !dropdownMenu) return;
+    
+    // Toggle dropdown
+    dropdownBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const isExpanded = dropdown.getAttribute('aria-expanded') === 'true';
+        dropdown.setAttribute('aria-expanded', !isExpanded);
+    });
+    
+    // Close dropdown when clicking outside
+    document.addEventListener('click', (e) => {
+        if (!dropdown.contains(e.target)) {
+            dropdown.setAttribute('aria-expanded', 'false');
+        }
+    });
+    
+    // Load categories
+    try {
+        dropdownMenu.innerHTML = '<div class="nav__dropdown-loading">Đang tải...</div>';
+        const categories = await api.getCategories();
+        
+        if (!categories || categories.length === 0) {
+            dropdownMenu.innerHTML = '<div class="nav__dropdown-empty">Không có danh mục nào</div>';
+            return;
+        }
+        
+        // Render categories
+        dropdownMenu.innerHTML = categories.map(category => {
+            return `
+                <button class="nav__dropdown-item" 
+                        data-category-id="${category.id}"
+                        onclick="filterByCategory(${category.id}, '${escapeHtml(category.name)}')">
+                    ${escapeHtml(category.name)}
+                    ${category.productCount !== undefined ? `<span style="color: var(--color-muted); font-size: 0.85rem; margin-left: 8px;">(${category.productCount})</span>` : ''}
+                </button>
+            `;
+        }).join('');
+        
+    } catch (error) {
+        console.error('Error loading categories:', error);
+        dropdownMenu.innerHTML = '<div class="nav__dropdown-empty">Lỗi khi tải danh mục</div>';
+    }
+}
+
+// Filter products by category
+function filterByCategory(categoryId, categoryName) {
+    // Navigate to products page with category filter
+    window.location.href = `/product.html?category=${categoryId}`;
 }

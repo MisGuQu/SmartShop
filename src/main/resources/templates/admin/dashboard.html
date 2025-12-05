@@ -69,34 +69,42 @@
             <div class="admin-content">
                 <!-- Stats Cards -->
                 <div class="stats-grid">
-                    <div class="stat-card">
-                        <div class="stat-card__icon primary">
-                            <i class="bi bi-box-seam"></i>
+                    <a href="/admin/products.html" class="stat-card">
+                        <div class="stat-card__row">
+                            <div class="stat-card__icon primary">
+                                <i class="bi bi-box-seam"></i>
+                            </div>
+                            <div class="stat-card__value" id="totalProducts">-</div>
                         </div>
-                        <div class="stat-card__value" id="totalProducts">-</div>
                         <div class="stat-card__label">Tổng sản phẩm</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-card__icon success">
-                            <i class="bi bi-tags"></i>
+                    </a>
+                    <a href="/admin/categories.html" class="stat-card">
+                        <div class="stat-card__row">
+                            <div class="stat-card__icon success">
+                                <i class="bi bi-tags"></i>
+                            </div>
+                            <div class="stat-card__value" id="totalCategories">-</div>
                         </div>
-                        <div class="stat-card__value" id="totalCategories">-</div>
                         <div class="stat-card__label">Danh mục</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-card__icon warning">
-                            <i class="bi bi-receipt"></i>
+                    </a>
+                    <a href="/admin/orders.html" class="stat-card">
+                        <div class="stat-card__row">
+                            <div class="stat-card__icon warning">
+                                <i class="bi bi-receipt"></i>
+                            </div>
+                            <div class="stat-card__value" id="totalOrders">-</div>
                         </div>
-                        <div class="stat-card__value" id="totalOrders">-</div>
                         <div class="stat-card__label">Tổng đơn hàng</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-card__icon info">
-                            <i class="bi bi-people"></i>
+                    </a>
+                    <a href="/admin/users.html" class="stat-card">
+                        <div class="stat-card__row">
+                            <div class="stat-card__icon info">
+                                <i class="bi bi-people"></i>
+                            </div>
+                            <div class="stat-card__value" id="totalUsers">-</div>
                         </div>
-                        <div class="stat-card__value" id="totalUsers">-</div>
                         <div class="stat-card__label">Người dùng</div>
-                    </div>
+                    </a>
                 </div>
 
                 <!-- Recent Orders -->

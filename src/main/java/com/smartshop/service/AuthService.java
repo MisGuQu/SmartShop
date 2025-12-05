@@ -57,6 +57,21 @@ public class AuthService {
 
     // 5️⃣ Đăng nhập – trả JWT token
     public AuthResponse login(LoginRequest loginRequest) {
+        // Kiểm tra tài khoản có bị khóa không trước khi authenticate
+        User user = userRepository.findByUsername(loginRequest.getUsername())
+                .orElse(null);
+        
+        if (user == null) {
+            // Nếu không tìm thấy bằng username, thử tìm bằng email
+            user = userRepository.findByEmail(loginRequest.getUsername())
+                    .orElse(null);
+        }
+        
+        // Nếu tìm thấy user và tài khoản bị khóa
+        if (user != null && !user.isActive()) {
+            throw new RuntimeException("Tài khoản của bạn đã bị khóa. Vui lòng liên hệ quản trị viên để được hỗ trợ.");
+        }
+        
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
                         loginRequest.getUsername(),
@@ -64,7 +79,13 @@ public class AuthService {
                 )
         );
 
-        User user = (User) authentication.getPrincipal();
+        user = (User) authentication.getPrincipal();
+        
+        // Kiểm tra lại sau khi authenticate (phòng trường hợp user bị khóa sau khi load)
+        if (!user.isActive()) {
+            throw new RuntimeException("Tài khoản của bạn đã bị khóa. Vui lòng liên hệ quản trị viên để được hỗ trợ.");
+        }
+        
         String jwt = tokenProvider.generateToken(user);
 
         return AuthResponse.builder()
