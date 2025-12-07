@@ -113,7 +113,6 @@ public class CheckoutService {
                 .paymentStatus("PENDING") // COD: sẽ thanh toán khi nhận hàng; online: update sau khi callback
                 .shippingAddress(req.getFullName() + " - " + req.getPhone() + "\n" + req.getAddress())
                 .shippingFee(shippingFee)
-                .shippingMethod(shippingMethod)
                 .build();
 
         // 2️⃣2️⃣ Lưu OrderItem + Giảm stock

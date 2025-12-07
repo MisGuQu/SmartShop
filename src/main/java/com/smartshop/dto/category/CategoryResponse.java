@@ -9,8 +9,7 @@ import lombok.Data;
 public class CategoryResponse {
     private Long id;
     private String name;
-    private Long parentId;
-    private String parentName;
+    private String description;
     private Integer productCount;
 
     public static CategoryResponse fromEntity(Category c) {
@@ -21,8 +20,7 @@ public class CategoryResponse {
         return CategoryResponse.builder()
                 .id(c.getId())
                 .name(c.getName())
-                .parentId(c.getParent() != null ? c.getParent().getId() : null)
-                .parentName(c.getParent() != null ? c.getParent().getName() : null)
+                .description(c.getDescription())
                 .productCount(productCount)
                 .build();
     }

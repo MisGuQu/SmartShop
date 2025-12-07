@@ -56,9 +56,6 @@ public class Order {
     @Column(name = "shipping_fee")
     private Double shippingFee;
 
-    @Column(name = "shipping_method", length = 20)
-    private String shippingMethod;
-
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;

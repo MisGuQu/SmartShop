@@ -4,30 +4,96 @@ let categories = [];
 // Initialize
 document.addEventListener('DOMContentLoaded', function() {
     loadCategories();
+    setupExportButtons();
 });
+
+// Setup export button event listeners
+function setupExportButtons() {
+    console.log('setupExportButtons called');
+    
+    // Use event delegation on the document to catch clicks
+    document.addEventListener('click', function(e) {
+        // Check if clicked element is export Excel button or inside it
+        if (e.target.closest('.export-excel-btn')) {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log('Excel export button clicked via delegation');
+            try {
+                exportToExcel();
+            } catch (error) {
+                console.error('Error in exportToExcel:', error);
+                alert('Lỗi khi xuất Excel: ' + error.message);
+            }
+            return false;
+        }
+        
+        // Check if clicked element is export PDF button or inside it
+        if (e.target.closest('.export-pdf-btn')) {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log('PDF export button clicked via delegation');
+            try {
+                exportToPDF();
+            } catch (error) {
+                console.error('Error in exportToPDF:', error);
+                alert('Lỗi khi xuất PDF: ' + error.message);
+            }
+            return false;
+        }
+    });
+    
+    // Also try direct attachment as backup
+    setTimeout(function() {
+        const excelBtn = document.querySelector('.export-excel-btn');
+        const pdfBtn = document.querySelector('.export-pdf-btn');
+        
+        if (excelBtn) {
+            console.log('Excel button found, attaching direct listener');
+            excelBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('Excel export button clicked (direct)');
+                try {
+                    exportToExcel();
+                } catch (error) {
+                    console.error('Error in exportToExcel:', error);
+                    alert('Lỗi khi xuất Excel: ' + error.message);
+                }
+                return false;
+            }, true); // Use capture phase
+        } else {
+            console.warn('Excel export button not found');
+        }
+        
+        if (pdfBtn) {
+            console.log('PDF button found, attaching direct listener');
+            pdfBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('PDF export button clicked (direct)');
+                try {
+                    exportToPDF();
+                } catch (error) {
+                    console.error('Error in exportToPDF:', error);
+                    alert('Lỗi khi xuất PDF: ' + error.message);
+                }
+                return false;
+            }, true); // Use capture phase
+        } else {
+            console.warn('PDF export button not found');
+        }
+    }, 500);
+}
 
 // Load categories
 async function loadCategories() {
     try {
         categories = await api.getCategories();
         renderCategoriesTable();
-        loadCategoriesForParent();
     } catch (error) {
         console.error('Error loading categories:', error);
         showAlert('Lỗi khi tải danh sách danh mục', 'error');
     }
-}
-
-// Load categories for parent select
-function loadCategoriesForParent() {
-    const select = document.getElementById('categoryParent');
-    select.innerHTML = '<option value="">Không có (danh mục gốc)</option>';
-    categories.forEach(cat => {
-        const option = document.createElement('option');
-        option.value = cat.id;
-        option.textContent = cat.name;
-        select.appendChild(option);
-    });
 }
 
 // Render categories table
@@ -36,7 +102,7 @@ function renderCategoriesTable() {
     if (!tbody) return;
 
     if (!categories || categories.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" class="text-center">Không có danh mục nào</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="5" class="text-center">Không có danh mục nào</td></tr>';
         return;
     }
 
@@ -44,7 +110,6 @@ function renderCategoriesTable() {
         <tr>
             <td>${category.id}</td>
             <td>${category.name || ''}</td>
-            <td>${category.parentName || '-'}</td>
             <td>${category.productCount || 0}</td>
             <td>${category.description || '-'}</td>
             <td>
@@ -73,7 +138,6 @@ async function editCategory(categoryId) {
         document.getElementById('categoryId').value = category.id;
         document.getElementById('categoryName').value = category.name || '';
         document.getElementById('categoryDescription').value = category.description || '';
-        document.getElementById('categoryParent').value = category.parentId || '';
         
         document.getElementById('categoryModalTitle').textContent = 'Sửa danh mục';
         new bootstrap.Modal(document.getElementById('categoryModal')).show();
@@ -89,9 +153,7 @@ async function saveCategory() {
         const categoryId = document.getElementById('categoryId').value;
         const formData = {
             name: document.getElementById('categoryName').value,
-            description: document.getElementById('categoryDescription').value,
-            parentId: document.getElementById('categoryParent').value ? 
-                parseInt(document.getElementById('categoryParent').value) : null
+            description: document.getElementById('categoryDescription').value
         };
 
         if (categoryId) {
@@ -127,18 +189,35 @@ async function confirmDeleteCategory(categoryId) {
     }
 }
 
-// Export to Excel
-function exportToExcel() {
+// Export to Excel - Make globally available
+window.exportToExcel = function() {
+    console.log('=== exportToExcel CALLED ===');
+    console.log('categories:', categories);
+    console.log('categories length:', categories ? categories.length : 0);
+    console.log('XLSX available:', typeof XLSX !== 'undefined');
+    
+    alert('Đang xuất Excel...'); // Temporary alert to confirm function is called
+    
     if (!categories || categories.length === 0) {
+        console.warn('No categories to export');
         showAlert('Không có dữ liệu để xuất!', 'error');
+        alert('Không có dữ liệu để xuất!');
         return;
     }
 
+    // Check if XLSX library is loaded
+    if (typeof XLSX === 'undefined') {
+        console.error('XLSX library not loaded');
+        showAlert('Thư viện Excel chưa được tải. Vui lòng tải lại trang!', 'error');
+        alert('Thư viện Excel chưa được tải. Vui lòng tải lại trang!');
+        return;
+    }
+
+    console.log('XLSX library loaded, starting export...');
     try {
         const data = categories.map(category => ({
             'ID': category.id || '',
             'Tên danh mục': category.name || '',
-            'Danh mục cha': category.parentName || '-',
             'Số sản phẩm': category.productCount || 0,
             'Mô tả': category.description || '-'
         }));
@@ -149,7 +228,6 @@ function exportToExcel() {
         const colWidths = [
             { wch: 10 }, // ID
             { wch: 30 }, // Tên
-            { wch: 25 }, // Danh mục cha
             { wch: 15 }, // Số sản phẩm
             { wch: 50 }  // Mô tả
         ];
@@ -157,21 +235,45 @@ function exportToExcel() {
 
         XLSX.utils.book_append_sheet(wb, ws, 'Danh mục');
         const filename = `BaoCaoDanhMuc_${new Date().toISOString().split('T')[0]}.xlsx`;
+        console.log('Writing file:', filename);
         XLSX.writeFile(wb, filename);
+        console.log('Excel export successful');
         showAlert('Xuất Excel thành công!', 'success');
+        alert('Xuất Excel thành công!');
     } catch (error) {
         console.error('Error exporting to Excel:', error);
-        showAlert('Lỗi khi xuất Excel: ' + (error.message || 'Unknown error'), 'error');
+        console.error('Error stack:', error.stack);
+        const errorMsg = 'Lỗi khi xuất Excel: ' + (error.message || 'Unknown error');
+        showAlert(errorMsg, 'error');
+        alert(errorMsg);
     }
-}
+};
 
-// Export to PDF
-function exportToPDF() {
+// Export to PDF - Make globally available
+window.exportToPDF = function() {
+    console.log('=== exportToPDF CALLED ===');
+    console.log('categories:', categories);
+    console.log('categories length:', categories ? categories.length : 0);
+    console.log('jsPDF available:', typeof window.jspdf !== 'undefined');
+    
+    alert('Đang xuất PDF...'); // Temporary alert to confirm function is called
+    
     if (!categories || categories.length === 0) {
+        console.warn('No categories to export');
         showAlert('Không có dữ liệu để xuất!', 'error');
+        alert('Không có dữ liệu để xuất!');
         return;
     }
 
+    // Check if jsPDF library is loaded
+    if (typeof window.jspdf === 'undefined') {
+        console.error('jsPDF library not loaded');
+        showAlert('Thư viện PDF chưa được tải. Vui lòng tải lại trang!', 'error');
+        alert('Thư viện PDF chưa được tải. Vui lòng tải lại trang!');
+        return;
+    }
+
+    console.log('jsPDF library loaded, starting export...');
     try {
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF('l', 'mm', 'a4');
@@ -184,14 +286,13 @@ function exportToPDF() {
         const tableData = categories.map(category => [
             category.id || '',
             (category.name || '').substring(0, 30),
-            (category.parentName || '-').substring(0, 20),
             category.productCount || 0,
             (category.description || '-').substring(0, 40)
         ]);
 
         doc.autoTable({
             startY: 28,
-            head: [['ID', 'Tên danh mục', 'Danh mục cha', 'Số SP', 'Mô tả']],
+            head: [['ID', 'Tên danh mục', 'Số SP', 'Mô tả']],
             body: tableData,
             styles: { fontSize: 8 },
             headStyles: { fillColor: [66, 139, 202], textColor: 255 },
@@ -200,18 +301,29 @@ function exportToPDF() {
         });
         
         const filename = `BaoCaoDanhMuc_${new Date().toISOString().split('T')[0]}.pdf`;
+        console.log('Saving PDF:', filename);
         doc.save(filename);
+        console.log('PDF export successful');
         showAlert('Xuất PDF thành công!', 'success');
+        alert('Xuất PDF thành công!');
     } catch (error) {
         console.error('Error exporting to PDF:', error);
-        showAlert('Lỗi khi xuất PDF: ' + (error.message || 'Unknown error'), 'error');
+        console.error('Error stack:', error.stack);
+        const errorMsg = 'Lỗi khi xuất PDF: ' + (error.message || 'Unknown error');
+        showAlert(errorMsg, 'error');
+        alert(errorMsg);
     }
-}
+};
 
 // Show alert
 function showAlert(message, type = 'success') {
+    console.log('showAlert called:', message, type);
     const alertContainer = document.getElementById('alertContainer');
-    if (!alertContainer) return;
+    if (!alertContainer) {
+        console.warn('alertContainer not found, using alert() as fallback');
+        alert(message);
+        return;
+    }
 
     const alertDiv = document.createElement('div');
     alertDiv.className = `alert alert-${type === 'error' ? 'danger' : type} alert-dismissible fade show`;
@@ -221,6 +333,7 @@ function showAlert(message, type = 'success') {
     `;
     alertContainer.innerHTML = '';
     alertContainer.appendChild(alertDiv);
+    console.log('Alert displayed in container');
 
     setTimeout(() => {
         alertDiv.remove();

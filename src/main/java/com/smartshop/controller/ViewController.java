@@ -27,6 +27,16 @@ public class ViewController {
         return "auth/register";
     }
 
+    @GetMapping("/auth/forgot-password")
+    public String forgotPassword() {
+        return "auth/forgot-password";
+    }
+
+    @GetMapping("/auth/reset-password")
+    public String resetPassword() {
+        return "auth/reset-password";
+    }
+
     // Product pages
     @GetMapping("/product.html")
     public String products() {
@@ -60,10 +70,25 @@ public class ViewController {
         return "order/order-detail";
     }
 
-    // Profile page
+    // Profile pages
     @GetMapping("/profile.html")
     public String profile() {
         return "user/profile";
+    }
+
+    @GetMapping("/user/profile.html")
+    public String userProfile() {
+        return "user/profile";
+    }
+
+    @GetMapping("/user/change-password.html")
+    public String changePassword() {
+        return "user/change-password";
+    }
+
+    @GetMapping("/kho-voucher.html")
+    public String vouchers() {
+        return "user/vouchers";
     }
 
     // Wishlist page
@@ -107,6 +132,12 @@ public class ViewController {
     @GetMapping("/contact.html")
     public String contact() {
         return "contact";
+    }
+
+    // Favicon handler - return 204 No Content to suppress warnings
+    @GetMapping("/favicon.ico")
+    public org.springframework.http.ResponseEntity<Void> favicon() {
+        return org.springframework.http.ResponseEntity.noContent().build();
     }
 }
 

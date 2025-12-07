@@ -19,8 +19,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.mail.SimpleMailMessage;
+import org.springframework.mail.javamail.JavaMailSender;
 
 import java.io.IOException;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.UUID;
@@ -37,6 +40,7 @@ public class AuthService {
     private final AuthenticationManager authenticationManager;
     private final Cloudinary cloudinary;
     private final RestTemplate restTemplate = new RestTemplate();
+    private final JavaMailSender mailSender;
 
     @Value("${app.web.base-url:http://localhost:8080}")
     private String appBaseUrl;
@@ -46,13 +50,15 @@ public class AuthService {
                        PasswordEncoder passwordEncoder,
                        JwtTokenProvider tokenProvider,
                        AuthenticationManager authenticationManager,
-                       Cloudinary cloudinary) {
+                       Cloudinary cloudinary,
+                       JavaMailSender mailSender) {
         this.userRepository = userRepository;
         this.roleRepository = roleRepository;
         this.passwordEncoder = passwordEncoder;
         this.tokenProvider = tokenProvider;
         this.authenticationManager = authenticationManager;
         this.cloudinary = cloudinary;
+        this.mailSender = mailSender;
     }
 
     // 5️⃣ Đăng nhập – trả JWT token
@@ -359,6 +365,88 @@ public class AuthService {
         } catch (Exception e) {
             throw new RuntimeException("Failed to upload image to Cloudinary: " + e.getMessage(), e);
         }
+    }
+
+    // Forgot Password - Generate reset token and send email
+    public void forgotPassword(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy tài khoản với email này."));
+
+        // Generate reset token
+        String resetToken = UUID.randomUUID().toString();
+        LocalDateTime expiryDate = LocalDateTime.now().plusHours(24); // Token valid for 24 hours
+
+        user.setResetToken(resetToken);
+        user.setResetTokenExpiry(expiryDate);
+        userRepository.save(user);
+
+        // Send email
+        try {
+            String resetUrl = appBaseUrl + "/auth/reset-password?token=" + resetToken;
+            String subject = "SmartShop - Đặt lại mật khẩu";
+            String body = String.format(
+                "Xin chào %s,\n\n" +
+                "Bạn đã yêu cầu đặt lại mật khẩu cho tài khoản SmartShop.\n\n" +
+                "Vui lòng click vào link sau để đặt lại mật khẩu:\n%s\n\n" +
+                "Link này sẽ hết hạn sau 24 giờ.\n\n" +
+                "Nếu bạn không yêu cầu đặt lại mật khẩu, vui lòng bỏ qua email này.\n\n" +
+                "Trân trọng,\n" +
+                "Đội ngũ SmartShop",
+                user.getFullName() != null ? user.getFullName() : user.getUsername(),
+                resetUrl
+            );
+
+            SimpleMailMessage message = new SimpleMailMessage();
+            message.setTo(user.getEmail());
+            message.setSubject(subject);
+            message.setText(body);
+            mailSender.send(message);
+        } catch (Exception e) {
+            // If email sending fails, remove the token
+            user.setResetToken(null);
+            user.setResetTokenExpiry(null);
+            userRepository.save(user);
+            throw new RuntimeException("Không thể gửi email. Vui lòng thử lại sau.", e);
+        }
+    }
+
+    // Reset Password - Validate token and update password
+    public void resetPassword(String token, String email, String newPassword) {
+        if (token == null || token.trim().isEmpty()) {
+            throw new RuntimeException("Token không hợp lệ.");
+        }
+
+        User user = userRepository.findByResetToken(token)
+                .orElseThrow(() -> new RuntimeException("Token không hợp lệ hoặc đã hết hạn."));
+
+        // Verify email matches the token's user
+        if (email == null || email.trim().isEmpty()) {
+            throw new RuntimeException("Vui lòng nhập email để xác nhận.");
+        }
+
+        if (!user.getEmail().equalsIgnoreCase(email.trim())) {
+            throw new RuntimeException("Email không khớp với tài khoản. Vui lòng kiểm tra lại email.");
+        }
+
+        // Check if token is expired
+        if (user.getResetTokenExpiry() == null || user.getResetTokenExpiry().isBefore(LocalDateTime.now())) {
+            // Clear expired token
+            user.setResetToken(null);
+            user.setResetTokenExpiry(null);
+            userRepository.save(user);
+            throw new RuntimeException("Token đã hết hạn. Vui lòng yêu cầu đặt lại mật khẩu mới.");
+        }
+
+        // Validate new password
+        if (newPassword == null || newPassword.trim().isEmpty() || newPassword.length() < 6) {
+            throw new RuntimeException("Mật khẩu mới phải có ít nhất 6 ký tự.");
+        }
+
+        // Update password
+        user.setPassword(passwordEncoder.encode(newPassword));
+        user.setResetToken(null);
+        user.setResetTokenExpiry(null);
+        userRepository.save(user);
     }
 }
 

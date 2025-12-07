@@ -129,17 +129,15 @@ async function handleCheckout(e) {
         
         const response = await api.checkout(checkoutData);
         
-        // Nếu thanh toán online (VNPAY, MOMO), tạo payment URL và redirect
-        if (paymentMethod === 'VNPAY' || paymentMethod === 'MOMO') {
+        // Nếu thanh toán online (VNPAY), tạo payment URL và redirect
+        if (paymentMethod === 'VNPAY') {
             try {
                 showAlert('Đang chuyển đến cổng thanh toán...', 'info');
                 
                 // Tạo payment URL
-                const paymentResponse = paymentMethod === 'VNPAY' 
-                    ? await api.createVNPayPayment(response.orderId)
-                    : await api.createMoMoPayment(response.orderId);
+                const paymentResponse = await api.createVNPayPayment(response.orderId);
                 
-                // Redirect đến cổng thanh toán
+                // Redirect đến cổng thanh toán VNPay
                 if (paymentResponse && paymentResponse.paymentUrl) {
                     window.location.href = paymentResponse.paymentUrl;
                 } else {

@@ -82,7 +82,7 @@ public class SecurityConfig {
                 
                 // Protected pages (require authentication)
                 .requestMatchers("/cart.html", "/checkout.html", "/orders.html", 
-                               "/order-detail.html", "/wishlist.html").authenticated()
+                               "/order-detail.html", "/wishlist.html", "/user/**").authenticated()
                 
                 // Admin pages (require ADMIN role)
                 .requestMatchers("/admin/**").hasRole("ADMIN")

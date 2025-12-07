@@ -45,7 +45,8 @@ function displayOrder(order) {
     // Get voucher discount and shipping fee if available
     const voucherDiscount = order.voucherDiscount || 0;
     const shippingFee = order.shippingFee || 0;
-    const finalTotal = order.totalAmount || subtotal;
+    // Calculate final total: subtotal - voucher discount + shipping fee
+    const finalTotal = subtotal - voucherDiscount + shippingFee;
     
     const statusClass = getStatusClass(order.status);
     const statusText = getStatusText(order.status);
@@ -222,8 +223,7 @@ function getStatusText(status) {
 function getPaymentMethodText(method) {
     const methodMap = {
         'COD': 'Thanh toán khi nhận hàng',
-        'VNPAY': 'VNPay',
-        'MOMO': 'MoMo'
+        'VNPAY': 'VNPay'
     };
     return methodMap[method] || method || 'N/A';
 }

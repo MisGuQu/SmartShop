@@ -143,7 +143,7 @@
             display: flex;
             align-items: center;
             justify-content: flex-start;
-            gap: 0;
+            gap: 6px;
             cursor: pointer;
             background: none;
             border: none;
@@ -158,42 +158,83 @@
             line-height: 1.2;
             white-space: nowrap;
             text-decoration: none;
+            transition: color 0.2s ease;
+        }
+        
+        .nav__link--dropdown:hover {
+            color: var(--color-primary);
         }
         
         .nav__dropdown-arrow {
-            display: none; /* Ẩn mũi tên */
+            width: 14px;
+            height: 14px;
+            transition: transform 0.3s ease;
+            opacity: 0.7;
+        }
+        
+        .nav__dropdown[aria-expanded="true"] .nav__dropdown-arrow {
+            transform: rotate(180deg);
+            opacity: 1;
         }
         
         .nav__dropdown-menu {
             position: absolute;
-            top: calc(100% + 8px);
+            top: calc(100% + 12px);
             left: 0;
-            background: var(--color-surface);
-            border: 1px solid rgba(15, 23, 42, 0.12);
-            border-radius: var(--radius-sm);
-            box-shadow: var(--shadow-md);
-            min-width: 220px;
-            max-height: 400px;
+            background: #ffffff;
+            border: 1px solid rgba(226, 232, 240, 0.8);
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1), 0 2px 8px rgba(0, 0, 0, 0.06);
+            min-width: 280px;
+            max-width: 320px;
+            max-height: 480px;
             overflow-y: auto;
+            overflow-x: hidden;
             z-index: 1000;
             display: none;
-            padding: 8px 0;
+            padding: 8px;
+            opacity: 0;
+            transform: translateY(-8px);
+            transition: opacity 0.2s ease, transform 0.2s ease;
+        }
+        
+        .nav__dropdown-menu::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .nav__dropdown-menu::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        
+        .nav__dropdown-menu::-webkit-scrollbar-thumb {
+            background: rgba(148, 163, 184, 0.4);
+            border-radius: 3px;
+        }
+        
+        .nav__dropdown-menu::-webkit-scrollbar-thumb:hover {
+            background: rgba(148, 163, 184, 0.6);
         }
         
         .nav__dropdown[aria-expanded="true"] .nav__dropdown-menu {
             display: block !important;
+            opacity: 1;
+            transform: translateY(0);
         }
         
         .nav__dropdown-menu.show {
             display: block !important;
+            opacity: 1;
+            transform: translateY(0);
         }
         
         .nav__dropdown-item {
-            display: block;
-            padding: 12px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            padding: 12px 16px;
             color: var(--color-text);
             text-decoration: none;
-            transition: background 0.2s ease;
+            transition: all 0.2s ease;
             cursor: pointer;
             border: none;
             background: none;
@@ -201,31 +242,75 @@
             text-align: left;
             font-family: inherit;
             font-size: 0.95rem;
+            font-weight: 500;
+            border-radius: 8px;
+            margin: 2px 0;
+            position: relative;
         }
         
         .nav__dropdown-item:hover {
-            background: rgba(37, 99, 235, 0.08);
+            background: linear-gradient(135deg, rgba(76, 110, 245, 0.08), rgba(124, 58, 237, 0.08));
             color: var(--color-primary);
+            transform: translateX(4px);
         }
         
         .nav__dropdown-item--active {
-            background: rgba(37, 99, 235, 0.1);
+            background: linear-gradient(135deg, rgba(76, 110, 245, 0.12), rgba(124, 58, 237, 0.12));
             color: var(--color-primary);
             font-weight: 600;
         }
         
+        .nav__dropdown-item--active::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 3px;
+            height: 60%;
+            background: linear-gradient(180deg, #4c6ef5, #7c3aed);
+            border-radius: 0 2px 2px 0;
+        }
+        
+        .nav__dropdown-item-count {
+            color: var(--color-muted);
+            font-size: 0.8rem;
+            font-weight: 500;
+            background: rgba(148, 163, 184, 0.1);
+            padding: 2px 8px;
+            border-radius: 12px;
+            margin-left: auto;
+            transition: all 0.2s ease;
+        }
+        
+        .nav__dropdown-item:hover .nav__dropdown-item-count {
+            background: rgba(76, 110, 245, 0.15);
+            color: var(--color-primary);
+        }
+        
+        .nav__dropdown-item--active .nav__dropdown-item-count {
+            background: rgba(76, 110, 245, 0.2);
+            color: var(--color-primary);
+        }
+        
+        .nav__dropdown-divider {
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(226, 232, 240, 0.8), transparent);
+            margin: 6px 0;
+        }
+        
         .nav__dropdown-loading {
-            padding: 20px;
+            padding: 24px;
             text-align: center;
             color: var(--color-muted);
-            font-size: 0.9rem;
+            font-size: 0.875rem;
         }
         
         .nav__dropdown-empty {
-            padding: 20px;
+            padding: 24px;
             text-align: center;
             color: var(--color-muted);
-            font-size: 0.9rem;
+            font-size: 0.875rem;
         }
     </style>
 </head>
@@ -239,7 +324,7 @@
             <div class="nav__dropdown" id="categoryDropdown">
                 <button class="nav__link nav__link--dropdown" id="categoryDropdownBtn" aria-expanded="false" aria-haspopup="true">
                     Danh Mục
-                    <svg class="nav__dropdown-arrow" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+                    <svg class="nav__dropdown-arrow" viewBox="0 0 24 24" width="14" height="14" aria-hidden="true">
                         <path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                     </svg>
                 </button>
@@ -378,33 +463,35 @@
             </div>
         </div>
         <div class="footer__column">
-            <h4 class="footer__title">THÔNG TIN</h4>
+            <h4 class="footer__title">THÔNG TIN LIÊN HỆ</h4>
             <ul class="footer__list">
-                <li><a href="/product.html">Sản phẩm mới</a></li>
-                <li><a href="/product.html">Sản phẩm bán chạy</a></li>
-                <li><a href="/contact.html">Cửa hàng của chúng tôi</a></li>
-                <li><a href="/contact.html">Khách hàng</a></li>
+                <li>
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 8px;">
+                        <path d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                    </svg>
+                    <a href="mailto:support@smartshop.vn">support@smartshop.vn</a>
+                </li>
+                <li>
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 8px;">
+                        <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/>
+                    </svg>
+                    <span>Hotline: 1900 1234</span>
+                </li>
+                <li>
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 8px;">
+                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                        <circle cx="12" cy="10" r="3"></circle>
+                    </svg>
+                    <span>123 Đường ABC, Quận XYZ, TP.HCM</span>
+                </li>
+                <li>
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 8px;">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <polyline points="12 6 12 12 16 14"></polyline>
+                    </svg>
+                    <span>Thứ 2 - Chủ nhật: 8:00 - 22:00</span>
+                </li>
             </ul>
-        </div>
-        <div class="footer__column">
-            <h4 class="footer__title">LIÊN KẾT NHANH</h4>
-            <ul class="footer__list">
-                <li><a href="/contact.html">Liên hệ chúng tôi</a></li>
-                <li><a href="/support">Trung tâm trợ giúp</a></li>
-                <li><a href="/policies/returns">Chính sách hoàn tiền</a></li>
-                <li><a href="/policies/shipping">Báo cáo spam</a></li>
-            </ul>
-        </div>
-        <div class="footer__column">
-            <h4 class="footer__title">ĐĂNG KÝ BẢN TIN</h4>
-            <form class="footer__newsletter" id="footerNewsletterForm">
-                <input type="email" 
-                       class="footer__input" 
-                       placeholder="email@example.com" 
-                       required
-                       aria-label="Email đăng ký bản tin">
-                <button type="submit" class="footer__subscribe">Đăng ký</button>
-            </form>
         </div>
     </div>
     <div class="footer__divider"></div>
@@ -443,25 +530,7 @@
         return false;
     }
     
-    // Setup newsletter form
-    function setupNewsletterForm() {
-        const form = document.getElementById('footerNewsletterForm');
-        if (form) {
-            form.addEventListener('submit', async (e) => {
-                e.preventDefault();
-                const emailInput = form.querySelector('input[type="email"]');
-                const email = emailInput.value.trim();
-                
-                if (email) {
-                    alert('Cảm ơn bạn đã đăng ký nhận bản tin! Chúng tôi sẽ gửi email về ' + email);
-                    emailInput.value = '';
-                }
-            });
-        }
-    }
-    
     document.addEventListener('DOMContentLoaded', () => {
-        setupNewsletterForm();
         setupProductCategoryDropdown(); // Đổi tên để tránh conflict với home.js
         updatePageTitle();
         
@@ -583,21 +652,10 @@
                     <button class="nav__dropdown-item ${isActive ? 'nav__dropdown-item--active' : ''}" 
                             data-category-id="${category.id}"
                             data-category-name="${safeName}">
-                        ${safeName}
-                        ${category.productCount !== undefined ? `<span style="color: var(--color-muted); font-size: 0.85rem; margin-left: 8px;">(${category.productCount})</span>` : ''}
+                        <span>${safeName}</span>
                     </button>
                 `;
             }).join('');
-            
-            // Add "Tất cả" option
-            const allButton = `
-                <div style="border-top: 1px solid rgba(15, 23, 42, 0.08); margin: 4px 0;"></div>
-                <button class="nav__dropdown-item ${!currentCategoryId ? 'nav__dropdown-item--active' : ''}" 
-                        data-category-id="all">
-                    Tất cả sản phẩm
-                </button>
-            `;
-            dropdownMenu.innerHTML += allButton;
             
             // Add event listeners to all category buttons
             const categoryButtons = dropdownMenu.querySelectorAll('.nav__dropdown-item');

@@ -69,12 +69,12 @@
                 <div class="d-flex justify-content-between align-items-center mb-4">
                     <div></div>
                     <div class="btn-group">
-                        <button type="button" class="btn btn-success dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                        <button type="button" class="btn btn-success dropdown-toggle" id="exportDropdownBtn" data-bs-toggle="dropdown" aria-expanded="false">
                             <i class="bi bi-file-earmark-arrow-down"></i> Xuất báo cáo
                         </button>
-                        <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="#" onclick="exportToExcel()"><i class="bi bi-file-earmark-excel"></i> Xuất Excel</a></li>
-                            <li><a class="dropdown-item" href="#" onclick="exportToPDF()"><i class="bi bi-file-earmark-pdf"></i> Xuất PDF</a></li>
+                        <ul class="dropdown-menu" id="exportDropdownMenu">
+                            <li><a class="dropdown-item export-excel-btn" href="javascript:void(0)" id="exportExcelBtn"><i class="bi bi-file-earmark-excel"></i> Xuất Excel</a></li>
+                            <li><a class="dropdown-item export-pdf-btn" href="javascript:void(0)" id="exportPdfBtn"><i class="bi bi-file-earmark-pdf"></i> Xuất PDF</a></li>
                         </ul>
                         <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#productModal" onclick="openProductModal()">
                             <i class="bi bi-plus-circle"></i> Thêm sản phẩm

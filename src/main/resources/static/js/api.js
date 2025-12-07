@@ -243,12 +243,6 @@ const api = {
             body: JSON.stringify({ orderId })
         });
     },
-    createMoMoPayment: (orderId) => {
-        return apiRequest('/payments/momo/create', {
-            method: 'POST',
-            body: JSON.stringify({ orderId })
-        });
-    },
 
     // Orders
     getOrders: () => {
@@ -344,11 +338,20 @@ const api = {
     getVouchers: () => {
         return apiRequest('/vouchers');
     },
+    getAvailableVouchers: () => {
+        return apiRequest('/vouchers/available');
+    },
     getVoucherByCode: (code) => {
         return apiRequest(`/vouchers/${code}`);
     },
     getMyVouchers: () => {
         return apiRequest('/vouchers/my-vouchers');
+    },
+    claimVoucher: (code) => {
+        return apiRequest('/vouchers/claim', {
+            method: 'POST',
+            body: JSON.stringify({ code })
+        });
     },
 
     // Admin - Products CRUD

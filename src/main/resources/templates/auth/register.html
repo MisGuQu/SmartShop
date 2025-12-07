@@ -93,11 +93,45 @@
 <script src="/js/auth.js"></script>
 <script>
     // Initialize Google Sign-In
-    function initGoogleSignIn() {
+    let googleClientId = null;
+    
+    // Fetch Google Client ID from server
+    async function loadGoogleClientId() {
+        try {
+            const response = await fetch('/api/auth/google-client-id');
+            if (response.ok) {
+                const data = await response.json();
+                googleClientId = data.clientId;
+            } else {
+                console.error('Failed to load Google Client ID');
+                showAlert('Không thể tải cấu hình Google Sign-In. Vui lòng thử lại sau.', 'danger');
+            }
+        } catch (error) {
+            console.error('Error loading Google Client ID:', error);
+            showAlert('Lỗi khi tải cấu hình Google Sign-In. Vui lòng kiểm tra kết nối.', 'danger');
+        }
+    }
+    
+    async function initGoogleSignIn() {
+        // Load client ID first if not loaded
+        if (!googleClientId) {
+            await loadGoogleClientId();
+        }
+        
+        if (!googleClientId) {
+            console.error('Google Client ID is not available');
+            // Hide Google button if client ID is not available
+            const googleBtn = document.getElementById('googleRegisterBtn');
+            if (googleBtn) {
+                googleBtn.style.display = 'none';
+            }
+            return;
+        }
+        
         if (typeof google !== 'undefined' && google.accounts) {
             try {
                 google.accounts.id.initialize({
-                    client_id: '740735252992-4lvlddgsh2bkla8vb46rfc0iam5ph3po.apps.googleusercontent.com',
+                    client_id: googleClientId,
                     callback: handleGoogleSignIn,
                     auto_select: false,
                     cancel_on_tap_outside: true
@@ -128,12 +162,17 @@
                 }
             } catch (error) {
                 console.error('Error initializing Google Sign-In:', error);
+                showAlert('Lỗi khởi tạo Google Sign-In. Vui lòng kiểm tra cấu hình Client ID.', 'danger');
                 // Fallback: show original button and use click handler
                 const googleBtn = document.getElementById('googleRegisterBtn');
                 if (googleBtn) {
                     googleBtn.style.display = 'block';
                     googleBtn.addEventListener('click', () => {
-                        google.accounts.id.prompt();
+                        if (googleClientId) {
+                            google.accounts.id.prompt();
+                        } else {
+                            showAlert('Google Client ID chưa được cấu hình. Vui lòng liên hệ quản trị viên.', 'danger');
+                        }
                     });
                 }
             }
@@ -143,11 +182,17 @@
         }
     }
     
+    // Load client ID first, then initialize
+    async function init() {
+        await loadGoogleClientId();
+        initGoogleSignIn();
+    }
+    
     // Try to initialize when DOM is ready
     if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', initGoogleSignIn);
+        document.addEventListener('DOMContentLoaded', init);
     } else {
-        initGoogleSignIn();
+        init();
     }
     
     async function handleGoogleSignIn(response) {
@@ -182,6 +227,13 @@
             
             if (error.message) {
                 errorMessage = error.message;
+                
+                // Provide helpful error messages
+                if (error.message.includes('invalid_client') || error.message.includes('401')) {
+                    errorMessage = 'Lỗi cấu hình Google OAuth. Client ID không hợp lệ hoặc chưa được cấu hình đúng trong Google Cloud Console.';
+                } else if (error.message.includes('network') || error.message.includes('fetch')) {
+                    errorMessage = 'Lỗi kết nối. Vui lòng kiểm tra kết nối internet và thử lại.';
+                }
             }
             
             // Check if user already exists

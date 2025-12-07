@@ -73,8 +73,8 @@
                             <i class="bi bi-file-earmark-arrow-down"></i> Xuất báo cáo
                         </button>
                         <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="#" onclick="exportToExcel()"><i class="bi bi-file-earmark-excel"></i> Xuất Excel</a></li>
-                            <li><a class="dropdown-item" href="#" onclick="exportToPDF()"><i class="bi bi-file-earmark-pdf"></i> Xuất PDF</a></li>
+                            <li><a class="dropdown-item export-excel-btn" href="#" onclick="if(typeof exportToExcel === 'function') { event.preventDefault(); event.stopPropagation(); exportToExcel(); } else { alert('Hàm exportToExcel chưa được tải. Vui lòng tải lại trang.'); } return false;"><i class="bi bi-file-earmark-excel"></i> Xuất Excel</a></li>
+                            <li><a class="dropdown-item export-pdf-btn" href="#" onclick="if(typeof exportToPDF === 'function') { event.preventDefault(); event.stopPropagation(); exportToPDF(); } else { alert('Hàm exportToPDF chưa được tải. Vui lòng tải lại trang.'); } return false;"><i class="bi bi-file-earmark-pdf"></i> Xuất PDF</a></li>
                         </ul>
                         <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#voucherModal" onclick="openVoucherModal()">
                             <i class="bi bi-plus-circle"></i> Thêm voucher

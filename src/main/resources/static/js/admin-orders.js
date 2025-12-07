@@ -4,6 +4,7 @@ let orders = [];
 // Initialize
 document.addEventListener('DOMContentLoaded', function() {
     loadOrders();
+    setupExportButtons();
     
     // Filter listeners
     const searchInput = document.getElementById('searchInput');
@@ -16,6 +17,84 @@ document.addEventListener('DOMContentLoaded', function() {
     if (fromDate) fromDate.addEventListener('change', filterOrders);
     if (toDate) toDate.addEventListener('change', filterOrders);
 });
+
+// Setup export button event listeners
+function setupExportButtons() {
+    console.log('setupExportButtons called');
+    
+    // Use event delegation on the document to catch clicks
+    document.addEventListener('click', function(e) {
+        // Check if clicked element is export Excel button or inside it
+        if (e.target.closest('.export-excel-btn')) {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log('Excel export button clicked via delegation');
+            try {
+                exportToExcel();
+            } catch (error) {
+                console.error('Error in exportToExcel:', error);
+                alert('Lỗi khi xuất Excel: ' + error.message);
+            }
+            return false;
+        }
+        
+        // Check if clicked element is export PDF button or inside it
+        if (e.target.closest('.export-pdf-btn')) {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log('PDF export button clicked via delegation');
+            try {
+                exportToPDF();
+            } catch (error) {
+                console.error('Error in exportToPDF:', error);
+                alert('Lỗi khi xuất PDF: ' + error.message);
+            }
+            return false;
+        }
+    });
+    
+    // Also try direct attachment as backup
+    setTimeout(function() {
+        const excelBtn = document.querySelector('.export-excel-btn');
+        const pdfBtn = document.querySelector('.export-pdf-btn');
+        
+        if (excelBtn) {
+            console.log('Excel button found, attaching direct listener');
+            excelBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('Excel export button clicked (direct)');
+                try {
+                    exportToExcel();
+                } catch (error) {
+                    console.error('Error in exportToExcel:', error);
+                    alert('Lỗi khi xuất Excel: ' + error.message);
+                }
+                return false;
+            }, true); // Use capture phase
+        } else {
+            console.warn('Excel export button not found');
+        }
+        
+        if (pdfBtn) {
+            console.log('PDF button found, attaching direct listener');
+            pdfBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('PDF export button clicked (direct)');
+                try {
+                    exportToPDF();
+                } catch (error) {
+                    console.error('Error in exportToPDF:', error);
+                    alert('Lỗi khi xuất PDF: ' + error.message);
+                }
+                return false;
+            }, true); // Use capture phase
+        } else {
+            console.warn('PDF export button not found');
+        }
+    }, 500);
+}
 
 // Load orders
 async function loadOrders() {
@@ -219,7 +298,7 @@ async function viewOrderDetail(orderId) {
                     <tfoot>
                         <tr>
                             <td colspan="3" class="text-end"><strong>Tạm tính:</strong></td>
-                            <td class="text-end">${formatPrice((order.items || []).reduce((sum, item) => sum + (item.lineTotal || 0), 0))}</td>
+                            <td class="text-end">${formatPrice((order.items || []).reduce((sum, item) => sum + (item.lineTotal || (item.price || 0) * (item.quantity || 0)), 0))}</td>
                         </tr>
                         ${order.voucherDiscount && order.voucherDiscount > 0 ? `
                             <tr>
@@ -233,7 +312,11 @@ async function viewOrderDetail(orderId) {
                         </tr>
                         <tr class="table-primary">
                             <td colspan="3" class="text-end"><strong>Tổng cộng:</strong></td>
-                            <td class="text-end"><strong>${formatPrice(order.totalAmount || 0)}</strong></td>
+                            <td class="text-end"><strong>${formatPrice(
+                                (order.items || []).reduce((sum, item) => sum + (item.lineTotal || (item.price || 0) * (item.quantity || 0)), 0) 
+                                - (order.voucherDiscount || 0) 
+                                + (order.shippingFee || 0)
+                            )}</strong></td>
                         </tr>
                     </tfoot>
                 </table>
@@ -303,10 +386,16 @@ function formatPrice(price) {
     }).format(price);
 }
 
-// Export to Excel
-function exportToExcel() {
+// Export to Excel - Make globally available
+window.exportToExcel = function() {
     if (!orders || orders.length === 0) {
         showAlert('Không có dữ liệu để xuất!', 'error');
+        return;
+    }
+
+    // Check if XLSX library is loaded
+    if (typeof XLSX === 'undefined') {
+        showAlert('Thư viện Excel chưa được tải. Vui lòng tải lại trang!', 'error');
         return;
     }
 
@@ -345,12 +434,18 @@ function exportToExcel() {
         console.error('Error exporting to Excel:', error);
         showAlert('Lỗi khi xuất Excel: ' + (error.message || 'Unknown error'), 'error');
     }
-}
+};
 
-// Export to PDF
-function exportToPDF() {
+// Export to PDF - Make globally available
+window.exportToPDF = function() {
     if (!orders || orders.length === 0) {
         showAlert('Không có dữ liệu để xuất!', 'error');
+        return;
+    }
+
+    // Check if jsPDF library is loaded
+    if (typeof window.jspdf === 'undefined') {
+        showAlert('Thư viện PDF chưa được tải. Vui lòng tải lại trang!', 'error');
         return;
     }
 
@@ -389,7 +484,7 @@ function exportToPDF() {
         console.error('Error exporting to PDF:', error);
         showAlert('Lỗi khi xuất PDF: ' + (error.message || 'Unknown error'), 'error');
     }
-}
+};
 
 // Show alert
 function showAlert(message, type = 'success') {

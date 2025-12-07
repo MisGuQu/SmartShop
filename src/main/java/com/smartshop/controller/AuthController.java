@@ -40,6 +40,9 @@ public class AuthController {
     @Value("${app.security.jwt.cookie-samesite:Strict}")
     private String cookieSameSite;
 
+    @Value("${spring.security.oauth2.client.registration.google.client-id:}")
+    private String googleClientId;
+
     public AuthController(AuthService authService, UserRepository userRepository) {
         this.authService = authService;
         this.userRepository = userRepository;
@@ -234,6 +237,52 @@ public class AuthController {
         deleteCookie(response);
         SecurityContextHolder.clearContext();
         return ResponseEntity.ok().build();
+    }
+
+    // Get Google OAuth Client ID for frontend
+    @GetMapping("/google-client-id")
+    public ResponseEntity<Map<String, String>> getGoogleClientId() {
+        Map<String, String> response = new java.util.HashMap<>();
+        response.put("clientId", googleClientId);
+        return ResponseEntity.ok(response);
+    }
+
+    // Forgot Password
+    @PostMapping("/forgot-password")
+    public ResponseEntity<Map<String, String>> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
+        try {
+            authService.forgotPassword(request.getEmail());
+            Map<String, String> response = new java.util.HashMap<>();
+            response.put("message", "Email đặt lại mật khẩu đã được gửi. Vui lòng kiểm tra hộp thư của bạn.");
+            return ResponseEntity.ok(response);
+        } catch (RuntimeException e) {
+            Map<String, String> errorResponse = new java.util.HashMap<>();
+            errorResponse.put("message", e.getMessage());
+            return ResponseEntity.badRequest().body(errorResponse);
+        } catch (Exception e) {
+            Map<String, String> errorResponse = new java.util.HashMap<>();
+            errorResponse.put("message", "Có lỗi xảy ra. Vui lòng thử lại sau.");
+            return ResponseEntity.status(500).body(errorResponse);
+        }
+    }
+
+    // Reset Password
+    @PostMapping("/reset-password")
+    public ResponseEntity<Map<String, String>> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
+        try {
+            authService.resetPassword(request.getToken(), request.getEmail(), request.getNewPassword());
+            Map<String, String> response = new java.util.HashMap<>();
+            response.put("message", "Đặt lại mật khẩu thành công. Vui lòng đăng nhập với mật khẩu mới.");
+            return ResponseEntity.ok(response);
+        } catch (RuntimeException e) {
+            Map<String, String> errorResponse = new java.util.HashMap<>();
+            errorResponse.put("message", e.getMessage());
+            return ResponseEntity.badRequest().body(errorResponse);
+        } catch (Exception e) {
+            Map<String, String> errorResponse = new java.util.HashMap<>();
+            errorResponse.put("message", "Có lỗi xảy ra. Vui lòng thử lại sau.");
+            return ResponseEntity.status(500).body(errorResponse);
+        }
     }
 }
 

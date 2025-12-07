@@ -598,7 +598,6 @@ async function setupCategoryDropdown() {
                         data-category-id="${category.id}"
                         onclick="filterByCategory(${category.id}, '${escapeHtml(category.name)}')">
                     ${escapeHtml(category.name)}
-                    ${category.productCount !== undefined ? `<span style="color: var(--color-muted); font-size: 0.85rem; margin-left: 8px;">(${category.productCount})</span>` : ''}
                 </button>
             `;
         }).join('');

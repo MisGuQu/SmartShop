@@ -1,14 +1,21 @@
 package com.smartshop.service;
 
+import com.smartshop.dto.voucher.UserVoucherResponse;
 import com.smartshop.dto.voucher.VoucherRequest;
 import com.smartshop.dto.voucher.VoucherResponse;
 import com.smartshop.entity.product.Category;
+import com.smartshop.entity.user.User;
+import com.smartshop.entity.voucher.UserVoucher;
 import com.smartshop.entity.voucher.Voucher;
 import com.smartshop.repository.CategoryRepository;
+import com.smartshop.repository.UserVoucherRepository;
 import com.smartshop.repository.VoucherRepository;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -18,11 +25,20 @@ public class VoucherService {
 
     private final VoucherRepository voucherRepository;
     private final CategoryRepository categoryRepository;
+    private final UserVoucherRepository userVoucherRepository;
 
     public VoucherService(VoucherRepository voucherRepository,
-                          CategoryRepository categoryRepository) {
+                          CategoryRepository categoryRepository,
+                          UserVoucherRepository userVoucherRepository) {
         this.voucherRepository = voucherRepository;
         this.categoryRepository = categoryRepository;
+        this.userVoucherRepository = userVoucherRepository;
+    }
+
+    // Lấy user hiện tại từ SecurityContext
+    private User getCurrentUser() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        return (User) auth.getPrincipal();
     }
 
     // ✅ Xem danh sách tất cả voucher
@@ -109,6 +125,63 @@ public class VoucherService {
                 .orElseThrow(() -> new RuntimeException("Voucher not found"));
         voucher.setIsActive(false);
         return VoucherResponse.fromEntity(voucherRepository.save(voucher));
+    }
+
+    // ✅ Lấy danh sách voucher còn hạn sử dụng (public)
+    public List<VoucherResponse> getAvailableVouchers() {
+        LocalDateTime now = LocalDateTime.now();
+        return voucherRepository.findAll().stream()
+                .filter(v -> Boolean.TRUE.equals(v.getIsActive()))
+                .filter(v -> v.getStartDate() == null || !now.isBefore(v.getStartDate()))
+                .filter(v -> v.getEndDate() == null || !now.isAfter(v.getEndDate()))
+                .map(VoucherResponse::fromEntity)
+                .collect(Collectors.toList());
+    }
+
+    // ✅ Lấy danh sách voucher của user hiện tại
+    public List<UserVoucherResponse> getMyVouchers() {
+        User user = getCurrentUser();
+        List<UserVoucher> userVouchers = userVoucherRepository.findByUser(user);
+        return userVouchers.stream()
+                .map(UserVoucherResponse::fromEntity)
+                .collect(Collectors.toList());
+    }
+
+    // ✅ Claim voucher (thêm voucher cho user bằng mã code)
+    public UserVoucherResponse claimVoucher(String code) {
+        User user = getCurrentUser();
+        
+        // Tìm voucher theo code
+        Voucher voucher = voucherRepository.findByCode(code)
+                .orElseThrow(() -> new RuntimeException("Mã voucher không tồn tại"));
+        
+        // Kiểm tra voucher có active không
+        if (!Boolean.TRUE.equals(voucher.getIsActive())) {
+            throw new RuntimeException("Mã voucher đã bị vô hiệu hóa");
+        }
+        
+        // Kiểm tra thời gian hiệu lực
+        LocalDateTime now = LocalDateTime.now();
+        if (voucher.getStartDate() != null && now.isBefore(voucher.getStartDate())) {
+            throw new RuntimeException("Mã voucher chưa có hiệu lực");
+        }
+        if (voucher.getEndDate() != null && now.isAfter(voucher.getEndDate())) {
+            throw new RuntimeException("Mã voucher đã hết hạn");
+        }
+        
+        // Kiểm tra user đã có voucher này chưa
+        if (userVoucherRepository.findByUserAndVoucher(user, voucher).isPresent()) {
+            throw new RuntimeException("Bạn đã sở hữu mã voucher này rồi");
+        }
+        
+        // Tạo UserVoucher mới
+        UserVoucher userVoucher = UserVoucher.builder()
+                .user(user)
+                .voucher(voucher)
+                .isUsed(false)
+                .build();
+        
+        return UserVoucherResponse.fromEntity(userVoucherRepository.save(userVoucher));
     }
 }
 

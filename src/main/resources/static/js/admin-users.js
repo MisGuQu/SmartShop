@@ -4,6 +4,7 @@ let users = [];
 // Initialize
 document.addEventListener('DOMContentLoaded', function() {
     loadUsers();
+    setupExportButtons();
     
     // Filter listeners
     const searchInput = document.getElementById('searchInput');
@@ -14,6 +15,84 @@ document.addEventListener('DOMContentLoaded', function() {
     if (statusFilter) statusFilter.addEventListener('change', filterUsers);
     if (roleFilter) roleFilter.addEventListener('change', filterUsers);
 });
+
+// Setup export button event listeners
+function setupExportButtons() {
+    console.log('setupExportButtons called');
+    
+    // Use event delegation on the document to catch clicks
+    document.addEventListener('click', function(e) {
+        // Check if clicked element is export Excel button or inside it
+        if (e.target.closest('.export-excel-btn')) {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log('Excel export button clicked via delegation');
+            try {
+                exportToExcel();
+            } catch (error) {
+                console.error('Error in exportToExcel:', error);
+                alert('Lỗi khi xuất Excel: ' + error.message);
+            }
+            return false;
+        }
+        
+        // Check if clicked element is export PDF button or inside it
+        if (e.target.closest('.export-pdf-btn')) {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log('PDF export button clicked via delegation');
+            try {
+                exportToPDF();
+            } catch (error) {
+                console.error('Error in exportToPDF:', error);
+                alert('Lỗi khi xuất PDF: ' + error.message);
+            }
+            return false;
+        }
+    });
+    
+    // Also try direct attachment as backup
+    setTimeout(function() {
+        const excelBtn = document.querySelector('.export-excel-btn');
+        const pdfBtn = document.querySelector('.export-pdf-btn');
+        
+        if (excelBtn) {
+            console.log('Excel button found, attaching direct listener');
+            excelBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('Excel export button clicked (direct)');
+                try {
+                    exportToExcel();
+                } catch (error) {
+                    console.error('Error in exportToExcel:', error);
+                    alert('Lỗi khi xuất Excel: ' + error.message);
+                }
+                return false;
+            }, true); // Use capture phase
+        } else {
+            console.warn('Excel export button not found');
+        }
+        
+        if (pdfBtn) {
+            console.log('PDF button found, attaching direct listener');
+            pdfBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('PDF export button clicked (direct)');
+                try {
+                    exportToPDF();
+                } catch (error) {
+                    console.error('Error in exportToPDF:', error);
+                    alert('Lỗi khi xuất PDF: ' + error.message);
+                }
+                return false;
+            }, true); // Use capture phase
+        } else {
+            console.warn('PDF export button not found');
+        }
+    }, 500);
+}
 
 // Load users
 async function loadUsers() {
@@ -272,9 +351,27 @@ async function saveUserRoles() {
 }
 
 // Export to Excel
-function exportToExcel() {
+// Make functions globally available
+window.exportToExcel = function() {
+    console.log('=== exportToExcel CALLED ===');
+    console.log('users:', users);
+    console.log('users length:', users ? users.length : 0);
+    console.log('XLSX available:', typeof XLSX !== 'undefined');
+    
+    alert('Đang xuất Excel...'); // Temporary alert to confirm function is called
+    
     if (!users || users.length === 0) {
+        console.warn('No users to export');
         showAlert('Không có dữ liệu để xuất!', 'error');
+        alert('Không có dữ liệu để xuất!');
+        return;
+    }
+
+    // Check if XLSX library is loaded
+    if (typeof XLSX === 'undefined') {
+        console.error('XLSX library not loaded');
+        showAlert('Thư viện Excel chưa được tải. Vui lòng tải lại trang!', 'error');
+        alert('Thư viện Excel chưa được tải. Vui lòng tải lại trang!');
         return;
     }
 
@@ -325,16 +422,35 @@ function exportToExcel() {
         const filename = `BaoCaoNguoiDung_${new Date().toISOString().split('T')[0]}.xlsx`;
         XLSX.writeFile(wb, filename);
         showAlert('Xuất Excel thành công!', 'success');
+        alert('Xuất Excel thành công!');
     } catch (error) {
         console.error('Error exporting to Excel:', error);
         showAlert('Lỗi khi xuất Excel: ' + (error.message || 'Unknown error'), 'error');
+        alert('Lỗi khi xuất Excel: ' + (error.message || 'Unknown error'));
     }
-}
+};
 
 // Export to PDF
 function exportToPDF() {
+    console.log('=== exportToPDF CALLED ===');
+    console.log('users:', users);
+    console.log('users length:', users ? users.length : 0);
+    console.log('jsPDF available:', typeof window.jspdf !== 'undefined');
+    
+    alert('Đang xuất PDF...'); // Temporary alert to confirm function is called
+    
     if (!users || users.length === 0) {
+        console.warn('No users to export');
         showAlert('Không có dữ liệu để xuất!', 'error');
+        alert('Không có dữ liệu để xuất!');
+        return;
+    }
+
+    // Check if jsPDF library is loaded
+    if (typeof window.jspdf === 'undefined') {
+        console.error('jsPDF library not loaded');
+        showAlert('Thư viện PDF chưa được tải. Vui lòng tải lại trang!', 'error');
+        alert('Thư viện PDF chưa được tải. Vui lòng tải lại trang!');
         return;
     }
 
@@ -386,11 +502,13 @@ function exportToPDF() {
         const filename = `BaoCaoNguoiDung_${new Date().toISOString().split('T')[0]}.pdf`;
         doc.save(filename);
         showAlert('Xuất PDF thành công!', 'success');
+        alert('Xuất PDF thành công!');
     } catch (error) {
         console.error('Error exporting to PDF:', error);
         showAlert('Lỗi khi xuất PDF: ' + (error.message || 'Unknown error'), 'error');
+        alert('Lỗi khi xuất PDF: ' + (error.message || 'Unknown error'));
     }
-}
+};
 
 // Show alert
 function showAlert(message, type = 'success') {

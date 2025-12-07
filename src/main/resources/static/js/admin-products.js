@@ -9,6 +9,8 @@ let currentFilters = {
 
 // Initialize
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('=== DOMContentLoaded FIRED ===');
+    
     // Set default values for sort dropdowns
     const sortBy = document.getElementById('sortBy');
     const sortDirection = document.getElementById('sortDirection');
@@ -18,7 +20,108 @@ document.addEventListener('DOMContentLoaded', function() {
     loadCategories().then(() => {
         loadProducts();
     });
+    
+    // Setup export buttons immediately and also after a delay
+    setupExportButtons();
+    setTimeout(setupExportButtons, 1000);
+    setTimeout(setupExportButtons, 2000);
 });
+
+// Setup export button event listeners
+function setupExportButtons() {
+    console.log('=== setupExportButtons CALLED ===');
+    console.log('window.exportToExcel:', typeof window.exportToExcel);
+    console.log('window.exportToPDF:', typeof window.exportToPDF);
+    
+    const excelBtn = document.getElementById('exportExcelBtn');
+    const pdfBtn = document.getElementById('exportPdfBtn');
+    const dropdownMenu = document.getElementById('exportDropdownMenu');
+    const dropdownBtn = document.getElementById('exportDropdownBtn');
+    
+    console.log('Excel button found:', !!excelBtn, excelBtn);
+    console.log('PDF button found:', !!pdfBtn, pdfBtn);
+    console.log('Dropdown menu found:', !!dropdownMenu, dropdownMenu);
+    console.log('Dropdown button found:', !!dropdownBtn, dropdownBtn);
+    
+    if (!excelBtn || !pdfBtn) {
+        console.warn('Export buttons not found! Retrying in 500ms...');
+        setTimeout(setupExportButtons, 500);
+        return;
+    }
+    
+    // Remove existing listeners by cloning
+    const newExcelBtn = excelBtn.cloneNode(true);
+    excelBtn.parentNode.replaceChild(newExcelBtn, excelBtn);
+    
+    const newPdfBtn = pdfBtn.cloneNode(true);
+    pdfBtn.parentNode.replaceChild(newPdfBtn, pdfBtn);
+    
+    // Add click listener to Excel button
+    newExcelBtn.addEventListener('click', function(e) {
+        console.log('=== Excel button CLICKED ===');
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        
+        // Close dropdown manually
+        if (typeof bootstrap !== 'undefined' && bootstrap.Dropdown) {
+            const dropdown = bootstrap.Dropdown.getInstance(dropdownBtn);
+            if (dropdown) {
+                dropdown.hide();
+            }
+        }
+        
+        // Call export function
+        console.log('Checking window.exportToExcel:', typeof window.exportToExcel);
+        if (typeof window.exportToExcel === 'function') {
+            console.log('Calling window.exportToExcel()');
+            try {
+                window.exportToExcel();
+            } catch (error) {
+                console.error('Error calling exportToExcel:', error);
+                alert('Lỗi: ' + error.message);
+            }
+        } else {
+            alert('Hàm exportToExcel không tồn tại! Type: ' + typeof window.exportToExcel);
+            console.error('exportToExcel is not a function:', typeof window.exportToExcel);
+        }
+        return false;
+    }, true);
+    
+    // Add click listener to PDF button
+    newPdfBtn.addEventListener('click', function(e) {
+        console.log('=== PDF button CLICKED ===');
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        
+        // Close dropdown manually
+        if (typeof bootstrap !== 'undefined' && bootstrap.Dropdown) {
+            const dropdown = bootstrap.Dropdown.getInstance(dropdownBtn);
+            if (dropdown) {
+                dropdown.hide();
+            }
+        }
+        
+        // Call export function
+        console.log('Checking window.exportToPDF:', typeof window.exportToPDF);
+        if (typeof window.exportToPDF === 'function') {
+            console.log('Calling window.exportToPDF()');
+            try {
+                window.exportToPDF();
+            } catch (error) {
+                console.error('Error calling exportToPDF:', error);
+                alert('Lỗi: ' + error.message);
+            }
+        } else {
+            alert('Hàm exportToPDF không tồn tại! Type: ' + typeof window.exportToPDF);
+            console.error('exportToPDF is not a function:', typeof window.exportToPDF);
+        }
+        return false;
+    }, true);
+    
+    console.log('Export buttons setup complete!');
+}
 
 // Load products
 async function loadProducts() {
@@ -395,10 +498,20 @@ async function toggleProductStatus(productId, isActive) {
     }
 }
 
-// Export to Excel
-function exportToExcel() {
+// Export to Excel - Make globally available
+window.exportToExcel = function() {
+    console.log('=== exportToExcel FUNCTION CALLED ===');
+    alert('Đang xuất Excel...');
+    
     if (!products || products.length === 0) {
         showAlert('Không có dữ liệu để xuất!', 'error');
+        alert('Không có dữ liệu để xuất!');
+        return;
+    }
+
+    // Check if XLSX library is loaded
+    if (typeof XLSX === 'undefined') {
+        showAlert('Thư viện Excel chưa được tải. Vui lòng tải lại trang!', 'error');
         return;
     }
 
@@ -456,12 +569,22 @@ function exportToExcel() {
         console.error('Error exporting to Excel:', error);
         showAlert('Lỗi khi xuất Excel: ' + (error.message || 'Unknown error'), 'error');
     }
-}
+};
 
-// Export to PDF
-function exportToPDF() {
+// Export to PDF - Make globally available
+window.exportToPDF = function() {
+    console.log('=== exportToPDF FUNCTION CALLED ===');
+    alert('Đang xuất PDF...');
+    
     if (!products || products.length === 0) {
         showAlert('Không có dữ liệu để xuất!', 'error');
+        alert('Không có dữ liệu để xuất!');
+        return;
+    }
+
+    // Check if jsPDF library is loaded
+    if (typeof window.jspdf === 'undefined') {
+        showAlert('Thư viện PDF chưa được tải. Vui lòng tải lại trang!', 'error');
         return;
     }
 
@@ -520,7 +643,7 @@ function exportToPDF() {
         console.error('Error exporting to PDF:', error);
         showAlert('Lỗi khi xuất PDF: ' + (error.message || 'Unknown error'), 'error');
     }
-}
+};
 
 // Show alert
 function showAlert(message, type = 'success') {

@@ -17,12 +17,11 @@ public class Category {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, unique = true)
+    @Column(nullable = false, unique = true, length = 150)
     private String name;
 
-    @ManyToOne
-    @JoinColumn(name = "parent_id")
-    private Category parent;
+    @Column(columnDefinition = "TEXT")
+    private String description;
 
     @Builder.Default
     @OneToMany(mappedBy = "category", cascade = CascadeType.ALL)

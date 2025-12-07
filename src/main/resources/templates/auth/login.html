@@ -15,11 +15,12 @@
     <section class="auth-panel">
         <div class="auth-brand">SmartShop</div>
 
-        <h1 class="auth-title">Đăng nhập</h1>
-
-        <p class="auth-subtitle">Chào mừng bạn quay lại. Chưa có tài khoản?
-            <a href="/auth/register.html">Đăng ký ngay</a>
-        </p>
+        <div class="auth-header">
+            <h1 class="auth-title">Chào mừng trở lại!</h1>
+            <p class="auth-subtitle">Đăng nhập để tiếp tục trải nghiệm mua sắm thông minh. Chưa có tài khoản?
+                <a href="/auth/register.html">Đăng ký ngay</a>
+            </p>
+        </div>
 
         <div id="alertContainer"></div>
 
@@ -33,7 +34,7 @@
             <div class="form-field" id="passwordField">
                 <label for="password">Mật khẩu</label>
                 <div class="password-input-wrapper">
-                    <input id="password" type="password" name="password" placeholder="••••••••" required>
+                    <input id="password" type="password" name="password" placeholder="Nhập mật khẩu của bạn" required>
                     <button type="button" class="password-toggle" id="passwordToggle" aria-label="Hiển thị mật khẩu">
                         <svg class="eye-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
@@ -48,12 +49,8 @@
                 <p class="field-error" id="passwordError" style="display: none;"></p>
             </div>
 
-            <div class="form-options">
-                <label class="checkbox">
-                    <input type="checkbox" id="rememberMe" name="rememberMe">
-                    <span>Ghi nhớ đăng nhập</span>
-                </label>
-                <a href="/auth/forgot-password">Quên mật khẩu?</a>
+            <div class="form-options" style="justify-content: flex-end;">
+                <a href="/auth/forgot-password" class="forgot-password-link">Quên mật khẩu?</a>
             </div>
 
             <button type="submit" class="button button--primary" id="submitButton">Đăng nhập</button>
@@ -75,9 +72,23 @@
     </section>
 
     <aside class="auth-illustration">
+        <div class="illustration-pattern"></div>
         <div class="illustration-overlay">
-            <h2>Trải nghiệm mua sắm thông minh</h2>
-            <p>Quản lý đơn hàng, theo dõi khuyến mãi và tận hưởng ưu đãi độc quyền mỗi ngày.</p>
+            <div class="illustration-content">
+                <h2>Trải nghiệm mua sắm thông minh</h2>
+                <p>Quản lý đơn hàng, theo dõi khuyến mãi và tận hưởng ưu đãi độc quyền mỗi ngày.</p>
+                <div class="illustration-features">
+                    <div class="feature-item">
+                        <span>Giao hàng nhanh chóng</span>
+                    </div>
+                    <div class="feature-item">
+                        <span>Ưu đãi độc quyền</span>
+                    </div>
+                    <div class="feature-item">
+                        <span>Bảo mật thông tin</span>
+                    </div>
+                </div>
+            </div>
         </div>
     </aside>
 </main>
@@ -87,11 +98,45 @@
 <script src="/js/auth.js"></script>
 <script>
     // Initialize Google Sign-In
-    function initGoogleSignIn() {
+    let googleClientId = null;
+    
+    // Fetch Google Client ID from server
+    async function loadGoogleClientId() {
+        try {
+            const response = await fetch('/api/auth/google-client-id');
+            if (response.ok) {
+                const data = await response.json();
+                googleClientId = data.clientId;
+            } else {
+                console.error('Failed to load Google Client ID');
+                showAlert('Không thể tải cấu hình Google Sign-In. Vui lòng thử lại sau.', 'danger');
+            }
+        } catch (error) {
+            console.error('Error loading Google Client ID:', error);
+            showAlert('Lỗi khi tải cấu hình Google Sign-In. Vui lòng kiểm tra kết nối.', 'danger');
+        }
+    }
+    
+    async function initGoogleSignIn() {
+        // Load client ID first if not loaded
+        if (!googleClientId) {
+            await loadGoogleClientId();
+        }
+        
+        if (!googleClientId) {
+            console.error('Google Client ID is not available');
+            // Hide Google button if client ID is not available
+            const googleBtn = document.getElementById('googleLoginBtn');
+            if (googleBtn) {
+                googleBtn.style.display = 'none';
+            }
+            return;
+        }
+        
         if (typeof google !== 'undefined' && google.accounts) {
             try {
                 google.accounts.id.initialize({
-                    client_id: '740735252992-4lvlddgsh2bkla8vb46rfc0iam5ph3po.apps.googleusercontent.com',
+                    client_id: googleClientId,
                     callback: handleGoogleSignIn,
                     auto_select: false,
                     cancel_on_tap_outside: true
@@ -122,12 +167,17 @@
                 }
             } catch (error) {
                 console.error('Error initializing Google Sign-In:', error);
+                showAlert('Lỗi khởi tạo Google Sign-In. Vui lòng kiểm tra cấu hình Client ID.', 'danger');
                 // Fallback: show original button and use click handler
                 const googleBtn = document.getElementById('googleLoginBtn');
                 if (googleBtn) {
                     googleBtn.style.display = 'block';
                     googleBtn.addEventListener('click', () => {
-                        google.accounts.id.prompt();
+                        if (googleClientId) {
+                            google.accounts.id.prompt();
+                        } else {
+                            showAlert('Google Client ID chưa được cấu hình. Vui lòng liên hệ quản trị viên.', 'danger');
+                        }
                     });
                 }
             }
@@ -137,11 +187,17 @@
         }
     }
     
+    // Load client ID first, then initialize
+    async function init() {
+        await loadGoogleClientId();
+        initGoogleSignIn();
+    }
+    
     // Try to initialize when DOM is ready
     if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', initGoogleSignIn);
+        document.addEventListener('DOMContentLoaded', init);
     } else {
-        initGoogleSignIn();
+        init();
     }
     
     async function handleGoogleSignIn(response) {
@@ -178,6 +234,13 @@
             
             if (error.message) {
                 errorMessage = error.message;
+                
+                // Provide helpful error messages
+                if (error.message.includes('invalid_client') || error.message.includes('401')) {
+                    errorMessage = 'Lỗi cấu hình Google OAuth. Client ID không hợp lệ hoặc chưa được cấu hình đúng trong Google Cloud Console.';
+                } else if (error.message.includes('network') || error.message.includes('fetch')) {
+                    errorMessage = 'Lỗi kết nối. Vui lòng kiểm tra kết nối internet và thử lại.';
+                }
             }
             
             showAlert(errorMessage, 'danger');

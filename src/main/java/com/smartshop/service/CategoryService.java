@@ -42,15 +42,9 @@ public class CategoryService {
     }
 
     public CategoryResponse create(CategoryRequest req) {
-        Category parent = null;
-        if (req.getParentId() != null) {
-            parent = categoryRepository.findById(req.getParentId())
-                    .orElseThrow(() -> new RuntimeException("Parent category not found"));
-        }
-
         Category category = Category.builder()
                 .name(req.getName())
-                .parent(parent)
+                .description(req.getDescription())
                 .build();
 
         Category savedCategory = categoryRepository.save(category);
@@ -64,14 +58,7 @@ public class CategoryService {
                 .orElseThrow(() -> new RuntimeException("Category not found"));
 
         category.setName(req.getName());
-
-        if (req.getParentId() != null) {
-            Category parent = categoryRepository.findById(req.getParentId())
-                    .orElseThrow(() -> new RuntimeException("Parent category not found"));
-            category.setParent(parent);
-        } else {
-            category.setParent(null);
-        }
+        category.setDescription(req.getDescription());
 
         Category savedCategory = categoryRepository.save(category);
         // Count products for the updated category
