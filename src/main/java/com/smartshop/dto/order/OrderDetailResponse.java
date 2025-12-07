@@ -18,6 +18,8 @@ public class OrderDetailResponse {
     private String voucherCode;
     private Double voucherDiscount;
     private Double shippingFee;
+    private Double paidAmount; // Số tiền đã thanh toán
+    private Double finalTotal; // Tổng cộng cuối cùng (sau khi trừ đã thanh toán)
     private String status;
     private String paymentStatus;
     private String paymentMethod;
@@ -55,6 +57,10 @@ public class OrderDetailResponse {
     }
 
     public static OrderDetailResponse fromEntity(Order o, List<OrderStatusHistoryResponse> history) {
+        return fromEntity(o, history, 0.0);
+    }
+    
+    public static OrderDetailResponse fromEntity(Order o, List<OrderStatusHistoryResponse> history, Double paidAmountParam) {
         List<OrderItemResponse> itemResponses = o.getItems().stream()
                 .map(OrderItemResponse::fromEntity)
                 .collect(Collectors.toList());
@@ -78,6 +84,10 @@ public class OrderDetailResponse {
         
         double voucherDiscount = o.getVoucherDiscount() != null ? o.getVoucherDiscount() : 0.0;
         double totalAmount = o.getTotalAmount() != null ? o.getTotalAmount() : 0.0;
+        
+        // Tính số tiền đã thanh toán và tổng cộng cuối cùng
+        double paidAmount = paidAmountParam != null ? paidAmountParam : 0.0;
+        double finalTotal = totalAmount - paidAmount; // Tổng cộng = tổng ban đầu - đã thanh toán
 
         // Get customer information
         String customerName = null;
@@ -125,6 +135,8 @@ public class OrderDetailResponse {
                 .voucherCode(o.getVoucherCode())
                 .voucherDiscount(voucherDiscount)
                 .shippingFee(shippingFee)
+                .paidAmount(paidAmount)
+                .finalTotal(finalTotal)
                 .status(o.getStatus())
                 .paymentStatus(o.getPaymentStatus())
                 .paymentMethod(o.getPaymentMethod())

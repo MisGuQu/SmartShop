@@ -119,8 +119,8 @@ public class PaymentService {
         params.put("vnp_IpAddr", ipAddr != null ? ipAddr.trim() : "");
         params.put("vnp_CreateDate", LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss")));
 
-        // Tạo query string cho hash (KHÔNG encode, đã sort, loại bỏ vnp_SecureHash và vnp_SecureHashType)
-        // QUAN TRỌNG: Hash data phải là raw, không encode
+        // Tạo query string cho hash (URL encode với US_ASCII, đã sort, loại bỏ vnp_SecureHash và vnp_SecureHashType)
+        // QUAN TRỌNG: Giá trị phải được URL encode với StandardCharsets.US_ASCII trước khi nối chuỗi
         String hashData = buildQueryForHash(params);
         
         // Đảm bảo HashSecret không có whitespace thừa
@@ -143,7 +143,7 @@ public class PaymentService {
         
         // Log để debug - CHI TIẾT để kiểm tra
         System.out.println("=== VNPay Payment Debug ===");
-        System.out.println("HASH DATA (raw, no encode): [" + hashData + "]");
+        System.out.println("HASH DATA (URL encoded with US_ASCII): [" + hashData + "]");
         System.out.println("HASH DATA length: " + hashData.length());
         System.out.println("SECURE HASH (before encode): " + secureHash);
         System.out.println("SECURE HASH length: " + secureHash.length());
@@ -164,7 +164,47 @@ public class PaymentService {
         return new PaymentUrlResponse(paymentUrl, qrCodeBase64);
     }
 
-    // 2️⃣ Xử lý VNPay return URL
+    // 2️⃣ Xác thực chữ ký từ VNPay return URL
+    public boolean verifySignature(Map<String, String> queryParams) {
+        String vnp_SecureHash = queryParams.get("vnp_SecureHash");
+        
+        if (vnp_SecureHash == null || vnp_SecureHash.isEmpty()) {
+            System.err.println("VNPay verifySignature: vnp_SecureHash is null or empty");
+            return false;
+        }
+        
+        // Tạo map chỉ chứa các tham số bắt đầu bằng vnp_
+        Map<String, String> vnpParams = new TreeMap<>();
+        for (Map.Entry<String, String> entry : queryParams.entrySet()) {
+            if (entry.getKey().startsWith("vnp_")) {
+                vnpParams.put(entry.getKey(), entry.getValue());
+            }
+        }
+        
+        // Loại bỏ vnp_SecureHash và vnp_SecureHashType khỏi map để tính hash
+        vnpParams.remove("vnp_SecureHash");
+        vnpParams.remove("vnp_SecureHashType");
+        
+        // Tạo query string để hash (giống hệt lúc gửi đi)
+        String hashData = buildQueryForHash(vnpParams);
+        
+        // Tính hash với secret key
+        String hashSecretClean = vnpHashSecret != null ? vnpHashSecret.trim() : "";
+        String calculatedHash = hmacSHA512(hashSecretClean, hashData);
+        
+        // Log để debug
+        System.out.println("=== VNPay Verify Signature Debug ===");
+        System.out.println("Received vnp_SecureHash: " + vnp_SecureHash);
+        System.out.println("Calculated hash: " + calculatedHash);
+        System.out.println("Hash data (for verification): [" + hashData + "]");
+        System.out.println("Hash match: " + calculatedHash.equalsIgnoreCase(vnp_SecureHash));
+        System.out.println("====================================");
+        
+        // So sánh hash
+        return calculatedHash.equalsIgnoreCase(vnp_SecureHash);
+    }
+    
+    // 3️⃣ Xử lý VNPay return URL
     public String handleVNPayReturn(Map<String, String> queryParams) throws JsonProcessingException {
         String txnRef = queryParams.get("vnp_TxnRef");
         String responseCode = queryParams.get("vnp_ResponseCode");
@@ -177,8 +217,14 @@ public class PaymentService {
 
         if ("00".equals(responseCode)) {
             tx.setStatus("SUCCESS");
-            tx.getOrder().setPaymentStatus("PAID");
-            markUserVoucherUsed(tx.getOrder());
+            Order order = tx.getOrder();
+            order.setPaymentStatus("PAID");
+            
+            // Khi thanh toán thành công: phí vận chuyển = 0 đồng
+            // Giữ nguyên totalAmount để tính toán (sẽ trừ đi paidAmount khi hiển thị)
+            order.setShippingFee(0.0);
+            
+            markUserVoucherUsed(order);
         } else {
             tx.setStatus("FAILED");
             tx.getOrder().setPaymentStatus("FAILED");
@@ -239,18 +285,16 @@ public class PaymentService {
         return sb.toString();
     }
     
-    // Tạo query string cho hash (theo chuẩn VNPay - KHÔNG encode, đã sort)
-    // GIỐNG HỆT code demo VNPay: Config.hashAllFields()
-    // QUAN TRỌNG: Logic phải GIỐNG HỆT code demo VNPay để tránh lỗi chữ ký
+    // Tạo query string cho hash (theo chuẩn VNPay - URL encode với US_ASCII, đã sort)
+    // QUAN TRỌNG: Giá trị phải được URL encode với StandardCharsets.US_ASCII trước khi nối chuỗi
     private String buildQueryForHash(Map<String, String> params) {
         List<String> fieldNames = new ArrayList<>(params.keySet());
         Collections.sort(fieldNames);
         
         StringBuilder sb = new StringBuilder();
-        Iterator<String> itr = fieldNames.iterator();
         
-        while (itr.hasNext()) {
-            String fieldName = itr.next();
+        for (int i = 0; i < fieldNames.size(); i++) {
+            String fieldName = fieldNames.get(i);
             
             // Bỏ qua vnp_SecureHash và vnp_SecureHashType
             if (fieldName.equals("vnp_SecureHash") || fieldName.equals("vnp_SecureHashType")) {
@@ -259,28 +303,25 @@ public class PaymentService {
             
             String fieldValue = params.get(fieldName);
             
-            // Chỉ thêm field nếu có giá trị (GIỐNG HỆT code demo VNPay)
-            // QUAN TRỌNG: KHÔNG encode khi tính hash (hash giá trị raw)
+            // Chỉ thêm field nếu có giá trị
             if (fieldValue != null && fieldValue.length() > 0) {
+                if (sb.length() > 0) {
+                    sb.append("&");
+                }
                 sb.append(fieldName);
                 sb.append("=");
-                sb.append(fieldValue); // Giá trị RAW, chưa encode
-            }
-            
-            // QUAN TRỌNG: Logic này GIỐNG HỆT code demo VNPay
-            // Thêm & nếu còn field tiếp theo (kể cả khi field hiện tại bị skip)
-            if (itr.hasNext()) {
-                sb.append("&");
+                // QUAN TRỌNG: URL encode giá trị với StandardCharsets.US_ASCII
+                try {
+                    // URLEncoder.encode() với charset name
+                    sb.append(URLEncoder.encode(fieldValue, StandardCharsets.US_ASCII.name()));
+                } catch (Exception e) {
+                    // Fallback nếu có lỗi encoding
+                    sb.append(fieldValue);
+                }
             }
         }
         
-        // Loại bỏ & thừa ở cuối (nếu có)
-        String result = sb.toString();
-        if (result.endsWith("&")) {
-            result = result.substring(0, result.length() - 1);
-        }
-        
-        return result;
+        return sb.toString();
     }
 
     // HMAC-SHA512

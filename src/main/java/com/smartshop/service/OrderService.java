@@ -6,6 +6,7 @@ import com.smartshop.entity.order.OrderStatusHistory;
 import com.smartshop.entity.user.User;
 import com.smartshop.repository.OrderRepository;
 import com.smartshop.repository.OrderStatusHistoryRepository;
+import com.smartshop.repository.PaymentTransactionRepository;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -20,11 +21,14 @@ public class OrderService {
 
     private final OrderRepository orderRepository;
     private final OrderStatusHistoryRepository statusHistoryRepository;
+    private final PaymentTransactionRepository paymentTransactionRepository;
 
     public OrderService(OrderRepository orderRepository,
-                        OrderStatusHistoryRepository statusHistoryRepository) {
+                        OrderStatusHistoryRepository statusHistoryRepository,
+                        PaymentTransactionRepository paymentTransactionRepository) {
         this.orderRepository = orderRepository;
         this.statusHistoryRepository = statusHistoryRepository;
+        this.paymentTransactionRepository = paymentTransactionRepository;
     }
 
     private User getCurrentUser() {
@@ -58,7 +62,13 @@ public class OrderService {
                 .map(OrderStatusHistoryResponse::fromEntity)
                 .collect(Collectors.toList());
 
-        return OrderDetailResponse.fromEntity(order, history);
+        // Lấy PaymentTransaction để tính số tiền đã thanh toán
+        Double paidAmount = paymentTransactionRepository.findByOrder(order)
+                .filter(tx -> "SUCCESS".equals(tx.getStatus()))
+                .map(tx -> tx.getAmount() != null ? tx.getAmount() : 0.0)
+                .orElse(0.0);
+
+        return OrderDetailResponse.fromEntity(order, history, paidAmount);
     }
 
     // Cập nhật trạng thái (Admin) + ghi lịch sử
@@ -88,7 +98,13 @@ public class OrderService {
                         .map(OrderStatusHistoryResponse::fromEntity)
                         .collect(Collectors.toList());
 
-        return OrderDetailResponse.fromEntity(order, historyResponses);
+        // Lấy PaymentTransaction để tính số tiền đã thanh toán
+        Double paidAmount = paymentTransactionRepository.findByOrder(order)
+                .filter(tx -> "SUCCESS".equals(tx.getStatus()))
+                .map(tx -> tx.getAmount() != null ? tx.getAmount() : 0.0)
+                .orElse(0.0);
+
+        return OrderDetailResponse.fromEntity(order, historyResponses, paidAmount);
     }
 
     // Hủy đơn hàng (User) - chỉ cho phép hủy đơn của chính mình
@@ -131,7 +147,13 @@ public class OrderService {
                         .map(OrderStatusHistoryResponse::fromEntity)
                         .collect(Collectors.toList());
 
-        return OrderDetailResponse.fromEntity(order, historyResponses);
+        // Lấy PaymentTransaction để tính số tiền đã thanh toán
+        Double paidAmount = paymentTransactionRepository.findByOrder(order)
+                .filter(tx -> "SUCCESS".equals(tx.getStatus()))
+                .map(tx -> tx.getAmount() != null ? tx.getAmount() : 0.0)
+                .orElse(0.0);
+
+        return OrderDetailResponse.fromEntity(order, historyResponses, paidAmount);
     }
 
     // Xác nhận nhận hàng (User) - chỉ cho phép xác nhận đơn của chính mình
@@ -174,7 +196,13 @@ public class OrderService {
                         .map(OrderStatusHistoryResponse::fromEntity)
                         .collect(Collectors.toList());
 
-        return OrderDetailResponse.fromEntity(order, historyResponses);
+        // Lấy PaymentTransaction để tính số tiền đã thanh toán
+        Double paidAmount = paymentTransactionRepository.findByOrder(order)
+                .filter(tx -> "SUCCESS".equals(tx.getStatus()))
+                .map(tx -> tx.getAmount() != null ? tx.getAmount() : 0.0)
+                .orElse(0.0);
+
+        return OrderDetailResponse.fromEntity(order, historyResponses, paidAmount);
     }
 }
 

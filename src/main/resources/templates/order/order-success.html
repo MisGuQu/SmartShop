@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thanh toán thành công - SmartShop</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+    <link rel="stylesheet" href="/css/home.css">
+    <style>
+        .success-container {
+            min-height: 60vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 20px;
+        }
+        
+        .success-card {
+            background: var(--color-surface);
+            border-radius: var(--radius-lg);
+            padding: 48px;
+            max-width: 600px;
+            width: 100%;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        .success-icon {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 24px;
+            background: #10b981;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .success-icon svg {
+            width: 48px;
+            height: 48px;
+            color: white;
+        }
+        
+        .success-title {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--color-text);
+            margin-bottom: 16px;
+        }
+        
+        .success-message {
+            font-size: 1.1rem;
+            color: var(--color-text-secondary);
+            margin-bottom: 32px;
+            line-height: 1.6;
+        }
+        
+        .success-actions {
+            display: flex;
+            gap: 16px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            padding: 12px 24px;
+            border-radius: var(--radius-md);
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s ease;
+            border: none;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+        
+        .btn-primary {
+            background: var(--color-primary);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: var(--color-primary-dark);
+            transform: translateY(-2px);
+        }
+        
+        .btn-secondary {
+            background: var(--color-surface);
+            color: var(--color-text);
+            border: 2px solid var(--color-border);
+        }
+        
+        .btn-secondary:hover {
+            background: var(--color-surface-hover);
+            border-color: var(--color-primary);
+        }
+        
+        .order-info {
+            background: var(--color-surface-hover);
+            border-radius: var(--radius-md);
+            padding: 20px;
+            margin-bottom: 24px;
+            text-align: left;
+        }
+        
+        .order-info-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 12px;
+        }
+        
+        .order-info-item:last-child {
+            margin-bottom: 0;
+        }
+        
+        .order-info-label {
+            font-weight: 600;
+            color: var(--color-text-secondary);
+        }
+        
+        .order-info-value {
+            color: var(--color-text);
+            font-weight: 500;
+        }
+    </style>
+</head>
+<body>
+<header class="header">
+    <div class="container header__content">
+        <div class="logo"><a href="/">SmartShop</a></div>
+        <nav class="nav">
+            <a href="/" class="nav__link">Trang chủ</a>
+            <a href="/product.html" class="nav__link">Sản phẩm</a>
+        </nav>
+        <div class="header__actions header__actions--quick">
+            <a href="/orders.html" class="header__icon" aria-label="Đơn hàng">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </a>
+            <a href="/cart.html" class="header__icon" aria-label="Giỏ hàng">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </a>
+        </div>
+    </div>
+</header>
+
+<main class="container">
+    <div class="success-container">
+        <div class="success-card">
+            <div class="success-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                    <path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </div>
+            
+            <h1 class="success-title">Thanh toán thành công!</h1>
+            <p class="success-message">
+                Cảm ơn bạn đã đặt hàng. Đơn hàng của bạn đã được xử lý thành công và đang được chuẩn bị.
+            </p>
+            
+            <div class="order-info" id="orderInfo" style="display: none;">
+                <div class="order-info-item">
+                    <span class="order-info-label">Mã đơn hàng:</span>
+                    <span class="order-info-value" id="orderNumber">-</span>
+                </div>
+                <div class="order-info-item">
+                    <span class="order-info-label">Tổng tiền:</span>
+                    <span class="order-info-value" id="orderTotal">-</span>
+                </div>
+                <div class="order-info-item">
+                    <span class="order-info-label">Phương thức thanh toán:</span>
+                    <span class="order-info-value">VNPay</span>
+                </div>
+            </div>
+            
+            <div class="success-actions">
+                <a href="#" id="viewOrderBtn" class="btn btn-primary">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                    Xem chi tiết đơn hàng
+                </a>
+                <a href="/product.html" class="btn btn-secondary">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
+                        <polyline points="9 22 9 12 15 12 15 22"/>
+                    </svg>
+                    Tiếp tục mua sắm
+                </a>
+            </div>
+        </div>
+    </div>
+</main>
+
+<footer class="footer">
+    <div class="container">
+        <div class="footer__content">
+            <div class="footer__section">
+                <h3 class="footer__title">Về SmartShop</h3>
+                <p class="footer__text">SmartShop - Cửa hàng thông minh cho mọi nhu cầu mua sắm của bạn.</p>
+            </div>
+            <div class="footer__section">
+                <h3 class="footer__title">Liên hệ</h3>
+                <ul class="footer__list">
+                    <li>
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 8px;">
+                            <path d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                        </svg>
+                        <a href="mailto:support@smartshop.vn">support@smartshop.vn</a>
+                    </li>
+                    <li>
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 8px;">
+                            <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/>
+                        </svg>
+                        <span>Hotline: 1900 1234</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    <div class="footer__divider"></div>
+    <p class="footer__copyright">© 2025 SmartShop. All rights reserved.</p>
+</footer>
+
+<script src="/js/api.js"></script>
+<script>
+    // Lấy orderId từ URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const orderId = urlParams.get('orderId');
+    
+    if (orderId) {
+        // Cập nhật link xem chi tiết đơn hàng
+        const viewOrderBtn = document.getElementById('viewOrderBtn');
+        if (viewOrderBtn) {
+            viewOrderBtn.href = `/order-detail.html?id=${orderId}`;
+        }
+        
+        // Tải thông tin đơn hàng nếu có API
+        if (typeof api !== 'undefined' && api.get) {
+            api.get(`/api/orders/${orderId}`)
+                .then(response => {
+                    if (response && response.data) {
+                        const order = response.data;
+                        const orderInfo = document.getElementById('orderInfo');
+                        const orderNumber = document.getElementById('orderNumber');
+                        const orderTotal = document.getElementById('orderTotal');
+                        
+                        if (orderInfo) orderInfo.style.display = 'block';
+                        if (orderNumber && order.orderNumber) {
+                            orderNumber.textContent = order.orderNumber;
+                        }
+                        if (orderTotal && order.totalAmount) {
+                            orderTotal.textContent = new Intl.NumberFormat('vi-VN', {
+                                style: 'currency',
+                                currency: 'VND'
+                            }).format(order.totalAmount);
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading order details:', error);
+                });
+        }
+    } else {
+        // Nếu không có orderId, ẩn nút xem chi tiết
+        const viewOrderBtn = document.getElementById('viewOrderBtn');
+        if (viewOrderBtn) {
+            viewOrderBtn.style.display = 'none';
+        }
+    }
+</script>
+</body>
+</html>
+

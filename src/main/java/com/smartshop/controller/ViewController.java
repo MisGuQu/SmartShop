@@ -70,6 +70,11 @@ public class ViewController {
         return "order/order-detail";
     }
 
+    @GetMapping("/order-success.html")
+    public String orderSuccess() {
+        return "order/order-success";
+    }
+
     // Profile pages
     @GetMapping("/profile.html")
     public String profile() {

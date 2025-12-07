@@ -69,6 +69,8 @@ public class SecurityConfig {
                 .requestMatchers("/api/categories/**").permitAll()
                 .requestMatchers("/api/reviews/product/**").permitAll()
                 .requestMatchers("/api/test/**").permitAll()
+                // VNPay return URL - must be public for callback
+                .requestMatchers("/api/payments/vnpay/return").permitAll()
                 
                 // Static resources (CSS, JS, Images)
                 .requestMatchers("/static/**").permitAll()

@@ -31,14 +31,21 @@ public class PaymentController {
         return ResponseEntity.ok(paymentService.createVNPayPayment(req.getOrderId(), httpRequest));
     }
 
-    // VNPay return URL (for Link Payment - no signature verification needed)
+    // VNPay return URL - xác thực chữ ký và xử lý kết quả
     @GetMapping("/vnpay/return")
     public RedirectView vnpayReturn(@RequestParam Map<String, String> allParams)
             throws JsonProcessingException {
         try {
-            String status = paymentService.handleVNPayReturn(allParams);
+            // Xác thực chữ ký trước
+            boolean isValidSignature = paymentService.verifySignature(allParams);
             
-            // Lấy orderId từ transaction hoặc từ params
+            if (!isValidSignature) {
+                System.err.println("VNPay return: Invalid signature!");
+                return new RedirectView("/?payment=error&reason=invalid_signature");
+            }
+            
+            // Lấy responseCode từ VNPay
+            String responseCode = allParams.get("vnp_ResponseCode");
             String txnRef = allParams.get("vnp_TxnRef");
             Long orderId = null;
             
@@ -57,15 +64,17 @@ public class PaymentController {
                 return new RedirectView("/?payment=error");
             }
             
-            // Redirect về trang order detail
-            String redirectUrl = "/order-detail.html?id=" + orderId;
-            if ("SUCCESS".equals(status)) {
-                redirectUrl += "&payment=success";
+            // Nếu xác thực thành công và responseCode == 00, xử lý thanh toán
+            if ("00".equals(responseCode)) {
+                paymentService.handleVNPayReturn(allParams);
+                // Redirect về trang order-success khi thanh toán thành công
+                return new RedirectView("/order-success.html?orderId=" + orderId);
             } else {
-                redirectUrl += "&payment=failed";
+                // Thanh toán thất bại
+                paymentService.handleVNPayReturn(allParams);
+                return new RedirectView("/order-detail.html?id=" + orderId + "&payment=failed");
             }
             
-            return new RedirectView(redirectUrl);
         } catch (Exception e) {
             // Log error và redirect về trang chủ
             System.err.println("Error handling VNPay return: " + e.getMessage());
