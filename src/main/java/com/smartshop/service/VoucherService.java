@@ -26,13 +26,16 @@ public class VoucherService {
     private final VoucherRepository voucherRepository;
     private final CategoryRepository categoryRepository;
     private final UserVoucherRepository userVoucherRepository;
+    private final NotificationService notificationService;
 
     public VoucherService(VoucherRepository voucherRepository,
                           CategoryRepository categoryRepository,
-                          UserVoucherRepository userVoucherRepository) {
+                          UserVoucherRepository userVoucherRepository,
+                          NotificationService notificationService) {
         this.voucherRepository = voucherRepository;
         this.categoryRepository = categoryRepository;
         this.userVoucherRepository = userVoucherRepository;
+        this.notificationService = notificationService;
     }
 
     // Lấy user hiện tại từ SecurityContext
@@ -181,7 +184,20 @@ public class VoucherService {
                 .isUsed(false)
                 .build();
         
-        return UserVoucherResponse.fromEntity(userVoucherRepository.save(userVoucher));
+        UserVoucher savedUserVoucher = userVoucherRepository.save(userVoucher);
+
+        // Tạo thông báo cho user khi nhận voucher mới
+        String title = "Bạn đã nhận được voucher mới!";
+        String message = "Bạn đã nhận được voucher " + voucher.getCode() + ". Hãy sử dụng ngay để nhận ưu đãi!";
+        notificationService.createNotification(
+                user,
+                title,
+                message,
+                "PROMOTION",
+                voucher.getId()
+        );
+        
+        return UserVoucherResponse.fromEntity(savedUserVoucher);
     }
 }
 

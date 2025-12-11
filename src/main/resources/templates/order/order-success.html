@@ -136,15 +136,36 @@
             <a href="/product.html" class="nav__link">Sản phẩm</a>
         </nav>
         <div class="header__actions header__actions--quick">
-            <a href="/orders.html" class="header__icon" aria-label="Đơn hàng">
+            <a href="#" id="wishlistLink" class="header__icon" aria-label="Danh sách yêu thích">
                 <svg viewBox="0 0 24 24" aria-hidden="true">
-                    <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M17.657 5.343a4 4 0 0 0-5.657 0L11 6.343l-.999-1a4 4 0 1 0-5.657 5.657L11 17.657l6.657-6.657a4 4 0 0 0 0-5.657z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path>
                 </svg>
+                <span class="visually-hidden">Yêu thích</span>
             </a>
+            <div class="header__notification-wrapper" id="headerNotificationWrapper">
+                <a href="#" id="notificationIcon" class="header__icon" aria-label="Thông báo">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path>
+                        <path d="M13.73 21a2 2 0 0 1-3.46 0" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path>
+                    </svg>
+                    <span class="header__notification-badge d-none" id="notificationBadge">0</span>
+                    <span class="visually-hidden">Thông báo</span>
+                </a>
+                <div class="header__notification-menu d-none" id="notificationMenu">
+                    <div class="notification-menu__header">
+                        <h3>Thông báo</h3>
+                        <button type="button" class="notification-menu__mark-all" id="markAllReadBtn">Đánh dấu tất cả đã đọc</button>
+                    </div>
+                    <div class="notification-list"></div>
+                </div>
+            </div>
             <a href="/cart.html" class="header__icon" aria-label="Giỏ hàng">
                 <svg viewBox="0 0 24 24" aria-hidden="true">
-                    <path d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M3.5 5h2.2l1.4 9.2a1 1 0 0 0 .99.85h9.26a1 1 0 0 0 .98-.8l1.12-5.6H7.16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path>
+                    <circle cx="10" cy="19" r="1.4" fill="none" stroke="currentColor" stroke-width="1.6"></circle>
+                    <circle cx="16.5" cy="19" r="1.4" fill="none" stroke="currentColor" stroke-width="1.6"></circle>
                 </svg>
+                <span class="visually-hidden">Giỏ hàng</span>
             </a>
         </div>
     </div>
@@ -229,6 +250,7 @@
 </footer>
 
 <script src="/js/api.js"></script>
+<script src="/js/notifications.js" defer></script>
 <script>
     // Lấy orderId từ URL
     const urlParams = new URLSearchParams(window.location.search);

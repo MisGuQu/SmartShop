@@ -22,13 +22,16 @@ public class OrderService {
     private final OrderRepository orderRepository;
     private final OrderStatusHistoryRepository statusHistoryRepository;
     private final PaymentTransactionRepository paymentTransactionRepository;
+    private final NotificationService notificationService;
 
     public OrderService(OrderRepository orderRepository,
                         OrderStatusHistoryRepository statusHistoryRepository,
-                        PaymentTransactionRepository paymentTransactionRepository) {
+                        PaymentTransactionRepository paymentTransactionRepository,
+                        NotificationService notificationService) {
         this.orderRepository = orderRepository;
         this.statusHistoryRepository = statusHistoryRepository;
         this.paymentTransactionRepository = paymentTransactionRepository;
+        this.notificationService = notificationService;
     }
 
     private User getCurrentUser() {
@@ -93,6 +96,20 @@ public class OrderService {
                 .build();
         statusHistoryRepository.save(history);
 
+        // Tạo thông báo cho user khi trạng thái đơn hàng thay đổi
+        if (order.getUser() != null) {
+            String statusText = getStatusText(newStatus);
+            String title = "Đơn hàng #" + order.getOrderNumber() + " đã được cập nhật";
+            String message = "Đơn hàng của bạn đã chuyển sang trạng thái: " + statusText;
+            notificationService.createNotification(
+                    order.getUser(),
+                    title,
+                    message,
+                    "ORDER",
+                    order.getId()
+            );
+        }
+
         List<OrderStatusHistoryResponse> historyResponses =
                 statusHistoryRepository.findByOrderOrderByCreatedAtAsc(order).stream()
                         .map(OrderStatusHistoryResponse::fromEntity)
@@ -105,6 +122,20 @@ public class OrderService {
                 .orElse(0.0);
 
         return OrderDetailResponse.fromEntity(order, historyResponses, paidAmount);
+    }
+
+    private String getStatusText(String status) {
+        return switch (status) {
+            case "PENDING" -> "Chờ xác nhận";
+            case "CONFIRMED" -> "Đã xác nhận";
+            case "PROCESSING" -> "Đang xử lý";
+            case "SHIPPED" -> "Đang giao hàng";
+            case "DELIVERED" -> "Đã giao hàng";
+            case "COMPLETED" -> "Hoàn thành";
+            case "CANCELLED" -> "Đã hủy";
+            case "REFUNDED" -> "Đã hoàn tiền";
+            default -> status;
+        };
     }
 
     // Hủy đơn hàng (User) - chỉ cho phép hủy đơn của chính mình
@@ -140,6 +171,19 @@ public class OrderService {
                 .newStatus("CANCELLED")
                 .build();
         statusHistoryRepository.save(history);
+
+        // Tạo thông báo cho user
+        if (order.getUser() != null) {
+            String title = "Đơn hàng #" + order.getOrderNumber() + " đã được hủy";
+            String message = "Đơn hàng của bạn đã được hủy thành công.";
+            notificationService.createNotification(
+                    order.getUser(),
+                    title,
+                    message,
+                    "ORDER",
+                    order.getId()
+            );
+        }
 
         // Lấy lại lịch sử đầy đủ
         List<OrderStatusHistoryResponse> historyResponses =
@@ -189,6 +233,19 @@ public class OrderService {
                 .newStatus("COMPLETED")
                 .build();
         statusHistoryRepository.save(history);
+
+        // Tạo thông báo cho user
+        if (order.getUser() != null) {
+            String title = "Đơn hàng #" + order.getOrderNumber() + " đã hoàn thành";
+            String message = "Cảm ơn bạn đã mua sắm tại SmartShop! Đơn hàng của bạn đã được hoàn thành.";
+            notificationService.createNotification(
+                    order.getUser(),
+                    title,
+                    message,
+                    "ORDER",
+                    order.getId()
+            );
+        }
 
         // Lấy lại lịch sử đầy đủ
         List<OrderStatusHistoryResponse> historyResponses =

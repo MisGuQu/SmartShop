@@ -196,7 +196,20 @@ CREATE TABLE review_media (
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (review_id) REFERENCES reviews(id) ON DELETE CASCADE
 );
-
+-- ============================================================
+-- 9. NOTIFICATIONS (MỚI THÊM)
+-- ============================================================
+CREATE TABLE notifications (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    user_id BIGINT NOT NULL,
+    title VARCHAR(255) NOT NULL,
+    message TEXT,
+    is_read BOOLEAN DEFAULT FALSE,
+    type VARCHAR(50),
+    reference_id BIGINT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
 -- ============================================================
 -- DỮ LIỆU MẪU
 -- ============================================================
