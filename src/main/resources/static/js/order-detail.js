@@ -45,8 +45,9 @@ function displayOrder(order) {
     // Get voucher discount and shipping fee if available
     const voucherDiscount = order.voucherDiscount || 0;
     const shippingFee = order.shippingFee || 0;
-    // Calculate final total: subtotal - voucher discount + shipping fee
-    const finalTotal = subtotal - voucherDiscount + shippingFee;
+    // Use finalTotal from backend response (already accounts for paidAmount)
+    // If not available, fallback to calculation
+    const finalTotal = order.finalTotal !== undefined ? order.finalTotal : (subtotal - voucherDiscount + shippingFee);
     
     const statusClass = getStatusClass(order.status);
     const statusText = getStatusText(order.status);

@@ -287,6 +287,22 @@ public class ReviewService {
         return reviews.map(ReviewResponse::fromEntity);
     }
 
+    // Admin: Trả lời bình luận
+    public ReviewResponse replyToReview(Long reviewId, String replyComment) {
+        if (!isAdmin()) {
+            throw new RuntimeException("Chỉ admin mới có quyền trả lời bình luận");
+        }
+
+        Review review = reviewRepository.findById(reviewId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy bình luận"));
+
+        review.setReplyComment(replyComment);
+        review.setReplyAt(LocalDateTime.now());
+        review = reviewRepository.save(review);
+
+        return ReviewResponse.fromEntity(review);
+    }
+
     // DTO cho thống kê rating
     @lombok.Data
     @lombok.Builder

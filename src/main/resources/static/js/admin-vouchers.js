@@ -3,88 +3,86 @@ let vouchers = [];
 let categories = [];
 
 // Initialize
-document.addEventListener('DOMContentLoaded', function() {
-    loadCategories();
-    loadVouchers();
+document.addEventListener('DOMContentLoaded', async function() {
+    // Load data first
+    await loadCategories();
+    await loadVouchers();
+    
+    // Setup export buttons - Attach ONLY ONCE
     setupExportButtons();
 });
 
-// Setup export button event listeners
+// Setup export button event listeners - Simple and reliable
 function setupExportButtons() {
-    console.log('setupExportButtons called');
+    console.log('=== setupExportButtons CALLED ===');
     
-    // Use event delegation on the document to catch clicks
-    document.addEventListener('click', function(e) {
-        // Check if clicked element is export Excel button or inside it
-        if (e.target.closest('.export-excel-btn')) {
-            e.preventDefault();
-            e.stopPropagation();
-            console.log('Excel export button clicked via delegation');
-            try {
-                exportToExcel();
-            } catch (error) {
-                console.error('Error in exportToExcel:', error);
-                alert('Lỗi khi xuất Excel: ' + error.message);
-            }
-            return false;
-        }
-        
-        // Check if clicked element is export PDF button or inside it
-        if (e.target.closest('.export-pdf-btn')) {
-            e.preventDefault();
-            e.stopPropagation();
-            console.log('PDF export button clicked via delegation');
-            try {
-                exportToPDF();
-            } catch (error) {
-                console.error('Error in exportToPDF:', error);
-                alert('Lỗi khi xuất PDF: ' + error.message);
-            }
-            return false;
-        }
-    });
+    const excelBtn = document.getElementById('exportExcelBtn');
+    const pdfBtn = document.getElementById('exportPdfBtn');
     
-    // Also try direct attachment as backup
-    setTimeout(function() {
-        const excelBtn = document.querySelector('.export-excel-btn');
-        const pdfBtn = document.querySelector('.export-pdf-btn');
+    console.log('Excel button found:', !!excelBtn);
+    console.log('PDF button found:', !!pdfBtn);
+    
+    if (!excelBtn || !pdfBtn) {
+        console.warn('Export buttons not found');
+        return;
+    }
+    
+    // Attach onclick directly - simple and reliable
+    excelBtn.onclick = function(e) {
+        e.preventDefault();
+        e.stopPropagation();
         
-        if (excelBtn) {
-            console.log('Excel button found, attaching direct listener');
-            excelBtn.addEventListener('click', function(e) {
-                e.preventDefault();
-                e.stopPropagation();
-                console.log('Excel export button clicked (direct)');
-                try {
-                    exportToExcel();
-                } catch (error) {
-                    console.error('Error in exportToExcel:', error);
-                    alert('Lỗi khi xuất Excel: ' + error.message);
-                }
-                return false;
-            }, true); // Use capture phase
-        } else {
-            console.warn('Excel export button not found');
+        // Close dropdown manually
+        const dropdownBtn = document.querySelector('[data-bs-toggle="dropdown"]');
+        if (typeof bootstrap !== 'undefined' && bootstrap.Dropdown && dropdownBtn) {
+            const dropdown = bootstrap.Dropdown.getInstance(dropdownBtn);
+            if (dropdown) {
+                dropdown.hide();
+            }
         }
         
-        if (pdfBtn) {
-            console.log('PDF button found, attaching direct listener');
-            pdfBtn.addEventListener('click', function(e) {
-                e.preventDefault();
-                e.stopPropagation();
-                console.log('PDF export button clicked (direct)');
-                try {
-                    exportToPDF();
-                } catch (error) {
-                    console.error('Error in exportToPDF:', error);
-                    alert('Lỗi khi xuất PDF: ' + error.message);
-                }
-                return false;
-            }, true); // Use capture phase
+        // Call export function
+        if (typeof window.exportToExcel === 'function') {
+            try {
+                window.exportToExcel();
+            } catch (error) {
+                console.error('Error calling exportToExcel:', error);
+                showAlert('Lỗi khi xuất Excel: ' + error.message, 'error');
+            }
         } else {
-            console.warn('PDF export button not found');
+            showAlert('Hàm exportToExcel chưa được tải. Vui lòng tải lại trang!', 'error');
         }
-    }, 500);
+        return false;
+    };
+    
+    pdfBtn.onclick = function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        // Close dropdown manually
+        const dropdownBtn = document.querySelector('[data-bs-toggle="dropdown"]');
+        if (typeof bootstrap !== 'undefined' && bootstrap.Dropdown && dropdownBtn) {
+            const dropdown = bootstrap.Dropdown.getInstance(dropdownBtn);
+            if (dropdown) {
+                dropdown.hide();
+            }
+        }
+        
+        // Call export function
+        if (typeof window.exportToPDF === 'function') {
+            try {
+                window.exportToPDF();
+            } catch (error) {
+                console.error('Error calling exportToPDF:', error);
+                showAlert('Lỗi khi xuất PDF: ' + error.message, 'error');
+            }
+        } else {
+            showAlert('Hàm exportToPDF chưa được tải. Vui lòng tải lại trang!', 'error');
+        }
+        return false;
+    };
+    
+    console.log('Export buttons setup complete!');
 }
 
 // Load categories
@@ -324,8 +322,9 @@ function formatPrice(price) {
 
 // Export to Excel - Make globally available
 window.exportToExcel = function() {
+    // Check if data is loaded
     if (!vouchers || vouchers.length === 0) {
-        showAlert('Không có dữ liệu để xuất!', 'error');
+        showAlert('Không có dữ liệu để xuất! Vui lòng đợi dữ liệu được tải.', 'error');
         return;
     }
 
@@ -383,8 +382,9 @@ window.exportToExcel = function() {
 
 // Export to PDF - Make globally available
 window.exportToPDF = function() {
+    // Check if data is loaded
     if (!vouchers || vouchers.length === 0) {
-        showAlert('Không có dữ liệu để xuất!', 'error');
+        showAlert('Không có dữ liệu để xuất! Vui lòng đợi dữ liệu được tải.', 'error');
         return;
     }
 

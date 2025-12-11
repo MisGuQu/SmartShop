@@ -133,6 +133,11 @@ public class ViewController {
         return "admin/vouchers";
     }
 
+    @GetMapping("/admin/reviews.html")
+    public String adminReviews() {
+        return "admin/reviews";
+    }
+
     // Contact page
     @GetMapping("/contact.html")
     public String contact() {

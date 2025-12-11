@@ -36,6 +36,13 @@ public class Review {
 
     private String comment;
 
+    // Các trường hỗ trợ Shop phản hồi
+    @Column(name = "reply_comment", columnDefinition = "TEXT")
+    private String replyComment;
+
+    @Column(name = "reply_at")
+    private LocalDateTime replyAt;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;

@@ -479,3 +479,48 @@
     }
 }
 
+/* Review Reply */
+.review-item__reply {
+    margin-top: 16px;
+    padding: 16px;
+    background: #f8f9fa;
+    border-left: 3px solid var(--color-primary);
+    border-radius: 8px;
+}
+
+.review-item__reply-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: var(--color-text);
+}
+
+.review-item__reply-date {
+    font-size: 0.875rem;
+    font-weight: normal;
+    color: var(--color-muted);
+}
+
+.review-item__reply-content {
+    color: var(--color-text);
+    line-height: 1.6;
+    white-space: pre-wrap;
+}
+
+.review-reply-form {
+    margin-top: 16px;
+    padding: 16px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border: 1px solid var(--color-border);
+}
+
+.review-reply-form h4 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 16px;
+    color: var(--color-text);
+}
+

@@ -2,87 +2,85 @@
 let categories = [];
 
 // Initialize
-document.addEventListener('DOMContentLoaded', function() {
-    loadCategories();
+document.addEventListener('DOMContentLoaded', async function() {
+    // Load data first
+    await loadCategories();
+    
+    // Setup export buttons - Attach ONLY ONCE
     setupExportButtons();
 });
 
-// Setup export button event listeners
+// Setup export button event listeners - Simple and reliable
 function setupExportButtons() {
-    console.log('setupExportButtons called');
+    console.log('=== setupExportButtons CALLED ===');
     
-    // Use event delegation on the document to catch clicks
-    document.addEventListener('click', function(e) {
-        // Check if clicked element is export Excel button or inside it
-        if (e.target.closest('.export-excel-btn')) {
-            e.preventDefault();
-            e.stopPropagation();
-            console.log('Excel export button clicked via delegation');
-            try {
-                exportToExcel();
-            } catch (error) {
-                console.error('Error in exportToExcel:', error);
-                alert('Lỗi khi xuất Excel: ' + error.message);
-            }
-            return false;
-        }
-        
-        // Check if clicked element is export PDF button or inside it
-        if (e.target.closest('.export-pdf-btn')) {
-            e.preventDefault();
-            e.stopPropagation();
-            console.log('PDF export button clicked via delegation');
-            try {
-                exportToPDF();
-            } catch (error) {
-                console.error('Error in exportToPDF:', error);
-                alert('Lỗi khi xuất PDF: ' + error.message);
-            }
-            return false;
-        }
-    });
+    const excelBtn = document.getElementById('exportExcelBtn');
+    const pdfBtn = document.getElementById('exportPdfBtn');
     
-    // Also try direct attachment as backup
-    setTimeout(function() {
-        const excelBtn = document.querySelector('.export-excel-btn');
-        const pdfBtn = document.querySelector('.export-pdf-btn');
+    console.log('Excel button found:', !!excelBtn);
+    console.log('PDF button found:', !!pdfBtn);
+    
+    if (!excelBtn || !pdfBtn) {
+        console.warn('Export buttons not found');
+        return;
+    }
+    
+    // Attach onclick directly - simple and reliable
+    excelBtn.onclick = function(e) {
+        e.preventDefault();
+        e.stopPropagation();
         
-        if (excelBtn) {
-            console.log('Excel button found, attaching direct listener');
-            excelBtn.addEventListener('click', function(e) {
-                e.preventDefault();
-                e.stopPropagation();
-                console.log('Excel export button clicked (direct)');
-                try {
-                    exportToExcel();
-                } catch (error) {
-                    console.error('Error in exportToExcel:', error);
-                    alert('Lỗi khi xuất Excel: ' + error.message);
-                }
-                return false;
-            }, true); // Use capture phase
-        } else {
-            console.warn('Excel export button not found');
+        // Close dropdown manually
+        const dropdownBtn = document.querySelector('[data-bs-toggle="dropdown"]');
+        if (typeof bootstrap !== 'undefined' && bootstrap.Dropdown && dropdownBtn) {
+            const dropdown = bootstrap.Dropdown.getInstance(dropdownBtn);
+            if (dropdown) {
+                dropdown.hide();
+            }
         }
         
-        if (pdfBtn) {
-            console.log('PDF button found, attaching direct listener');
-            pdfBtn.addEventListener('click', function(e) {
-                e.preventDefault();
-                e.stopPropagation();
-                console.log('PDF export button clicked (direct)');
-                try {
-                    exportToPDF();
-                } catch (error) {
-                    console.error('Error in exportToPDF:', error);
-                    alert('Lỗi khi xuất PDF: ' + error.message);
-                }
-                return false;
-            }, true); // Use capture phase
+        // Call export function
+        if (typeof window.exportToExcel === 'function') {
+            try {
+                window.exportToExcel();
+            } catch (error) {
+                console.error('Error calling exportToExcel:', error);
+                showAlert('Lỗi khi xuất Excel: ' + error.message, 'error');
+            }
         } else {
-            console.warn('PDF export button not found');
+            showAlert('Hàm exportToExcel chưa được tải. Vui lòng tải lại trang!', 'error');
         }
-    }, 500);
+        return false;
+    };
+    
+    pdfBtn.onclick = function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        // Close dropdown manually
+        const dropdownBtn = document.querySelector('[data-bs-toggle="dropdown"]');
+        if (typeof bootstrap !== 'undefined' && bootstrap.Dropdown && dropdownBtn) {
+            const dropdown = bootstrap.Dropdown.getInstance(dropdownBtn);
+            if (dropdown) {
+                dropdown.hide();
+            }
+        }
+        
+        // Call export function
+        if (typeof window.exportToPDF === 'function') {
+            try {
+                window.exportToPDF();
+            } catch (error) {
+                console.error('Error calling exportToPDF:', error);
+                showAlert('Lỗi khi xuất PDF: ' + error.message, 'error');
+            }
+        } else {
+            showAlert('Hàm exportToPDF chưa được tải. Vui lòng tải lại trang!', 'error');
+        }
+        return false;
+    };
+    
+    console.log('Export buttons setup complete!');
 }
 
 // Load categories
@@ -192,28 +190,19 @@ async function confirmDeleteCategory(categoryId) {
 // Export to Excel - Make globally available
 window.exportToExcel = function() {
     console.log('=== exportToExcel CALLED ===');
-    console.log('categories:', categories);
-    console.log('categories length:', categories ? categories.length : 0);
-    console.log('XLSX available:', typeof XLSX !== 'undefined');
     
-    alert('Đang xuất Excel...'); // Temporary alert to confirm function is called
-    
+    // Check if data is loaded
     if (!categories || categories.length === 0) {
-        console.warn('No categories to export');
-        showAlert('Không có dữ liệu để xuất!', 'error');
-        alert('Không có dữ liệu để xuất!');
+        showAlert('Không có dữ liệu để xuất! Vui lòng đợi dữ liệu được tải.', 'error');
         return;
     }
 
     // Check if XLSX library is loaded
     if (typeof XLSX === 'undefined') {
-        console.error('XLSX library not loaded');
         showAlert('Thư viện Excel chưa được tải. Vui lòng tải lại trang!', 'error');
-        alert('Thư viện Excel chưa được tải. Vui lòng tải lại trang!');
         return;
     }
 
-    console.log('XLSX library loaded, starting export...');
     try {
         const data = categories.map(category => ({
             'ID': category.id || '',
@@ -235,45 +224,30 @@ window.exportToExcel = function() {
 
         XLSX.utils.book_append_sheet(wb, ws, 'Danh mục');
         const filename = `BaoCaoDanhMuc_${new Date().toISOString().split('T')[0]}.xlsx`;
-        console.log('Writing file:', filename);
         XLSX.writeFile(wb, filename);
-        console.log('Excel export successful');
         showAlert('Xuất Excel thành công!', 'success');
-        alert('Xuất Excel thành công!');
     } catch (error) {
         console.error('Error exporting to Excel:', error);
-        console.error('Error stack:', error.stack);
-        const errorMsg = 'Lỗi khi xuất Excel: ' + (error.message || 'Unknown error');
-        showAlert(errorMsg, 'error');
-        alert(errorMsg);
+        showAlert('Lỗi khi xuất Excel: ' + (error.message || 'Unknown error'), 'error');
     }
 };
 
 // Export to PDF - Make globally available
 window.exportToPDF = function() {
     console.log('=== exportToPDF CALLED ===');
-    console.log('categories:', categories);
-    console.log('categories length:', categories ? categories.length : 0);
-    console.log('jsPDF available:', typeof window.jspdf !== 'undefined');
     
-    alert('Đang xuất PDF...'); // Temporary alert to confirm function is called
-    
+    // Check if data is loaded
     if (!categories || categories.length === 0) {
-        console.warn('No categories to export');
-        showAlert('Không có dữ liệu để xuất!', 'error');
-        alert('Không có dữ liệu để xuất!');
+        showAlert('Không có dữ liệu để xuất! Vui lòng đợi dữ liệu được tải.', 'error');
         return;
     }
 
     // Check if jsPDF library is loaded
     if (typeof window.jspdf === 'undefined') {
-        console.error('jsPDF library not loaded');
         showAlert('Thư viện PDF chưa được tải. Vui lòng tải lại trang!', 'error');
-        alert('Thư viện PDF chưa được tải. Vui lòng tải lại trang!');
         return;
     }
 
-    console.log('jsPDF library loaded, starting export...');
     try {
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF('l', 'mm', 'a4');
@@ -301,27 +275,19 @@ window.exportToPDF = function() {
         });
         
         const filename = `BaoCaoDanhMuc_${new Date().toISOString().split('T')[0]}.pdf`;
-        console.log('Saving PDF:', filename);
         doc.save(filename);
-        console.log('PDF export successful');
         showAlert('Xuất PDF thành công!', 'success');
-        alert('Xuất PDF thành công!');
     } catch (error) {
         console.error('Error exporting to PDF:', error);
-        console.error('Error stack:', error.stack);
-        const errorMsg = 'Lỗi khi xuất PDF: ' + (error.message || 'Unknown error');
-        showAlert(errorMsg, 'error');
-        alert(errorMsg);
+        showAlert('Lỗi khi xuất PDF: ' + (error.message || 'Unknown error'), 'error');
     }
 };
 
 // Show alert
 function showAlert(message, type = 'success') {
-    console.log('showAlert called:', message, type);
     const alertContainer = document.getElementById('alertContainer');
     if (!alertContainer) {
-        console.warn('alertContainer not found, using alert() as fallback');
-        alert(message);
+        console.warn('alertContainer not found');
         return;
     }
 
@@ -333,7 +299,6 @@ function showAlert(message, type = 'success') {
     `;
     alertContainer.innerHTML = '';
     alertContainer.appendChild(alertDiv);
-    console.log('Alert displayed in container');
 
     setTimeout(() => {
         alertDiv.remove();

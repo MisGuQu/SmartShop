@@ -220,9 +220,8 @@ public class PaymentService {
             Order order = tx.getOrder();
             order.setPaymentStatus("PAID");
             
-            // Khi thanh toán thành công: phí vận chuyển = 0 đồng
-            // Giữ nguyên totalAmount để tính toán (sẽ trừ đi paidAmount khi hiển thị)
-            order.setShippingFee(0.0);
+            // Giữ nguyên shippingFee và totalAmount để tính toán (sẽ trừ đi paidAmount khi hiển thị)
+            // Không thay đổi shippingFee vì đây là thông tin lịch sử của đơn hàng
             
             markUserVoucherUsed(order);
         } else {

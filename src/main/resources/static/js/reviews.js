@@ -2,6 +2,8 @@
 let currentUserId = null;
 let currentUser = null;
 let editingReviewId = null;
+let isAdmin = false;
+let replyingToReviewId = null;
 
 // Initialize reviews
 async function initReviews(productId) {
@@ -18,6 +20,12 @@ async function loadCurrentUser() {
             currentUser = await api.getCurrentUser();
             if (currentUser) {
                 currentUserId = currentUser.id;
+                // Check if user is admin
+                isAdmin = currentUser.roles && (
+                    currentUser.roles.includes('ADMIN') || 
+                    currentUser.roles.includes('ROLE_ADMIN') || 
+                    currentUser.roles.some(r => r.includes('ADMIN'))
+                );
             }
         }
     } catch (error) {
@@ -130,12 +138,33 @@ function displayReviews(reviews) {
                         }).join('')}
                     </div>
                 ` : ''}
-                ${isOwner ? `
-                    <div class="review-item__actions">
-                        <button class="btn btn-sm btn-link" onclick="editReview(${review.id})">Sửa</button>
-                        <button class="btn btn-sm btn-link text-danger" onclick="deleteReview(${review.id})">Xóa</button>
+                ${review.replyComment ? `
+                    <div class="review-item__reply">
+                        <div class="review-item__reply-header">
+                            <strong>Phản hồi từ Shop:</strong>
+                            <span class="review-item__reply-date">${new Date(review.replyAt).toLocaleDateString('vi-VN', {
+                                year: 'numeric',
+                                month: 'long',
+                                day: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                            })}</span>
+                        </div>
+                        <div class="review-item__reply-content">${escapeHtml(review.replyComment)}</div>
                     </div>
                 ` : ''}
+                <div class="review-item__actions">
+                    ${isOwner ? `
+                        <button class="btn btn-sm btn-link" onclick="editReview(${review.id})">Sửa</button>
+                        <button class="btn btn-sm btn-link text-danger" onclick="deleteReview(${review.id})">Xóa</button>
+                    ` : ''}
+                    ${isAdmin && !review.replyComment ? `
+                        <button class="btn btn-sm btn-primary" onclick="showReplyForm(${review.id})">Trả lời</button>
+                    ` : ''}
+                    ${isAdmin && review.replyComment ? `
+                        <button class="btn btn-sm btn-link" onclick="showReplyForm(${review.id})">Sửa trả lời</button>
+                    ` : ''}
+                </div>
             </div>
         `;
     });
@@ -367,6 +396,85 @@ function escapeHtml(text) {
         "'": '&#039;'
     };
     return text.replace(/[&<>"']/g, m => map[m]);
+}
+
+// Show reply form
+function showReplyForm(reviewId) {
+    if (!isAdmin) {
+        alert('Chỉ admin mới có quyền trả lời bình luận');
+        return;
+    }
+
+    replyingToReviewId = reviewId;
+    const reviewItem = document.querySelector(`[data-review-id="${reviewId}"]`);
+    if (!reviewItem) return;
+
+    // Check if reply form already exists
+    let existingForm = reviewItem.querySelector('.review-reply-form');
+    if (existingForm) {
+        existingForm.remove();
+    }
+
+    // Get existing reply if any
+    const reviewItemElement = reviewItem;
+    const existingReply = reviewItemElement.querySelector('.review-item__reply');
+    const existingReplyText = existingReply ? existingReply.querySelector('.review-item__reply-content').textContent.trim() : '';
+
+    const formHtml = `
+        <div class="review-reply-form">
+            <h4>Trả lời bình luận</h4>
+            <form onsubmit="submitReply(event, ${reviewId})">
+                <div class="form-group">
+                    <label for="replyCommentInput_${reviewId}">Nội dung trả lời *</label>
+                    <textarea id="replyCommentInput_${reviewId}" name="replyComment" rows="3" class="form-control" required>${escapeHtml(existingReplyText)}</textarea>
+                </div>
+                <div class="form-group">
+                    <button type="submit" class="btn btn-primary btn-sm">Gửi trả lời</button>
+                    <button type="button" class="btn btn-secondary btn-sm" onclick="cancelReplyForm(${reviewId})">Hủy</button>
+                </div>
+            </form>
+        </div>
+    `;
+
+    const formDiv = document.createElement('div');
+    formDiv.innerHTML = formHtml;
+    reviewItem.appendChild(formDiv.firstElementChild);
+    formDiv.firstElementChild.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+// Submit reply
+async function submitReply(event, reviewId) {
+    event.preventDefault();
+    
+    const replyInput = document.getElementById(`replyCommentInput_${reviewId}`);
+    const replyComment = replyInput.value.trim();
+
+    if (!replyComment) {
+        alert('Vui lòng nhập nội dung trả lời');
+        return;
+    }
+
+    try {
+        await api.replyToReview(reviewId, replyComment);
+        showToast('Trả lời bình luận thành công!', 'success');
+        cancelReplyForm(reviewId);
+        await loadReviews(productId);
+    } catch (error) {
+        console.error('Error replying to review:', error);
+        showToast(error.message || 'Có lỗi xảy ra', 'error');
+    }
+}
+
+// Cancel reply form
+function cancelReplyForm(reviewId) {
+    replyingToReviewId = null;
+    const reviewItem = document.querySelector(`[data-review-id="${reviewId}"]`);
+    if (reviewItem) {
+        const form = reviewItem.querySelector('.review-reply-form');
+        if (form) {
+            form.remove();
+        }
+    }
 }
 
 // Show toast notification

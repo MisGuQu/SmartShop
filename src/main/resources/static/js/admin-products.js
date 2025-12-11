@@ -8,7 +8,7 @@ let currentFilters = {
 };
 
 // Initialize
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', async function() {
     console.log('=== DOMContentLoaded FIRED ===');
     
     // Set default values for sort dropdowns
@@ -17,110 +17,146 @@ document.addEventListener('DOMContentLoaded', function() {
     if (sortBy) sortBy.value = 'id';
     if (sortDirection) sortDirection.value = 'asc';
     
-    loadCategories().then(() => {
-        loadProducts();
-    });
+    // Load data first
+    await loadCategories();
+    await loadProducts();
     
-    // Setup export buttons immediately and also after a delay
+    // Setup export buttons - Attach ONLY ONCE, directly to buttons
     setupExportButtons();
-    setTimeout(setupExportButtons, 1000);
-    setTimeout(setupExportButtons, 2000);
 });
 
-// Setup export button event listeners
+// Setup export button event listeners - Use event delegation on dropdown menu
+let exportButtonsSetup = false;
+
 function setupExportButtons() {
     console.log('=== setupExportButtons CALLED ===');
-    console.log('window.exportToExcel:', typeof window.exportToExcel);
-    console.log('window.exportToPDF:', typeof window.exportToPDF);
     
-    const excelBtn = document.getElementById('exportExcelBtn');
-    const pdfBtn = document.getElementById('exportPdfBtn');
-    const dropdownMenu = document.getElementById('exportDropdownMenu');
-    const dropdownBtn = document.getElementById('exportDropdownBtn');
-    
-    console.log('Excel button found:', !!excelBtn, excelBtn);
-    console.log('PDF button found:', !!pdfBtn, pdfBtn);
-    console.log('Dropdown menu found:', !!dropdownMenu, dropdownMenu);
-    console.log('Dropdown button found:', !!dropdownBtn, dropdownBtn);
-    
-    if (!excelBtn || !pdfBtn) {
-        console.warn('Export buttons not found! Retrying in 500ms...');
-        setTimeout(setupExportButtons, 500);
+    if (exportButtonsSetup) {
+        console.log('Export buttons already setup, skipping...');
         return;
     }
     
-    // Remove existing listeners by cloning
-    const newExcelBtn = excelBtn.cloneNode(true);
-    excelBtn.parentNode.replaceChild(newExcelBtn, excelBtn);
+    const excelBtn = document.getElementById('exportExcelBtn');
+    const pdfBtn = document.getElementById('exportPdfBtn');
     
-    const newPdfBtn = pdfBtn.cloneNode(true);
-    pdfBtn.parentNode.replaceChild(newPdfBtn, pdfBtn);
+    console.log('Excel button found:', !!excelBtn);
+    console.log('PDF button found:', !!pdfBtn);
     
-    // Add click listener to Excel button
-    newExcelBtn.addEventListener('click', function(e) {
-        console.log('=== Excel button CLICKED ===');
+    if (!excelBtn || !pdfBtn) {
+        console.warn('Export buttons not found - retrying in 100ms...');
+        setTimeout(setupExportButtons, 100);
+        return;
+    }
+    
+    // Find dropdown menu - try by ID first, then by finding parent
+    let dropdownMenu = document.getElementById('exportDropdownMenu');
+    if (!dropdownMenu && excelBtn.parentElement) {
+        dropdownMenu = excelBtn.closest('.dropdown-menu');
+    }
+    
+    console.log('Dropdown menu found:', !!dropdownMenu);
+    
+    exportButtonsSetup = true;
+    
+    // Use event delegation on dropdown menu if found, otherwise use document
+    const eventTarget = dropdownMenu || document;
+    
+    const handleExportClick = function(e) {
+        const target = e.target;
+        const clickedElement = target.closest('#exportExcelBtn') || target.closest('#exportPdfBtn') || 
+                              (target.id === 'exportExcelBtn' ? target : null) ||
+                              (target.id === 'exportPdfBtn' ? target : null);
+        
+        if (!clickedElement) {
+            return; // Not clicking on export buttons
+        }
+        
+        console.log('=== EXPORT BUTTON CLICKED ===', clickedElement.id || clickedElement);
+        
         e.preventDefault();
         e.stopPropagation();
         e.stopImmediatePropagation();
         
         // Close dropdown manually
-        if (typeof bootstrap !== 'undefined' && bootstrap.Dropdown) {
+        const dropdownBtn = document.getElementById('exportDropdownBtn') || 
+                           document.querySelector('[data-bs-toggle="dropdown"]');
+        if (typeof bootstrap !== 'undefined' && bootstrap.Dropdown && dropdownBtn) {
             const dropdown = bootstrap.Dropdown.getInstance(dropdownBtn);
             if (dropdown) {
                 dropdown.hide();
             }
         }
         
-        // Call export function
-        console.log('Checking window.exportToExcel:', typeof window.exportToExcel);
+        // Determine which button was clicked
+        const isExcel = clickedElement.id === 'exportExcelBtn' || 
+                       clickedElement.closest('#exportExcelBtn') ||
+                       clickedElement.classList.contains('export-excel-btn');
+        
+        if (isExcel) {
+            console.log('Excel button clicked!');
+            console.log('Checking window.exportToExcel:', typeof window.exportToExcel);
+            
+            if (typeof window.exportToExcel === 'function') {
+                console.log('Calling window.exportToExcel()...');
+                try {
+                    window.exportToExcel();
+                    console.log('exportToExcel() called successfully');
+                } catch (error) {
+                    console.error('Error calling exportToExcel:', error);
+                    showAlert('Lỗi khi xuất Excel: ' + error.message, 'error');
+                }
+            } else {
+                console.error('exportToExcel is not a function!', typeof window.exportToExcel);
+                showAlert('Hàm exportToExcel chưa được tải. Vui lòng tải lại trang!', 'error');
+            }
+        } else {
+            console.log('PDF button clicked!');
+            console.log('Checking window.exportToPDF:', typeof window.exportToPDF);
+            
+            if (typeof window.exportToPDF === 'function') {
+                console.log('Calling window.exportToPDF()...');
+                try {
+                    window.exportToPDF();
+                    console.log('exportToPDF() called successfully');
+                } catch (error) {
+                    console.error('Error calling exportToPDF:', error);
+                    showAlert('Lỗi khi xuất PDF: ' + error.message, 'error');
+                }
+            } else {
+                console.error('exportToPDF is not a function!', typeof window.exportToPDF);
+                showAlert('Hàm exportToPDF chưa được tải. Vui lòng tải lại trang!', 'error');
+            }
+        }
+        
+        return false;
+    };
+    
+    // Attach with capture phase to catch before Bootstrap
+    eventTarget.addEventListener('click', handleExportClick, true);
+    
+    // Also attach directly to buttons as backup
+    excelBtn.onclick = function(e) {
+        console.log('=== EXCEL BUTTON DIRECT CLICK ===');
+        e.preventDefault();
+        e.stopPropagation();
         if (typeof window.exportToExcel === 'function') {
-            console.log('Calling window.exportToExcel()');
-            try {
-                window.exportToExcel();
-            } catch (error) {
-                console.error('Error calling exportToExcel:', error);
-                alert('Lỗi: ' + error.message);
-            }
-        } else {
-            alert('Hàm exportToExcel không tồn tại! Type: ' + typeof window.exportToExcel);
-            console.error('exportToExcel is not a function:', typeof window.exportToExcel);
+            window.exportToExcel();
         }
         return false;
-    }, true);
+    };
     
-    // Add click listener to PDF button
-    newPdfBtn.addEventListener('click', function(e) {
-        console.log('=== PDF button CLICKED ===');
+    pdfBtn.onclick = function(e) {
+        console.log('=== PDF BUTTON DIRECT CLICK ===');
         e.preventDefault();
         e.stopPropagation();
-        e.stopImmediatePropagation();
-        
-        // Close dropdown manually
-        if (typeof bootstrap !== 'undefined' && bootstrap.Dropdown) {
-            const dropdown = bootstrap.Dropdown.getInstance(dropdownBtn);
-            if (dropdown) {
-                dropdown.hide();
-            }
-        }
-        
-        // Call export function
-        console.log('Checking window.exportToPDF:', typeof window.exportToPDF);
         if (typeof window.exportToPDF === 'function') {
-            console.log('Calling window.exportToPDF()');
-            try {
-                window.exportToPDF();
-            } catch (error) {
-                console.error('Error calling exportToPDF:', error);
-                alert('Lỗi: ' + error.message);
-            }
-        } else {
-            alert('Hàm exportToPDF không tồn tại! Type: ' + typeof window.exportToPDF);
-            console.error('exportToPDF is not a function:', typeof window.exportToPDF);
+            window.exportToPDF();
         }
         return false;
-    }, true);
+    };
     
     console.log('Export buttons setup complete!');
+    console.log('Event listener attached to:', eventTarget);
 }
 
 // Load products
@@ -501,11 +537,10 @@ async function toggleProductStatus(productId, isActive) {
 // Export to Excel - Make globally available
 window.exportToExcel = function() {
     console.log('=== exportToExcel FUNCTION CALLED ===');
-    alert('Đang xuất Excel...');
     
+    // Check if data is loaded
     if (!products || products.length === 0) {
-        showAlert('Không có dữ liệu để xuất!', 'error');
-        alert('Không có dữ liệu để xuất!');
+        showAlert('Không có dữ liệu để xuất! Vui lòng đợi dữ liệu được tải.', 'error');
         return;
     }
 
@@ -574,11 +609,10 @@ window.exportToExcel = function() {
 // Export to PDF - Make globally available
 window.exportToPDF = function() {
     console.log('=== exportToPDF FUNCTION CALLED ===');
-    alert('Đang xuất PDF...');
     
+    // Check if data is loaded
     if (!products || products.length === 0) {
-        showAlert('Không có dữ liệu để xuất!', 'error');
-        alert('Không có dữ liệu để xuất!');
+        showAlert('Không có dữ liệu để xuất! Vui lòng đợi dữ liệu được tải.', 'error');
         return;
     }
 

@@ -34,6 +34,10 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
 
     // Admin: Lọc theo khoảng thời gian
     Page<Review> findByCreatedAtBetween(LocalDateTime startDate, LocalDateTime endDate, Pageable pageable);
+
+    // Lấy review mới nhất theo product
+    @Query("SELECT r FROM Review r WHERE r.product = :product ORDER BY r.createdAt DESC")
+    Page<Review> findLatestByProduct(@Param("product") Product product, Pageable pageable);
 }
 
 

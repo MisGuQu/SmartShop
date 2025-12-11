@@ -122,6 +122,19 @@ public class ReviewController {
         response.put("message", "Admin đã xóa bình luận thành công");
         return ResponseEntity.ok(response);
     }
+
+    // Admin: Trả lời bình luận
+    @PostMapping("/{reviewId}/reply")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ReviewResponse> replyToReview(
+            @PathVariable Long reviewId,
+            @RequestBody Map<String, String> request) {
+        String replyComment = request.get("replyComment");
+        if (replyComment == null || replyComment.trim().isEmpty()) {
+            throw new RuntimeException("Nội dung trả lời không được để trống");
+        }
+        return ResponseEntity.ok(reviewService.replyToReview(reviewId, replyComment));
+    }
 }
 
 

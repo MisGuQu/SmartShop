@@ -21,6 +21,8 @@ public class ReviewResponse {
     private String productName;
     private int rating;
     private String comment;
+    private String replyComment; // Nội dung shop trả lời
+    private LocalDateTime replyAt; // Thời gian shop trả lời
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private boolean isEdited; // Đánh dấu đã chỉnh sửa
@@ -59,6 +61,8 @@ public class ReviewResponse {
                 .productName(review.getProduct().getName())
                 .rating(review.getRating())
                 .comment(review.getComment())
+                .replyComment(review.getReplyComment())
+                .replyAt(review.getReplyAt())
                 .createdAt(review.getCreatedAt())
                 .updatedAt(review.getUpdatedAt())
                 .isEdited(isEdited)

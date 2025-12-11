@@ -333,6 +333,12 @@ const api = {
     deleteReview: (reviewId) => {
         return apiRequest(`/reviews/${reviewId}`, { method: 'DELETE' });
     },
+    replyToReview: (reviewId, replyComment) => {
+        return apiRequest(`/reviews/${reviewId}/reply`, {
+            method: 'POST',
+            body: JSON.stringify({ replyComment })
+        });
+    },
 
     // Vouchers
     getVouchers: () => {

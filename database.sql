@@ -178,6 +178,11 @@ CREATE TABLE reviews (
     product_id BIGINT NOT NULL,
     rating INT CHECK (rating BETWEEN 1 AND 5),
     comment TEXT,
+    
+    -- [MỚI] Các trường hỗ trợ Shop phản hồi
+    reply_comment TEXT DEFAULT NULL,   -- Nội dung shop trả lời
+    reply_at DATETIME DEFAULT NULL,    -- Thời gian shop trả lời
+    
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE

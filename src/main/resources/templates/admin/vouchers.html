@@ -46,6 +46,10 @@
                     <i class="bi bi-ticket-perforated"></i>
                     <span>Quản lý Voucher</span>
                 </a>
+                <a href="/admin/reviews.html" class="admin-sidebar__item">
+                    <i class="bi bi-star"></i>
+                    <span>Quản lý Đánh giá</span>
+                </a>
             </nav>
         </aside>
 
@@ -73,8 +77,8 @@
                             <i class="bi bi-file-earmark-arrow-down"></i> Xuất báo cáo
                         </button>
                         <ul class="dropdown-menu">
-                            <li><a class="dropdown-item export-excel-btn" href="#" onclick="if(typeof exportToExcel === 'function') { event.preventDefault(); event.stopPropagation(); exportToExcel(); } else { alert('Hàm exportToExcel chưa được tải. Vui lòng tải lại trang.'); } return false;"><i class="bi bi-file-earmark-excel"></i> Xuất Excel</a></li>
-                            <li><a class="dropdown-item export-pdf-btn" href="#" onclick="if(typeof exportToPDF === 'function') { event.preventDefault(); event.stopPropagation(); exportToPDF(); } else { alert('Hàm exportToPDF chưa được tải. Vui lòng tải lại trang.'); } return false;"><i class="bi bi-file-earmark-pdf"></i> Xuất PDF</a></li>
+                            <li><a class="dropdown-item export-excel-btn" href="javascript:void(0)" id="exportExcelBtn"><i class="bi bi-file-earmark-excel"></i> Xuất Excel</a></li>
+                            <li><a class="dropdown-item export-pdf-btn" href="javascript:void(0)" id="exportPdfBtn"><i class="bi bi-file-earmark-pdf"></i> Xuất PDF</a></li>
                         </ul>
                         <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#voucherModal" onclick="openVoucherModal()">
                             <i class="bi bi-plus-circle"></i> Thêm voucher

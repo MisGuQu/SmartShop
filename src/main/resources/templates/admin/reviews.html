@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Quản lý Danh mục - SmartShop Admin</title>
+    <title>Quản lý Đánh giá - SmartShop Admin</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <link rel="stylesheet" href="/css/admin.css">
@@ -30,7 +30,7 @@
                     <i class="bi bi-box-seam"></i>
                     <span>Quản lý Sản phẩm</span>
                 </a>
-                <a href="/admin/categories.html" class="admin-sidebar__item active">
+                <a href="/admin/categories.html" class="admin-sidebar__item">
                     <i class="bi bi-tags"></i>
                     <span>Quản lý Danh mục</span>
                 </a>
@@ -46,7 +46,7 @@
                     <i class="bi bi-ticket-perforated"></i>
                     <span>Quản lý Voucher</span>
                 </a>
-                <a href="/admin/reviews.html" class="admin-sidebar__item">
+                <a href="/admin/reviews.html" class="admin-sidebar__item active">
                     <i class="bi bi-star"></i>
                     <span>Quản lý Đánh giá</span>
                 </a>
@@ -57,7 +57,7 @@
         <div class="admin-main-content">
             <!-- Top Navbar -->
             <nav class="admin-navbar">
-                <h1 class="admin-navbar__title">Quản lý Danh mục</h1>
+                <h1 class="admin-navbar__title">Quản lý Đánh giá</h1>
                 <div class="admin-navbar__actions">
                     <a href="/" class="admin-navbar__link">
                         <i class="bi bi-house"></i> Về trang chủ
@@ -70,42 +70,76 @@
 
             <!-- Content -->
             <div class="admin-content">
-                <div class="d-flex justify-content-between align-items-center mb-4">
-                    <div></div>
-                    <div class="btn-group">
-                        <button type="button" class="btn btn-success dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
-                            <i class="bi bi-file-earmark-arrow-down"></i> Xuất báo cáo
-                        </button>
-                        <ul class="dropdown-menu">
-                            <li><a class="dropdown-item export-excel-btn" href="javascript:void(0)" id="exportExcelBtn"><i class="bi bi-file-earmark-excel"></i> Xuất Excel</a></li>
-                            <li><a class="dropdown-item export-pdf-btn" href="javascript:void(0)" id="exportPdfBtn"><i class="bi bi-file-earmark-pdf"></i> Xuất PDF</a></li>
-                        </ul>
-                        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#categoryModal" onclick="openCategoryModal()">
-                            <i class="bi bi-plus-circle"></i> Thêm danh mục
-                        </button>
+                <!-- Filters -->
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-md-3">
+                                <label class="form-label">Lọc theo sản phẩm</label>
+                                <input type="number" class="form-control" id="filterProductId" placeholder="ID sản phẩm">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Lọc theo người dùng</label>
+                                <input type="number" class="form-control" id="filterUserId" placeholder="ID người dùng">
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label">Lọc theo rating</label>
+                                <select class="form-select" id="filterRating">
+                                    <option value="">Tất cả</option>
+                                    <option value="5">5 sao</option>
+                                    <option value="4">4 sao</option>
+                                    <option value="3">3 sao</option>
+                                    <option value="2">2 sao</option>
+                                    <option value="1">1 sao</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label">Trang</label>
+                                <input type="number" class="form-control" id="pageInput" value="0" min="0">
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label">Số lượng/trang</label>
+                                <input type="number" class="form-control" id="sizeInput" value="20" min="1" max="100">
+                            </div>
+                        </div>
+                        <div class="row g-3 mt-2">
+                            <div class="col-12">
+                                <button class="btn btn-primary" onclick="loadReviews()">
+                                    <i class="bi bi-search"></i> Tìm kiếm
+                                </button>
+                                <button class="btn btn-secondary" onclick="resetFilters()">
+                                    <i class="bi bi-arrow-clockwise"></i> Reset
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
-                <div id="alertContainer"></div>
-
-                <!-- Categories Table -->
+                <!-- Reviews Table -->
                 <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="bi bi-star"></i> Danh sách Đánh giá</h5>
+                    </div>
                     <div class="card-body">
                         <div class="table-responsive">
                             <table class="table table-hover">
                                 <thead>
                                     <tr>
                                         <th>ID</th>
-                                        <th>Tên danh mục</th>
-                                        <th>Số sản phẩm</th>
-                                        <th>Mô tả</th>
+                                        <th>Sản phẩm</th>
+                                        <th>Người đánh giá</th>
+                                        <th>Rating</th>
+                                        <th>Comment</th>
+                                        <th>Comment mới nhất</th>
+                                        <th>Phản hồi</th>
+                                        <th>Ngày tạo</th>
                                         <th>Thao tác</th>
                                     </tr>
                                 </thead>
-                                <tbody id="categoriesTableBody">
+                                <tbody id="reviewsTableBody">
                                     <tr>
-                                        <td colspan="6" class="text-center">
-                                            <div class="spinner-border" role="status">
+                                        <td colspan="9" class="text-center">
+                                            <div class="spinner-border spinner-border-sm" role="status">
                                                 <span class="visually-hidden">Loading...</span>
                                             </div>
                                         </td>
@@ -113,51 +147,46 @@
                                 </tbody>
                             </table>
                         </div>
+                        <div class="d-flex justify-content-between align-items-center mt-3">
+                            <div>
+                                <span id="reviewsInfo">Đang tải...</span>
+                            </div>
+                            <nav>
+                                <ul class="pagination mb-0" id="pagination">
+                                </ul>
+                            </nav>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Category Modal -->
-    <div class="modal fade" id="categoryModal" tabindex="-1">
+    <!-- Reply Modal -->
+    <div class="modal fade" id="replyModal" tabindex="-1">
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="categoryModalTitle">Thêm danh mục</h5>
+                    <h5 class="modal-title">Trả lời đánh giá</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <form id="categoryForm">
-                        <input type="hidden" id="categoryId">
-                        
-                        <div class="mb-3">
-                            <label class="form-label">Tên danh mục *</label>
-                            <input type="text" class="form-control" id="categoryName" required>
-                        </div>
-
-                        <div class="mb-3">
-                            <label class="form-label">Mô tả</label>
-                            <textarea class="form-control" id="categoryDescription" rows="3"></textarea>
-                        </div>
-                    </form>
+                    <div class="mb-3">
+                        <label class="form-label">Nội dung trả lời *</label>
+                        <textarea class="form-control" id="replyCommentInput" rows="4" required></textarea>
+                    </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
-                    <button type="button" class="btn btn-primary" onclick="saveCategory()">Lưu</button>
+                    <button type="button" class="btn btn-primary" onclick="submitReply()">Gửi trả lời</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Include libraries for Excel and PDF export -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
-    
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="/js/api.js"></script>
-    <script src="/js/admin-categories.js"></script>
+    <script src="/js/admin-reviews.js"></script>
     <script>
         // Toggle sidebar
         function toggleSidebar() {
@@ -179,14 +208,11 @@
 
         // Handle logout
         async function handleLogout() {
-            if (confirm('Bạn có chắc chắn muốn đăng xuất?')) {
-                try {
-                    await api.logout();
-                    window.location.href = '/';
-                } catch (error) {
-                    console.error('Logout error:', error);
-                    window.location.href = '/';
-                }
+            try {
+                await api.logout();
+                window.location.href = '/auth/login.html';
+            } catch (error) {
+                console.error('Logout error:', error);
             }
         }
     </script>
