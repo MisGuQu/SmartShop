@@ -6,7 +6,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     // Load data first
     await loadUsers();
     
-    // Setup export buttons - Attach ONLY ONCE
+    // Setup export buttons
     setupExportButtons();
     
     // Filter listeners
@@ -19,77 +19,94 @@ document.addEventListener('DOMContentLoaded', async function() {
     if (roleFilter) roleFilter.addEventListener('change', filterUsers);
 });
 
-// Setup export button event listeners - Simple and reliable
+// Export functions - called from onclick in HTML
+window.exportUserExcel = async function() {
+    console.log('=== exportUserExcel CALLED ===');
+    
+    try {
+        // Close dropdown
+        const dropdownBtn = document.querySelector('[data-bs-toggle="dropdown"]');
+        if (typeof bootstrap !== 'undefined' && bootstrap.Dropdown && dropdownBtn) {
+            const dropdown = bootstrap.Dropdown.getInstance(dropdownBtn);
+            if (dropdown) dropdown.hide();
+        }
+        
+        // Fetch file with credentials
+        console.log('Fetching /api/admin/users/export/excel');
+        const response = await fetch('/api/admin/users/export/excel', {
+            method: 'GET',
+            credentials: 'include'
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        // Get blob and create download link
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `users_${new Date().toISOString().split('T')[0]}.xlsx`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+        
+        console.log('Excel file downloaded successfully');
+        showAlert('Xuất Excel thành công!', 'success');
+    } catch (error) {
+        console.error('Error exporting Excel:', error);
+        showAlert('Lỗi khi xuất Excel: ' + error.message, 'error');
+    }
+};
+
+window.exportUserPDF = async function() {
+    console.log('=== exportUserPDF CALLED ===');
+    
+    try {
+        // Close dropdown
+        const dropdownBtn = document.querySelector('[data-bs-toggle="dropdown"]');
+        if (typeof bootstrap !== 'undefined' && bootstrap.Dropdown && dropdownBtn) {
+            const dropdown = bootstrap.Dropdown.getInstance(dropdownBtn);
+            if (dropdown) dropdown.hide();
+        }
+        
+        // Fetch file with credentials
+        console.log('Fetching /api/admin/users/export/pdf');
+        const response = await fetch('/api/admin/users/export/pdf', {
+            method: 'GET',
+            credentials: 'include'
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        // Get blob and create download link
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `users_${new Date().toISOString().split('T')[0]}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+        
+        console.log('PDF file downloaded successfully');
+        showAlert('Xuất PDF thành công!', 'success');
+    } catch (error) {
+        console.error('Error exporting PDF:', error);
+        showAlert('Lỗi khi xuất PDF: ' + error.message, 'error');
+    }
+};
+
+// Setup export button event listeners (backup)
 function setupExportButtons() {
     console.log('=== setupExportButtons CALLED ===');
-    
-    const excelBtn = document.getElementById('exportExcelBtn');
-    const pdfBtn = document.getElementById('exportPdfBtn');
-    
-    console.log('Excel button found:', !!excelBtn);
-    console.log('PDF button found:', !!pdfBtn);
-    
-    if (!excelBtn || !pdfBtn) {
-        console.warn('Export buttons not found');
-        return;
-    }
-    
-    // Attach onclick directly - simple and reliable
-    excelBtn.onclick = function(e) {
-        e.preventDefault();
-        e.stopPropagation();
-        
-        // Close dropdown manually
-        const dropdownBtn = document.querySelector('[data-bs-toggle="dropdown"]');
-        if (typeof bootstrap !== 'undefined' && bootstrap.Dropdown && dropdownBtn) {
-            const dropdown = bootstrap.Dropdown.getInstance(dropdownBtn);
-            if (dropdown) {
-                dropdown.hide();
-            }
-        }
-        
-        // Call export function
-        if (typeof window.exportToExcel === 'function') {
-            try {
-                window.exportToExcel();
-            } catch (error) {
-                console.error('Error calling exportToExcel:', error);
-                showAlert('Lỗi khi xuất Excel: ' + error.message, 'error');
-            }
-        } else {
-            showAlert('Hàm exportToExcel chưa được tải. Vui lòng tải lại trang!', 'error');
-        }
-        return false;
-    };
-    
-    pdfBtn.onclick = function(e) {
-        e.preventDefault();
-        e.stopPropagation();
-        
-        // Close dropdown manually
-        const dropdownBtn = document.querySelector('[data-bs-toggle="dropdown"]');
-        if (typeof bootstrap !== 'undefined' && bootstrap.Dropdown && dropdownBtn) {
-            const dropdown = bootstrap.Dropdown.getInstance(dropdownBtn);
-            if (dropdown) {
-                dropdown.hide();
-            }
-        }
-        
-        // Call export function
-        if (typeof window.exportToPDF === 'function') {
-            try {
-                window.exportToPDF();
-            } catch (error) {
-                console.error('Error calling exportToPDF:', error);
-                showAlert('Lỗi khi xuất PDF: ' + error.message, 'error');
-            }
-        } else {
-            showAlert('Hàm exportToPDF chưa được tải. Vui lòng tải lại trang!', 'error');
-        }
-        return false;
-    };
-    
-    console.log('Export buttons setup complete!');
+    // Functions are now global and called from onclick in HTML
+    console.log('Export functions are available globally');
 }
 
 // Load users
@@ -347,145 +364,6 @@ async function saveUserRoles() {
         showAlert('Lỗi khi cập nhật vai trò: ' + (error.message || 'Unknown error'), 'error');
     }
 }
-
-// Export to Excel - Make globally available
-window.exportToExcel = function() {
-    console.log('=== exportToExcel CALLED ===');
-    
-    // Check if data is loaded
-    if (!users || users.length === 0) {
-        showAlert('Không có dữ liệu để xuất! Vui lòng đợi dữ liệu được tải.', 'error');
-        return;
-    }
-
-    // Check if XLSX library is loaded
-    if (typeof XLSX === 'undefined') {
-        showAlert('Thư viện Excel chưa được tải. Vui lòng tải lại trang!', 'error');
-        return;
-    }
-
-    try {
-        const data = users.map(user => {
-            let isActiveValue = user.isActive !== undefined ? user.isActive : (user.active !== undefined ? user.active : true);
-            let isUserActive = false;
-            if (typeof isActiveValue === 'boolean') {
-                isUserActive = isActiveValue;
-            } else if (typeof isActiveValue === 'string') {
-                isUserActive = isActiveValue === 'true' || isActiveValue === '1';
-            } else {
-                isUserActive = isActiveValue !== false && isActiveValue !== 'false' && isActiveValue !== 0 && isActiveValue !== '0';
-            }
-
-            const roles = user.roles && user.roles.length > 0 ? 
-                user.roles.map(r => typeof r === 'string' ? r.replace('ROLE_', '') : r.name.replace('ROLE_', '')).join(', ') : 
-                'Không có';
-
-            return {
-                'ID': user.id || '',
-                'Tên người dùng': user.username || '',
-                'Email': user.email || '',
-                'Họ tên': user.fullName || '',
-                'Số điện thoại': user.phone || '',
-                'Vai trò': roles,
-                'Trạng thái': isUserActive ? 'Hoạt động' : 'Đã khóa',
-                'Ngày đăng ký': user.createdAt ? new Date(user.createdAt).toLocaleString('vi-VN') : ''
-            };
-        });
-
-        const wb = XLSX.utils.book_new();
-        const ws = XLSX.utils.json_to_sheet(data);
-        
-        const colWidths = [
-            { wch: 10 }, // ID
-            { wch: 20 }, // Tên người dùng
-            { wch: 30 }, // Email
-            { wch: 25 }, // Họ tên
-            { wch: 15 }, // Số điện thoại
-            { wch: 20 }, // Vai trò
-            { wch: 15 }, // Trạng thái
-            { wch: 20 }  // Ngày đăng ký
-        ];
-        ws['!cols'] = colWidths;
-
-        XLSX.utils.book_append_sheet(wb, ws, 'Người dùng');
-        const filename = `BaoCaoNguoiDung_${new Date().toISOString().split('T')[0]}.xlsx`;
-        XLSX.writeFile(wb, filename);
-        showAlert('Xuất Excel thành công!', 'success');
-    } catch (error) {
-        console.error('Error exporting to Excel:', error);
-        showAlert('Lỗi khi xuất Excel: ' + (error.message || 'Unknown error'), 'error');
-    }
-};
-
-// Export to PDF - Make globally available
-window.exportToPDF = function() {
-    console.log('=== exportToPDF CALLED ===');
-    
-    // Check if data is loaded
-    if (!users || users.length === 0) {
-        showAlert('Không có dữ liệu để xuất! Vui lòng đợi dữ liệu được tải.', 'error');
-        return;
-    }
-
-    // Check if jsPDF library is loaded
-    if (typeof window.jspdf === 'undefined') {
-        showAlert('Thư viện PDF chưa được tải. Vui lòng tải lại trang!', 'error');
-        return;
-    }
-
-    try {
-        const { jsPDF } = window.jspdf;
-        const doc = new jsPDF('l', 'mm', 'a4');
-        
-        doc.setFontSize(16);
-        doc.text('BÁO CÁO NGƯỜI DÙNG', 14, 15);
-        doc.setFontSize(10);
-        doc.text(`Ngày xuất: ${new Date().toLocaleDateString('vi-VN')}`, 14, 22);
-        
-        const tableData = users.map(user => {
-            let isActiveValue = user.isActive !== undefined ? user.isActive : (user.active !== undefined ? user.active : true);
-            let isUserActive = false;
-            if (typeof isActiveValue === 'boolean') {
-                isUserActive = isActiveValue;
-            } else if (typeof isActiveValue === 'string') {
-                isUserActive = isActiveValue === 'true' || isActiveValue === '1';
-            } else {
-                isUserActive = isActiveValue !== false && isActiveValue !== 'false' && isActiveValue !== 0 && isActiveValue !== '0';
-            }
-
-            const roles = user.roles && user.roles.length > 0 ? 
-                user.roles.map(r => typeof r === 'string' ? r.replace('ROLE_', '') : r.name.replace('ROLE_', '')).join(', ') : 
-                '-';
-
-            return [
-                user.id || '',
-                (user.username || '').substring(0, 15),
-                (user.email || '').substring(0, 25),
-                (user.fullName || '-').substring(0, 20),
-                roles.substring(0, 15),
-                isUserActive ? 'Hoạt động' : 'Đã khóa',
-                user.createdAt ? new Date(user.createdAt).toLocaleDateString('vi-VN') : ''
-            ];
-        });
-
-        doc.autoTable({
-            startY: 28,
-            head: [['ID', 'Tên đăng nhập', 'Email', 'Họ tên', 'Vai trò', 'Trạng thái', 'Ngày ĐK']],
-            body: tableData,
-            styles: { fontSize: 8 },
-            headStyles: { fillColor: [66, 139, 202], textColor: 255 },
-            alternateRowStyles: { fillColor: [245, 245, 245] },
-            margin: { top: 28, left: 14, right: 14 }
-        });
-        
-        const filename = `BaoCaoNguoiDung_${new Date().toISOString().split('T')[0]}.pdf`;
-        doc.save(filename);
-        showAlert('Xuất PDF thành công!', 'success');
-    } catch (error) {
-        console.error('Error exporting to PDF:', error);
-        showAlert('Lỗi khi xuất PDF: ' + (error.message || 'Unknown error'), 'error');
-    }
-};
 
 // Show alert
 function showAlert(message, type = 'success') {

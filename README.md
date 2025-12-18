@@ -5,6 +5,7 @@ Hệ thống thương mại điện tử (E-commerce) được xây dựng bằn
 ## 📋 Mục Lục
 
 - [Tổng Quan](#tổng-quan)
+- [Kiến Trúc Hệ Thống](#kiến-trúc-hệ-thống)
 - [Công Nghệ Sử Dụng](#công-nghệ-sử-dụng)
 - [Tính Năng](#tính-năng)
 - [Cấu Trúc Dự Án](#cấu-trúc-dự-án)
@@ -15,6 +16,7 @@ Hệ thống thương mại điện tử (E-commerce) được xây dựng bằn
 - [API Documentation](#api-documentation)
 - [Tài Khoản Mặc Định](#tài-khoản-mặc-định)
 - [Hướng Dẫn Sử Dụng](#hướng-dẫn-sử-dụng)
+- [Tài Liệu Tham Khảo](#tài-liệu-tham-khảo)
 
 ---
 
@@ -28,6 +30,47 @@ SmartShop là một hệ thống bán hàng online hoàn chỉnh với các tín
 - **Authentication**: JWT + Spring Security
 - **File Storage**: Cloudinary (ảnh/video)
 - **Payment**: Tích hợp VNPay và MoMo (có thể mở rộng)
+
+---
+
+## 🏗️ Kiến Trúc Hệ Thống
+
+Dự án sử dụng **REST API** được xây dựng theo **Mô hình 3 lớp (3-Layer Architecture)**:
+
+```
+┌─────────────────────────────────────┐
+│   Controller Layer (Presentation)   │  ← REST API Endpoints
+│   - AdminController.java            │     Trả về JSON responses
+│   - AuthController.java             │
+│   - ProductController.java          │
+│   - CartController.java             │
+└──────────────┬──────────────────────┘
+               │
+┌──────────────▼──────────────────────┐
+│      Service Layer (Business)       │  ← Business Logic
+│   - AdminService.java               │     Xử lý nghiệp vụ
+│   - AuthService.java                │
+│   - ProductService.java             │
+│   - CartService.java                │
+└──────────────┬──────────────────────┘
+               │
+┌──────────────▼──────────────────────┐
+│   Repository Layer (Data Access)   │  ← Database Operations
+│   - UserRepository.java             │     JPA/Hibernate
+│   - ProductRepository.java          │
+│   - OrderRepository.java            │
+└──────────────┬──────────────────────┘
+               │
+         [MySQL Database]
+```
+
+### Đặc điểm kiến trúc:
+
+- ✅ **REST API**: Tất cả endpoints trả về JSON, tuân thủ RESTful principles
+- ✅ **3-Layer Architecture**: Tách biệt rõ ràng Controller → Service → Repository
+- ✅ **Separation of Concerns**: Mỗi layer có trách nhiệm riêng biệt
+- ✅ **Scalable**: Dễ dàng mở rộng và bảo trì
+- ✅ **Testable**: Dễ dàng viết unit test cho từng layer
 
 ---
 
@@ -147,6 +190,18 @@ SmartShop là một hệ thống bán hàng online hoàn chỉnh với các tín
 - ✅ Xuất hóa đơn PDF
 - ✅ Tải hóa đơn theo đơn hàng
 
+### 🔔 Hệ Thống Thông Báo
+- ✅ Thông báo tự động khi:
+  - Đơn hàng thay đổi trạng thái (PENDING → CONFIRMED → SHIPPING → DELIVERED)
+  - Thanh toán thành công/thất bại
+  - Nhận voucher mới
+  - Có đánh giá mới cho sản phẩm
+- ✅ Xem danh sách thông báo
+- ✅ Đếm số thông báo chưa đọc
+- ✅ Đánh dấu đã đọc (từng thông báo hoặc tất cả)
+- ✅ Phân loại thông báo theo type: ORDER, PAYMENT, PROMOTION, REVIEW, SYSTEM
+- ✅ Thông báo có thể link đến đối tượng liên quan (order, voucher, etc.)
+
 ---
 
 ## 📁 Cấu Trúc Dự Án
@@ -214,6 +269,8 @@ smartshop/
 ├── database.sql                    # Database schema và sample data
 ├── pom.xml                        # Maven dependencies
 ├── POSTMAN_API_GUIDE.md           # Hướng dẫn test API với Postman
+├── QUICK_START_VNPAY.md            # Hướng dẫn nhanh tích hợp VNPay
+├── DANH_SACH_FILE_VNPAY.md         # Danh sách file liên quan VNPay
 └── README.md                      # File này
 ```
 
@@ -255,6 +312,8 @@ CREATE DATABASE smartshop;
 ```bash
 mysql -u root -p < database.sql
 ```
+
+> **Lưu ý**: Database name là `smartshop` (không phải `smartshop_db`)
 
 ### Bước 3: Cấu Hình Application Properties
 
@@ -361,6 +420,20 @@ spring.mail.username=your_gmail@gmail.com
 spring.mail.password=your_app_password
 ```
 
+### VNPay Configuration
+
+Để tích hợp thanh toán VNPay, xem hướng dẫn chi tiết trong file **[QUICK_START_VNPAY.md](QUICK_START_VNPAY.md)**
+
+**Tóm tắt nhanh:**
+1. Đăng ký tài khoản VNPay Sandbox: https://sandbox.vnpayment.vn/
+2. Cài đặt Ngrok để tạo public URL (cho callback)
+3. Cập nhật config trong `application.properties`:
+```properties
+app.payment.vnpay.tmn-code=YOUR_TMN_CODE
+app.payment.vnpay.hash-secret=YOUR_HASH_SECRET
+app.payment.vnpay.return-url=${app.web.base-url}/api/payments/vnpay/return
+```
+
 ---
 
 ## 🗄️ Cấu Trúc Database
@@ -382,6 +455,7 @@ spring.mail.password=your_app_password
 - **payment_transactions** - Giao dịch thanh toán
 - **reviews** - Đánh giá sản phẩm
 - **review_media** - Ảnh/video đánh giá
+- **notifications** - Thông báo cho người dùng
 
 Xem chi tiết trong file `database.sql`
 
@@ -421,6 +495,12 @@ Xem chi tiết trong file `database.sql`
 - `GET /api/reviews/product/{productId}` - Xem đánh giá
 - `POST /api/reviews` - Tạo đánh giá (multipart/form-data)
 
+#### Notifications (Cần token)
+- `GET /api/notifications` - Lấy danh sách thông báo của user
+- `GET /api/notifications/unread-count` - Lấy số lượng thông báo chưa đọc
+- `PUT /api/notifications/mark-all-read` - Đánh dấu tất cả là đã đọc
+- `PUT /api/notifications/{id}/mark-read` - Đánh dấu một thông báo là đã đọc
+
 #### Admin (Cần token ADMIN)
 - `GET /api/admin/dashboard` - Thống kê
 - `GET /api/admin/users` - Danh sách users
@@ -428,6 +508,14 @@ Xem chi tiết trong file `database.sql`
 - `GET /api/admin/orders` - Quản lý đơn hàng
 
 **Xem chi tiết đầy đủ trong file `POSTMAN_API_GUIDE.md`**
+
+### Payment Endpoints
+
+#### VNPay (Cần token)
+- `POST /api/payments/vnpay/create` - Tạo URL thanh toán VNPay
+- `GET /api/payments/vnpay/return` - Callback từ VNPay (tự động)
+
+**Xem hướng dẫn chi tiết**: [QUICK_START_VNPAY.md](QUICK_START_VNPAY.md)
 
 ---
 
@@ -491,6 +579,19 @@ Sau khi chạy `database.sql`, có sẵn các tài khoản:
    - Đơn hàng: `/admin/orders.html`
    - Người dùng: `/admin/users.html`
    - Voucher: `/admin/vouchers.html`
+
+### 6. Thông Báo
+
+1. Xem thông báo: Gọi API `GET /api/notifications`
+2. Xem số thông báo chưa đọc: `GET /api/notifications/unread-count`
+3. Đánh dấu đã đọc: `PUT /api/notifications/{id}/mark-read`
+4. Đánh dấu tất cả đã đọc: `PUT /api/notifications/mark-all-read`
+
+**Lưu ý**: Thông báo được tạo tự động khi:
+- Đơn hàng thay đổi trạng thái
+- Thanh toán thành công/thất bại
+- Nhận voucher mới
+- Có đánh giá mới
 
 ---
 
@@ -563,6 +664,34 @@ Dự án này được phát triển cho mục đích học tập và nghiên c�
 ## 👨‍💻 Tác Giả
 
 SmartShop Development Team
+
+---
+
+## 📚 Tài Liệu Tham Khảo
+
+### Tài liệu trong dự án:
+
+1. **[POSTMAN_API_GUIDE.md](POSTMAN_API_GUIDE.md)** - Hướng dẫn chi tiết test API với Postman
+   - Tất cả endpoints với ví dụ request/response
+   - Hướng dẫn upload file (Cloudinary)
+   - Troubleshooting
+
+2. **[QUICK_START_VNPAY.md](QUICK_START_VNPAY.md)** - Hướng dẫn nhanh tích hợp VNPay
+   - Đăng ký VNPay Sandbox
+   - Cấu hình Ngrok
+   - Test thanh toán
+
+3. **[DANH_SACH_FILE_VNPAY.md](DANH_SACH_FILE_VNPAY.md)** - Danh sách file liên quan VNPay
+   - Cấu trúc file backend/frontend
+   - Luồng hoạt động thanh toán
+
+### Tài liệu bên ngoài:
+
+- [Spring Boot Documentation](https://spring.io/projects/spring-boot)
+- [Spring Security Reference](https://docs.spring.io/spring-security/reference/)
+- [JWT.io](https://jwt.io/) - JWT Debugger
+- [VNPay Sandbox](https://sandbox.vnpayment.vn/)
+- [Cloudinary Documentation](https://cloudinary.com/documentation)
 
 ---
 

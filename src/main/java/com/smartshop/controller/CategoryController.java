@@ -2,11 +2,15 @@ package com.smartshop.controller;
 
 import com.smartshop.dto.category.CategoryRequest;
 import com.smartshop.dto.category.CategoryResponse;
+import com.smartshop.service.CategoryExportService;
 import com.smartshop.service.CategoryService;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.IOException;
 import java.util.List;
 
 @RestController
@@ -15,9 +19,12 @@ import java.util.List;
 public class CategoryController {
 
     private final CategoryService categoryService;
+    private final CategoryExportService categoryExportService;
 
-    public CategoryController(CategoryService categoryService) {
+    public CategoryController(CategoryService categoryService,
+                              CategoryExportService categoryExportService) {
         this.categoryService = categoryService;
+        this.categoryExportService = categoryExportService;
     }
 
     // ✅ Danh sách danh mục (public)
@@ -52,6 +59,38 @@ public class CategoryController {
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         categoryService.delete(id);
         return ResponseEntity.noContent().build();
+    }
+
+    // ✅ Export to Excel
+    @GetMapping("/export/excel")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<byte[]> exportToExcel() throws IOException {
+        byte[] excelData = categoryExportService.exportToExcel().toByteArray();
+        
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
+        headers.setContentDispositionFormData("attachment", "categories.xlsx");
+        headers.setContentLength(excelData.length);
+        
+        return ResponseEntity.ok()
+                .headers(headers)
+                .body(excelData);
+    }
+
+    // ✅ Export to PDF
+    @GetMapping("/export/pdf")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<byte[]> exportToPdf() throws IOException {
+        byte[] pdfData = categoryExportService.exportToPdf().toByteArray();
+        
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_PDF);
+        headers.setContentDispositionFormData("attachment", "categories.pdf");
+        headers.setContentLength(pdfData.length);
+        
+        return ResponseEntity.ok()
+                .headers(headers)
+                .body(pdfData);
     }
 }
 

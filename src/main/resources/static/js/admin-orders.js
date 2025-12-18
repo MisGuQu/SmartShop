@@ -6,7 +6,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     // Load data first
     await loadOrders();
     
-    // Setup export buttons - Attach ONLY ONCE
+    // Setup export buttons
     setupExportButtons();
     
     // Filter listeners
@@ -21,77 +21,109 @@ document.addEventListener('DOMContentLoaded', async function() {
     if (toDate) toDate.addEventListener('change', filterOrders);
 });
 
-// Setup export button event listeners - Simple and reliable
+// Export functions - called from onclick in HTML
+window.exportOrderExcel = async function() {
+    console.log('=== exportOrderExcel CALLED ===');
+    
+    try {
+        // Close dropdown
+        const dropdownBtn = document.querySelector('[data-bs-toggle="dropdown"]');
+        if (typeof bootstrap !== 'undefined' && bootstrap.Dropdown && dropdownBtn) {
+            const dropdown = bootstrap.Dropdown.getInstance(dropdownBtn);
+            if (dropdown) dropdown.hide();
+        }
+        
+        // Fetch file with credentials
+        console.log('Fetching /api/orders/export/excel');
+        const response = await fetch('/api/orders/export/excel', {
+            method: 'GET',
+            credentials: 'include'
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        // Get blob and create download link
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `orders_${new Date().toISOString().split('T')[0]}.xlsx`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+        
+        console.log('Excel file downloaded successfully');
+        showAlert('Xuất Excel thành công!', 'success');
+    } catch (error) {
+        console.error('Error exporting Excel:', error);
+        showAlert('Lỗi khi xuất Excel: ' + error.message, 'error');
+    }
+};
+
+window.exportOrderPDF = async function() {
+    console.log('=== exportOrderPDF CALLED ===');
+    
+    try {
+        // Close dropdown
+        const dropdownBtn = document.querySelector('[data-bs-toggle="dropdown"]');
+        if (typeof bootstrap !== 'undefined' && bootstrap.Dropdown && dropdownBtn) {
+            const dropdown = bootstrap.Dropdown.getInstance(dropdownBtn);
+            if (dropdown) dropdown.hide();
+        }
+        
+        // Fetch file with credentials
+        console.log('Fetching /api/orders/export/pdf');
+        const response = await fetch('/api/orders/export/pdf', {
+            method: 'GET',
+            credentials: 'include'
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        // Get blob and create download link
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `orders_${new Date().toISOString().split('T')[0]}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+        
+        console.log('PDF file downloaded successfully');
+        showAlert('Xuất PDF thành công!', 'success');
+    } catch (error) {
+        console.error('Error exporting PDF:', error);
+        showAlert('Lỗi khi xuất PDF: ' + error.message, 'error');
+    }
+};
+
+// Setup export button event listeners
 function setupExportButtons() {
     console.log('=== setupExportButtons CALLED ===');
-    
     const excelBtn = document.getElementById('exportExcelBtn');
     const pdfBtn = document.getElementById('exportPdfBtn');
-    
-    console.log('Excel button found:', !!excelBtn);
-    console.log('PDF button found:', !!pdfBtn);
-    
-    if (!excelBtn || !pdfBtn) {
-        console.warn('Export buttons not found');
-        return;
+
+    if (excelBtn) {
+        excelBtn.addEventListener('click', async (event) => {
+            event.preventDefault();
+            await exportOrderExcel();
+        });
     }
-    
-    // Attach onclick directly - simple and reliable
-    excelBtn.onclick = function(e) {
-        e.preventDefault();
-        e.stopPropagation();
-        
-        // Close dropdown manually
-        const dropdownBtn = document.querySelector('[data-bs-toggle="dropdown"]');
-        if (typeof bootstrap !== 'undefined' && bootstrap.Dropdown && dropdownBtn) {
-            const dropdown = bootstrap.Dropdown.getInstance(dropdownBtn);
-            if (dropdown) {
-                dropdown.hide();
-            }
-        }
-        
-        // Call export function
-        if (typeof window.exportToExcel === 'function') {
-            try {
-                window.exportToExcel();
-            } catch (error) {
-                console.error('Error calling exportToExcel:', error);
-                showAlert('Lỗi khi xuất Excel: ' + error.message, 'error');
-            }
-        } else {
-            showAlert('Hàm exportToExcel chưa được tải. Vui lòng tải lại trang!', 'error');
-        }
-        return false;
-    };
-    
-    pdfBtn.onclick = function(e) {
-        e.preventDefault();
-        e.stopPropagation();
-        
-        // Close dropdown manually
-        const dropdownBtn = document.querySelector('[data-bs-toggle="dropdown"]');
-        if (typeof bootstrap !== 'undefined' && bootstrap.Dropdown && dropdownBtn) {
-            const dropdown = bootstrap.Dropdown.getInstance(dropdownBtn);
-            if (dropdown) {
-                dropdown.hide();
-            }
-        }
-        
-        // Call export function
-        if (typeof window.exportToPDF === 'function') {
-            try {
-                window.exportToPDF();
-            } catch (error) {
-                console.error('Error calling exportToPDF:', error);
-                showAlert('Lỗi khi xuất PDF: ' + error.message, 'error');
-            }
-        } else {
-            showAlert('Hàm exportToPDF chưa được tải. Vui lòng tải lại trang!', 'error');
-        }
-        return false;
-    };
-    
-    console.log('Export buttons setup complete!');
+
+    if (pdfBtn) {
+        pdfBtn.addEventListener('click', async (event) => {
+            event.preventDefault();
+            await exportOrderPDF();
+        });
+    }
+    console.log('Export button listeners attached');
 }
 
 // Load orders
@@ -383,108 +415,6 @@ function formatPrice(price) {
         currency: 'VND'
     }).format(price);
 }
-
-// Export to Excel - Make globally available
-window.exportToExcel = function() {
-    // Check if data is loaded
-    if (!orders || orders.length === 0) {
-        showAlert('Không có dữ liệu để xuất! Vui lòng đợi dữ liệu được tải.', 'error');
-        return;
-    }
-
-    // Check if XLSX library is loaded
-    if (typeof XLSX === 'undefined') {
-        showAlert('Thư viện Excel chưa được tải. Vui lòng tải lại trang!', 'error');
-        return;
-    }
-
-    try {
-        const data = orders.map(order => ({
-            'ID': order.id || '',
-            'Mã đơn hàng': order.orderNumber || '',
-            'Khách hàng': order.customerName || order.customerEmail || '',
-            'Email': order.customerEmail || '',
-            'Tổng tiền (VNĐ)': order.totalAmount || 0,
-            'Trạng thái': order.status || '',
-            'Trạng thái thanh toán': order.paymentStatus || '',
-            'Ngày đặt': order.createdAt ? new Date(order.createdAt).toLocaleString('vi-VN') : ''
-        }));
-
-        const wb = XLSX.utils.book_new();
-        const ws = XLSX.utils.json_to_sheet(data);
-        
-        const colWidths = [
-            { wch: 10 }, // ID
-            { wch: 20 }, // Mã đơn hàng
-            { wch: 25 }, // Khách hàng
-            { wch: 30 }, // Email
-            { wch: 18 }, // Tổng tiền
-            { wch: 15 }, // Trạng thái
-            { wch: 20 }, // Trạng thái thanh toán
-            { wch: 20 }  // Ngày đặt
-        ];
-        ws['!cols'] = colWidths;
-
-        XLSX.utils.book_append_sheet(wb, ws, 'Đơn hàng');
-        const filename = `BaoCaoDonHang_${new Date().toISOString().split('T')[0]}.xlsx`;
-        XLSX.writeFile(wb, filename);
-        showAlert('Xuất Excel thành công!', 'success');
-    } catch (error) {
-        console.error('Error exporting to Excel:', error);
-        showAlert('Lỗi khi xuất Excel: ' + (error.message || 'Unknown error'), 'error');
-    }
-};
-
-// Export to PDF - Make globally available
-window.exportToPDF = function() {
-    // Check if data is loaded
-    if (!orders || orders.length === 0) {
-        showAlert('Không có dữ liệu để xuất! Vui lòng đợi dữ liệu được tải.', 'error');
-        return;
-    }
-
-    // Check if jsPDF library is loaded
-    if (typeof window.jspdf === 'undefined') {
-        showAlert('Thư viện PDF chưa được tải. Vui lòng tải lại trang!', 'error');
-        return;
-    }
-
-    try {
-        const { jsPDF } = window.jspdf;
-        const doc = new jsPDF('l', 'mm', 'a4');
-        
-        doc.setFontSize(16);
-        doc.text('BÁO CÁO ĐƠN HÀNG', 14, 15);
-        doc.setFontSize(10);
-        doc.text(`Ngày xuất: ${new Date().toLocaleDateString('vi-VN')}`, 14, 22);
-        
-        const tableData = orders.map(order => [
-            order.id || '',
-            (order.orderNumber || '').substring(0, 15),
-            (order.customerName || order.customerEmail || '').substring(0, 20),
-            formatPrice(order.totalAmount || 0),
-            (order.status || '').substring(0, 15),
-            order.createdAt ? new Date(order.createdAt).toLocaleDateString('vi-VN') : ''
-        ]);
-
-        doc.autoTable({
-            startY: 28,
-            head: [['ID', 'Mã đơn', 'Khách hàng', 'Tổng tiền', 'Trạng thái', 'Ngày đặt']],
-            body: tableData,
-            styles: { fontSize: 8 },
-            headStyles: { fillColor: [66, 139, 202], textColor: 255 },
-            alternateRowStyles: { fillColor: [245, 245, 245] },
-            margin: { top: 28, left: 14, right: 14 }
-        });
-        
-        const filename = `BaoCaoDonHang_${new Date().toISOString().split('T')[0]}.pdf`;
-        doc.save(filename);
-        showAlert('Xuất PDF thành công!', 'success');
-    } catch (error) {
-        console.error('Error exporting to PDF:', error);
-        showAlert('Lỗi khi xuất PDF: ' + (error.message || 'Unknown error'), 'error');
-    }
-};
 
 // Show alert
 function showAlert(message, type = 'success') {

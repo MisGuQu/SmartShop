@@ -242,6 +242,7 @@ async function updateAuthUI() {
                 console.error('Error loading user info:', error);
                 // Still show auth UI even if user info fails to load
             }
+            await refreshCartBadge();
         } else {
             console.log('User is not authenticated, showing anonymous UI');
             // Show anonymous UI
@@ -251,6 +252,7 @@ async function updateAuthUI() {
             // Update links to redirect to login
             if (wishlistLink) wishlistLink.href = '/auth/login.html?redirect=/wishlist.html';
             if (cartLink) cartLink.href = '/auth/login.html?redirect=/cart.html';
+            hideCartBadge();
         }
     } catch (error) {
         console.error('Error updating auth UI:', error);
@@ -613,3 +615,69 @@ function filterByCategory(categoryId, categoryName) {
     // Navigate to products page with category filter
     window.location.href = `/product.html?category=${categoryId}`;
 }
+
+function ensureCartBadge() {
+    const cartLink = document.getElementById('cartLink');
+    if (!cartLink) return null;
+    cartLink.classList.add('header__icon--cart');
+    let badge = document.getElementById('cartBadge');
+    if (!badge) {
+        badge = document.createElement('span');
+        badge.id = 'cartBadge';
+        badge.className = 'header__cart-badge d-none';
+        cartLink.appendChild(badge);
+    }
+    return badge;
+}
+
+function hideCartBadge() {
+    const badge = document.getElementById('cartBadge');
+    if (badge) {
+        badge.classList.add('d-none');
+    }
+}
+
+function setCartBadgeCount(count) {
+    const badge = ensureCartBadge();
+    if (!badge) return;
+    const displayValue = typeof count === 'number' && count > 99 ? '99+' : (count || 0);
+    if (count && count > 0) {
+        badge.textContent = displayValue;
+        badge.classList.remove('d-none');
+    } else {
+        badge.textContent = '0';
+        badge.classList.add('d-none');
+    }
+}
+
+function getQuantityFromCart(cart) {
+    if (!cart) return 0;
+    if (typeof cart.totalQuantity === 'number') {
+        return cart.totalQuantity;
+    }
+    if (Array.isArray(cart.items)) {
+        return cart.items.reduce((sum, item) => sum + (item.quantity || 0), 0);
+    }
+    return 0;
+}
+
+async function refreshCartBadge() {
+    const badge = ensureCartBadge();
+    if (!badge) return;
+    if (authStatus !== true) {
+        hideCartBadge();
+        return;
+    }
+
+    try {
+        const cart = await api.getCart();
+        const quantity = getQuantityFromCart(cart);
+        setCartBadgeCount(quantity);
+    } catch (error) {
+        console.error('Error refreshing cart badge:', error);
+    }
+}
+
+window.refreshCartBadge = refreshCartBadge;
+window.setCartBadgeCount = setCartBadgeCount;
+window.hideCartBadge = hideCartBadge;

@@ -30,4 +30,7 @@ public class OrderItem {
 
     @Column(nullable = false)
     private Double price;
+
+    @Column(name = "image_url", length = 500)
+    private String imageUrl;
 }

@@ -25,6 +25,9 @@ function displayCart(cart) {
     const container = document.getElementById('cartContent');
     
     if (!cart || !cart.items || cart.items.length === 0) {
+        if (window.setCartBadgeCount) {
+            window.setCartBadgeCount(0);
+        }
         container.innerHTML = `
             <div class="empty-cart">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -118,6 +121,10 @@ function displayCart(cart) {
             </div>
         </div>
     `;
+    const quantity = cart.totalQuantity ?? cart.items.reduce((sum, item) => sum + (item.quantity || 0), 0);
+    if (window.setCartBadgeCount) {
+        window.setCartBadgeCount(quantity);
+    }
 }
 
 function escapeHtml(text) {

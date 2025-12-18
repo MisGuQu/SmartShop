@@ -2,12 +2,17 @@ package com.smartshop.controller;
 
 import com.smartshop.dto.product.ProductRequest;
 import com.smartshop.dto.product.ProductResponse;
+import com.smartshop.service.ProductExportService;
 import com.smartshop.service.ProductService;
 import org.springframework.data.domain.Page;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+
+import java.io.IOException;
 
 @RestController
 @RequestMapping("/api/products")
@@ -15,9 +20,12 @@ import org.springframework.web.multipart.MultipartFile;
 public class ProductController {
 
     private final ProductService productService;
+    private final ProductExportService productExportService;
 
-    public ProductController(ProductService productService) {
+    public ProductController(ProductService productService,
+                            ProductExportService productExportService) {
         this.productService = productService;
+        this.productExportService = productExportService;
     }
 
     // ✅ Danh sách sản phẩm với phân trang và lọc (public)
@@ -119,6 +127,38 @@ public class ProductController {
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ProductResponse> toggleStatus(@PathVariable Long id) {
         return ResponseEntity.ok(productService.toggleStatus(id));
+    }
+
+    // ✅ Export to Excel
+    @GetMapping("/export/excel")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<byte[]> exportToExcel() throws IOException {
+        byte[] excelData = productExportService.exportToExcel().toByteArray();
+        
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
+        headers.setContentDispositionFormData("attachment", "products.xlsx");
+        headers.setContentLength(excelData.length);
+        
+        return ResponseEntity.ok()
+                .headers(headers)
+                .body(excelData);
+    }
+
+    // ✅ Export to PDF
+    @GetMapping("/export/pdf")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<byte[]> exportToPdf() throws IOException {
+        byte[] pdfData = productExportService.exportToPdf().toByteArray();
+        
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_PDF);
+        headers.setContentDispositionFormData("attachment", "products.pdf");
+        headers.setContentLength(pdfData.length);
+        
+        return ResponseEntity.ok()
+                .headers(headers)
+                .body(pdfData);
     }
 }
 

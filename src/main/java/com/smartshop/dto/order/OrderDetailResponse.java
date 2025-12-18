@@ -39,6 +39,7 @@ public class OrderDetailResponse {
     public static class OrderItemResponse {
         private Long productId;
         private String productName;
+	    private String imageUrl;
         private Double price;
         private Integer quantity;
         private Double lineTotal;
@@ -49,6 +50,8 @@ public class OrderDetailResponse {
             return OrderItemResponse.builder()
                     .productId(item.getProduct() != null ? item.getProduct().getId() : null)
                     .productName(item.getProduct() != null ? item.getProduct().getName() : "N/A")
+				.imageUrl(item.getImageUrl() != null ? item.getImageUrl() :
+						(item.getProduct() != null ? item.getProduct().getImageUrl() : null))
                     .price(price)
                     .quantity(qty)
                     .lineTotal(price * qty)

@@ -629,6 +629,23 @@ a {
     background: #ffffff;
 }
 
+/* Export dropdown: force visible when toggled manually */
+/* Export dropdown manual */
+.export-dropdown {
+    position: relative;
+}
+.export-dropdown .export-dropdown-menu {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    min-width: 180px;
+    z-index: 2000;
+}
+.export-dropdown .export-dropdown-menu.show {
+    display: block;
+}
+
 .dropdown-item {
     padding: 0.75rem 1rem;
     border-radius: 8px;

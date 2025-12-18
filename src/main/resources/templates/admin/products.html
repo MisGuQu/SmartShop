@@ -72,13 +72,14 @@
             <div class="admin-content">
                 <div class="d-flex justify-content-between align-items-center mb-4">
                     <div></div>
-                    <div class="btn-group">
-                        <button type="button" class="btn btn-success dropdown-toggle" id="exportDropdownBtn" data-bs-toggle="dropdown" aria-expanded="false">
+                    <div class="btn-group export-dropdown">
+                        <button type="button" class="btn btn-success dropdown-toggle" id="exportDropdownBtn" aria-expanded="false" onclick="toggleExportMenu(this, event)">
+
                             <i class="bi bi-file-earmark-arrow-down"></i> Xuất báo cáo
                         </button>
-                        <ul class="dropdown-menu" id="exportDropdownMenu">
-                            <li><a class="dropdown-item export-excel-btn" href="javascript:void(0)" id="exportExcelBtn"><i class="bi bi-file-earmark-excel"></i> Xuất Excel</a></li>
-                            <li><a class="dropdown-item export-pdf-btn" href="javascript:void(0)" id="exportPdfBtn"><i class="bi bi-file-earmark-pdf"></i> Xuất PDF</a></li>
+                        <ul class="dropdown-menu export-dropdown-menu" id="exportDropdownMenu">
+                            <li><a class="dropdown-item export-excel-btn" href="javascript:void(0)" id="exportExcelBtn" onclick="exportToExcel(); return false;"><i class="bi bi-file-earmark-excel"></i> Xuất Excel</a></li>
+                            <li><a class="dropdown-item export-pdf-btn" href="javascript:void(0)" id="exportPdfBtn" onclick="exportToPDF(); return false;"><i class="bi bi-file-earmark-pdf"></i> Xuất PDF</a></li>
                         </ul>
                         <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#productModal" onclick="openProductModal()">
                             <i class="bi bi-plus-circle"></i> Thêm sản phẩm
@@ -233,12 +234,9 @@
         </div>
     </div>
 
-    <!-- Include libraries for Excel and PDF export -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
-    
+    <!-- Bootstrap Bundle (required for dropdowns) -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
     <script src="/js/api.js"></script>
     <script src="/js/admin-products.js"></script>
     <script>
@@ -258,6 +256,53 @@
                     item.classList.add('active');
                 }
             });
+        });
+
+        // Manual export dropdown
+        let currentExportMenu = null;
+        function closeExportMenu(menu) {
+            if (!menu) return;
+            const wrapper = menu.closest('.export-dropdown');
+            menu.classList.remove('show');
+            if (wrapper) wrapper.classList.remove('show');
+            if (menu._trigger) {
+                menu._trigger.setAttribute('aria-expanded', 'false');
+            }
+            currentExportMenu = null;
+        }
+
+        function toggleExportMenu(btn, evt) {
+            if (evt) {
+                evt.preventDefault();
+                evt.stopPropagation();
+            }
+            const menu = btn.nextElementSibling;
+            if (!menu) return;
+
+            // close other open
+            if (currentExportMenu && currentExportMenu !== menu) {
+                closeExportMenu(currentExportMenu);
+            }
+
+            const willShow = !menu.classList.contains('show');
+            if (willShow) {
+                menu._trigger = btn;
+                menu.classList.add('show');
+                const wrapper = menu.closest('.export-dropdown');
+                if (wrapper) wrapper.classList.add('show');
+                btn.setAttribute('aria-expanded', 'true');
+                currentExportMenu = menu;
+            } else {
+                closeExportMenu(menu);
+            }
+        }
+
+        document.addEventListener('click', function(e) {
+            if (currentExportMenu) {
+                const trigger = currentExportMenu._trigger;
+                if (trigger && (trigger.contains(e.target) || currentExportMenu.contains(e.target))) return;
+                closeExportMenu(currentExportMenu);
+            }
         });
 
         // Handle logout

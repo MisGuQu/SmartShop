@@ -41,8 +41,8 @@ public class OrderSummaryResponse {
             double price = item.getPrice();
             int qty = item.getQuantity();
             String productName = item.getProduct() != null ? item.getProduct().getName() : "N/A";
-            String imageUrl = null;
-            if (item.getProduct() != null) {
+            String imageUrl = item.getImageUrl();
+            if ((imageUrl == null || imageUrl.isBlank()) && item.getProduct() != null) {
                 imageUrl = item.getProduct().getImageUrl();
             }
             

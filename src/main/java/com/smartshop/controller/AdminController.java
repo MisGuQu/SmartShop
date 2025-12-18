@@ -5,10 +5,14 @@ import com.smartshop.dto.common.ApiResponse;
 import com.smartshop.dto.order.OrderSummaryResponse;
 import com.smartshop.dto.review.ReviewResponse;
 import com.smartshop.service.AdminService;
+import com.smartshop.service.UserExportService;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -19,9 +23,12 @@ import java.util.stream.Collectors;
 public class AdminController {
 
     private final AdminService adminService;
+    private final UserExportService userExportService;
 
-    public AdminController(AdminService adminService) {
+    public AdminController(AdminService adminService,
+                          UserExportService userExportService) {
         this.adminService = adminService;
+        this.userExportService = userExportService;
     }
 
     // Quản lý Users
@@ -77,6 +84,36 @@ public class AdminController {
     public ResponseEntity<ApiResponse<Void>> deleteReview(@PathVariable Long reviewId) {
         adminService.deleteReview(reviewId);
         return ResponseEntity.ok(ApiResponse.success("Xóa review thành công", null));
+    }
+
+    // ✅ Export Users to Excel
+    @GetMapping("/users/export/excel")
+    public ResponseEntity<byte[]> exportUsersToExcel() throws IOException {
+        byte[] excelData = userExportService.exportToExcel().toByteArray();
+        
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
+        headers.setContentDispositionFormData("attachment", "users.xlsx");
+        headers.setContentLength(excelData.length);
+        
+        return ResponseEntity.ok()
+                .headers(headers)
+                .body(excelData);
+    }
+
+    // ✅ Export Users to PDF
+    @GetMapping("/users/export/pdf")
+    public ResponseEntity<byte[]> exportUsersToPdf() throws IOException {
+        byte[] pdfData = userExportService.exportToPdf().toByteArray();
+        
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_PDF);
+        headers.setContentDispositionFormData("attachment", "users.pdf");
+        headers.setContentLength(pdfData.length);
+        
+        return ResponseEntity.ok()
+                .headers(headers)
+                .body(pdfData);
     }
 }
 

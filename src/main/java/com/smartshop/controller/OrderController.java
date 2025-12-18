@@ -1,11 +1,15 @@
 package com.smartshop.controller;
 
 import com.smartshop.dto.order.*;
+import com.smartshop.service.OrderExportService;
 import com.smartshop.service.OrderService;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.IOException;
 import java.util.List;
 
 @RestController
@@ -14,9 +18,12 @@ import java.util.List;
 public class OrderController {
 
     private final OrderService orderService;
+    private final OrderExportService orderExportService;
 
-    public OrderController(OrderService orderService) {
+    public OrderController(OrderService orderService,
+                           OrderExportService orderExportService) {
         this.orderService = orderService;
+        this.orderExportService = orderExportService;
     }
 
     // 2️⃣7️⃣ Lịch sử mua hàng (user hiện tại)
@@ -54,6 +61,38 @@ public class OrderController {
     @PreAuthorize("hasRole('CUSTOMER') or hasRole('ADMIN')")
     public ResponseEntity<OrderDetailResponse> confirmReceived(@PathVariable Long orderId) {
         return ResponseEntity.ok(orderService.confirmReceived(orderId));
+    }
+
+    // ✅ Export to Excel (Admin only)
+    @GetMapping("/export/excel")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<byte[]> exportToExcel() throws IOException {
+        byte[] excelData = orderExportService.exportToExcel().toByteArray();
+        
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
+        headers.setContentDispositionFormData("attachment", "orders.xlsx");
+        headers.setContentLength(excelData.length);
+        
+        return ResponseEntity.ok()
+                .headers(headers)
+                .body(excelData);
+    }
+
+    // ✅ Export to PDF (Admin only)
+    @GetMapping("/export/pdf")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<byte[]> exportToPdf() throws IOException {
+        byte[] pdfData = orderExportService.exportToPdf().toByteArray();
+        
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_PDF);
+        headers.setContentDispositionFormData("attachment", "orders.pdf");
+        headers.setContentLength(pdfData.length);
+        
+        return ResponseEntity.ok()
+                .headers(headers)
+                .body(pdfData);
     }
 }
 

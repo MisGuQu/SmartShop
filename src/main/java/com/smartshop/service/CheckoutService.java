@@ -131,6 +131,7 @@ public class CheckoutService {
                             .product(product)
                             .quantity(ci.getQuantity())
                             .price(product.getPrice())
+                            .imageUrl(product.getImageUrl())
                             .build();
                 })
                 .collect(Collectors.toList());
